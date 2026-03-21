@@ -71,13 +71,17 @@ export function KPICards({
 
     const comparisonLabel = getComparisonLabel();
 
-    const stats = [
+    const hasConversions = conversions > 0;
+    const hasConversations = conversations > 0;
+
+    const allStats = [
         {
             title: isPrepay ? "Saldo Disponível" : "Saldo Disponível (Saldo a ser cobrado no cartão)",
             value: new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(displayBalance),
             change: paymentLabel,
             trend: "neutral",
             icon: Wallet,
+            show: true,
         },
         {
             title: "Gasto Total",
@@ -85,6 +89,7 @@ export function KPICards({
             change: "+12%",
             trend: "up",
             icon: DollarSign,
+            show: true,
         },
         {
             title: "Cliques",
@@ -92,6 +97,7 @@ export function KPICards({
             change: "+4%",
             trend: "up",
             icon: MousePointerClick,
+            show: true,
         },
         {
             title: "Custo por Result.",
@@ -99,6 +105,7 @@ export function KPICards({
             change: "-2%",
             trend: "down",
             icon: Users,
+            show: hasConversions,
         },
         {
             title: "Conversões",
@@ -106,6 +113,7 @@ export function KPICards({
             change: "+8%",
             trend: "up",
             icon: MessageSquare,
+            show: hasConversions,
         },
         {
             title: "Conversas",
@@ -113,6 +121,7 @@ export function KPICards({
             change: "+15%",
             trend: "up",
             icon: Users,
+            show: hasConversations,
         },
         {
             title: "Custo/Conversa",
@@ -120,8 +129,11 @@ export function KPICards({
             change: "-5%",
             trend: "down",
             icon: DollarSign,
+            show: hasConversations,
         },
     ];
+
+    const stats = allStats.filter(s => s.show);
 
     return (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">

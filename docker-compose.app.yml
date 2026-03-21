@@ -87,7 +87,7 @@ services:
         # HTTPS router for ads.metrixbr.com
         - traefik.http.routers.bilula.rule=Host(`ads.metrixbr.com`)
         - traefik.http.routers.bilula.entrypoints=websecure
-        - traefik.http.routers.bilula.tls.certresolver=letsencrypt
+        - traefik.http.routers.bilula.tls.certresolver=mytlschallenge
         - traefik.http.services.bilula.loadbalancer.server.port=3000
     depends_on:
       - db

@@ -233,14 +233,21 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                         const salesActions = insight.actions.filter((a: any) => a.action_type.includes('purchase'));
                         salesValue = salesActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
 
-                        // Broad capture: Sum any action that looks like a messaging start
-                        const msgActions = insight.actions.filter((a: any) =>
-                            a.action_type.includes('messaging_conversation_started') ||
-                            a.action_type.includes('messaging_first_reply')
+                        // Conversations started from Click-to-WhatsApp ads
+                        // Priority: messaging_conversation_started_7d (main CTWA metric shown in Meta Ads Manager)
+                        const ctwaActions = insight.actions.filter((a: any) =>
+                            a.action_type.includes('messaging_conversation_started')
                         );
-
-                        if (msgActions.length > 0) {
-                            conversationsValue = msgActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                        if (ctwaActions.length > 0) {
+                            conversationsValue = ctwaActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                        } else {
+                            // Fallback for Sponsored Messages campaigns only
+                            const firstReplyActions = insight.actions.filter((a: any) =>
+                                a.action_type.includes('messaging_first_reply')
+                            );
+                            if (firstReplyActions.length > 0) {
+                                conversationsValue = firstReplyActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                            }
                         }
 
                         // Page likes (new followers from ads)
@@ -448,12 +455,18 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                 const salesActions = insight.actions.filter((a: any) => a.action_type.includes('purchase'));
                 salesValue = salesActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
 
-                // Conversations
-                const msgActions = insight.actions.filter((a: any) =>
-                    a.action_type.includes('messaging_conversation_started') ||
-                    a.action_type.includes('messaging_first_reply')
+                // Conversations started from Click-to-WhatsApp ads
+                const ctwaActions = insight.actions.filter((a: any) =>
+                    a.action_type.includes('messaging_conversation_started')
                 );
-                conversationsValue = msgActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                if (ctwaActions.length > 0) {
+                    conversationsValue = ctwaActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                } else {
+                    const firstReplyActions = insight.actions.filter((a: any) =>
+                        a.action_type.includes('messaging_first_reply')
+                    );
+                    conversationsValue = firstReplyActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                }
             }
 
             return {

@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String     @id @default(uuid())
+  email           String     @unique
+  password        String
+  name            String?
+  role            String     @default("Admin")
+  
+  is_super_admin  Boolean    @default(false)
+  
+  workspace_id    String?
+  workspace       Workspace? @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  password_resets PasswordReset[]
+
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+
+  @@index([workspace_id])
+}
+
+model Account {
+  id                   String     @id @default(uuid())
+  workspace_id         String?
+  workspace            Workspace? @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  account_id           String     @unique
+  account_name         String
+  client_name          String?
+  balance              Float      @default(0)
+  amount_spent         Float      @default(0)
+  currency             String     @default("BRL")
+  account_status       String     @default("ACTIVE")
+  is_prepay            Boolean    @default(false)
+  access_token         String?
+  created_at           DateTime   @default(now())
+  updated_at           DateTime   @updatedAt
+  daily_report_enabled Boolean    @default(false)
+  daily_report_time    String     @default("09:00")
+  daily_report_range   String     @default("today")
+  is_hidden            Boolean    @default(false)
+  last_wa_report_sent_at DateTime?
+  report_metrics_config Json?
+  report_custom_message String?
+  custom_webhook_id   String?    @unique
+  campaigns            Campaign[]
+  leads                Lead[]
+
+  @@index([workspace_id])
+}
+
+model Workspace {
+  id                  String    @id @default(uuid())
+  nome_empresa        String
+  status              String    @default("ACTIVE")
+  criado_em           DateTime  @default(now())
+  
+  meta_access_token   String?
+  
+  users               User[]
+  accounts            Account[]
+  settings            Setting[]
+  invites             Invite[]
+}
+
+model Setting {
+  id             String    @id @default(uuid())
+  workspace_id   String    @unique
+  workspace      Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  whatsapp_enabled Boolean @default(false)
+
+  // Per-workspace integrations
+  criativo_art_api_key String?
+
+  criado_em      DateTime  @default(now())
+}
+
+model Invite {
+  id           String    @id @default(uuid())
+  email        String
+  role         String    @default("Member")
+  token        String    @unique
+  expires_at   DateTime
+  
+  workspace_id String
+  workspace    Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  criado_em    DateTime  @default(now())
+
+  @@index([workspace_id])
+  @@unique([email, workspace_id])
+}
+
+model PasswordReset {
+  id         String   @id @default(uuid())
+  token      String   @unique
+  expires_at DateTime
+  
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  criado_em  DateTime @default(now())
+
+  @@index([user_id])
+}
+
+model Lead {
+  id            String   @id @default(uuid())
+  lead_id       String   @unique
+  account_id    String?
+  campaign_id   String?
+  campaign_name String?
+  adset_id      String?
+  adset_name    String?
+  ad_id         String?
+  ad_name       String?
+  form_id       String?
+  full_name     String?
+  email         String?
+  phone         String?
+  platform      String   @default("facebook")
+  created_time  DateTime
+  status        String   @default("novo")
+  notes         String?
+  raw_data      String?
+  synced_at     DateTime @default(now())
+  account       Account? @relation(fields: [account_id], references: [id])
+
+  @@index([account_id])
+  @@index([status])
+}
+
+model Campaign {
+  id                  String   @id @default(uuid())
+  account_id          String
+  campaign_id         String   @unique
+  campaign_name       String
+  impressions         Int      @default(0)
+  clicks              Int      @default(0)
+  spend               Float    @default(0)
+  cpm                 Float    @default(0)
+  cpc                 Float    @default(0)
+  ctr                 Float    @default(0)
+  conversions         Int      @default(0)
+  cost_per_conversion Float    @default(0)
+  date                DateTime
+  synced_at           DateTime @default(now())
+  account             Account  @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@index([account_id])
+}
+
+model GlobalConfig {
+  id                    String   @id @default("singleton")
+  meta_access_token     String?
+  criativo_art_api_key  String?
+  updated_at            DateTime @updatedAt
+}
+model WebhookLog {
+  id         String   @id @default(uuid())
+  payload    String
+  receivedAt DateTime @default(now())
+}
+
+model ReportLog {
+  id           String   @id @default(uuid())
+  account_id   String
+  account_name String
+  channel      String
+  status       String
+  error_msg    String?
+  range        String?
+  sent_at      DateTime @default(now())
+  workspace_id String?
+
+  @@index([sent_at])
+  @@index([account_id])
+  @@index([channel])
+}

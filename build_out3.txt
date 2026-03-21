@@ -1,0 +1,74 @@
+
+> trafego-dpg@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\User\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\User\Downloads\bilula\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 18.3s
+  Running TypeScript ...
+  Collecting page data using 11 workers ...
+  Generating static pages using 11 workers (0/29) ...
+  Generating static pages using 11 workers (7/29) 
+  Generating static pages using 11 workers (14/29) 
+  Generating static pages using 11 workers (21/29) 
+✓ Generating static pages using 11 workers (29/29) in 638.8ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /accounts
+├ ƒ /api/auth/meta
+├ ƒ /api/auth/meta/callback
+├ ƒ /api/auth/youtube
+├ ƒ /api/auth/youtube/callback
+├ ƒ /api/cleanup-db
+├ ƒ /api/cron/daily-reports
+├ ƒ /api/cron/email-reports
+├ ƒ /api/cron/google-chat
+├ ƒ /api/cron/sync-leads
+├ ƒ /api/debug/alliance
+├ ƒ /api/debug/creatives
+├ ƒ /api/debug/gchat-save
+├ ƒ /api/debug/leads
+├ ƒ /api/debug/meta
+├ ƒ /api/debug/webhooks
+├ ƒ /api/debug/webhooks/recent
+├ ƒ /api/leads
+├ ƒ /api/meta/campaigns
+├ ƒ /api/test-metrics
+├ ƒ /api/traffic-ai
+├ ƒ /api/webhooks/custom/[webhookId]
+├ ƒ /api/webhooks/meta
+├ ƒ /automations
+├ ƒ /gestor-trafego
+├ ƒ /leads
+├ ○ /login
+├ ƒ /notifications
+├ ƒ /overview
+├ ƒ /settings
+├ ƒ /whatsapp-reports
+├ ƒ /whatsapp-test
+├ ƒ /youtube
+└ ƒ /youtube/[id]
+
+Route (pages)
+─ ƒ /api/youtube/upload-native
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

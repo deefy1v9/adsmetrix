@@ -1,0 +1,203 @@
+=== Analysis for Account: CriativoArt ===
+
+
+Ad: v1 (CRIATIVO.ART(GERAL))
+Spend: R$ 54.17
+--- Configured Actions ---
+ - link_click: 34
+ - page_engagement: 307
+ - landing_page_view: 27
+ - omni_landing_page_view: 27
+ - post_engagement: 307
+ - comment: 1
+ - post_interaction_gross: 26
+ - onsite_conversion.post_unsave: 1
+ - post: 3
+ - onsite_conversion.post_save: 8
+ - onsite_conversion.post_net_like: 14
+ - onsite_conversion.post_net_save: 7
+ - onsite_web_lead: 11
+ - lead: 11
+ - offsite_conversion.fb_pixel_lead: 11
+ - video_view: 247
+ - post_reaction: 14
+
+Ad: c2 (CRIATIVO.ART(GERAL))
+Spend: R$ 3.36
+--- Configured Actions ---
+ - link_click: 4
+ - page_engagement: 4
+ - landing_page_view: 2
+ - omni_landing_page_view: 2
+ - post_engagement: 4
+
+Ad: c3 (CRIATIVO.ART(GERAL))
+Spend: R$ 14.33
+--- Configured Actions ---
+ - link_click: 11
+ - page_engagement: 12
+ - landing_page_view: 7
+ - omni_landing_page_view: 7
+ - post_engagement: 12
+ - post_interaction_gross: 1
+ - onsite_conversion.post_net_like: 1
+ - onsite_web_lead: 2
+ - lead: 2
+ - offsite_conversion.fb_pixel_lead: 2
+ - post_reaction: 1
+
+Ad: c4 (CRIATIVO.ART(GERAL))
+Spend: R$ 10.05
+--- Configured Actions ---
+ - link_click: 8
+ - page_engagement: 8
+ - landing_page_view: 5
+ - omni_landing_page_view: 5
+ - post_engagement: 8
+ - onsite_web_lead: 1
+ - lead: 1
+ - offsite_conversion.fb_pixel_lead: 1
+
+Ad: c5 (CRIATIVO.ART(GERAL))
+Spend: R$ 3.65
+--- Configured Actions ---
+ - link_click: 3
+ - page_engagement: 3
+ - landing_page_view: 1
+ - omni_landing_page_view: 1
+ - post_engagement: 3
+
+Ad: c6 (CRIATIVO.ART(GERAL))
+Spend: R$ 6.86
+--- Configured Actions ---
+ - link_click: 9
+ - page_engagement: 9
+ - landing_page_view: 8
+ - omni_landing_page_view: 8
+ - post_engagement: 9
+ - onsite_web_lead: 3
+ - lead: 3
+ - offsite_conversion.fb_pixel_lead: 3
+
+Ad: c7 (CRIATIVO.ART(GERAL))
+Spend: R$ 4.76
+--- Configured Actions ---
+ - link_click: 2
+ - page_engagement: 2
+ - landing_page_view: 2
+ - omni_landing_page_view: 2
+ - post_engagement: 2
+
+Ad: c2 (CRIATIVO.ART(GERAL))
+Spend: R$ 79.54
+--- Configured Actions ---
+ - link_click: 62
+ - page_engagement: 69
+ - landing_page_view: 52
+ - omni_landing_page_view: 52
+ - post_engagement: 67
+ - like: 2
+ - post_interaction_gross: 5
+ - post: 1
+ - onsite_conversion.post_net_like: 4
+ - onsite_web_lead: 24
+ - lead: 24
+ - offsite_conversion.fb_pixel_lead: 24
+ - post_reaction: 4
+
+Ad: c3 (CRIATIVO.ART(GERAL))
+Spend: R$ 123.27
+--- Configured Actions ---
+ - link_click: 213
+ - page_engagement: 224
+ - landing_page_view: 149
+ - omni_landing_page_view: 149
+ - post_engagement: 224
+ - post_interaction_gross: 11
+ - post: 2
+ - onsite_conversion.post_save: 7
+ - onsite_conversion.post_net_like: 2
+ - onsite_conversion.post_net_save: 7
+ - onsite_web_lead: 33
+ - lead: 33
+ - offsite_conversion.fb_pixel_lead: 33
+ - post_reaction: 2
+
+Ad: c4 (CRIATIVO.ART(GERAL))
+Spend: R$ 1.49
+--- Configured Actions ---
+ - link_click: 3
+ - page_engagement: 3
+ - landing_page_view: 1
+ - omni_landing_page_view: 1
+ - post_engagement: 3
+
+Ad: c5 (CRIATIVO.ART(GERAL))
+Spend: R$ 11.74
+--- Configured Actions ---
+ - link_click: 44
+ - page_engagement: 44
+ - landing_page_view: 26
+ - omni_landing_page_view: 26
+ - post_engagement: 44
+ - onsite_web_lead: 6
+ - lead: 6
+ - offsite_conversion.fb_pixel_lead: 6
+
+Ad: c6 (CRIATIVO.ART(GERAL))
+Spend: R$ 253.32
+--- Configured Actions ---
+ - link_click: 291
+ - page_engagement: 332
+ - landing_page_view: 236
+ - omni_landing_page_view: 236
+ - onsite_conversion.post_unlike: 2
+ - post_engagement: 330
+ - comment: 3
+ - like: 2
+ - post_interaction_gross: 39
+ - post: 4
+ - onsite_conversion.post_save: 9
+ - onsite_conversion.post_net_like: 21
+ - onsite_conversion.post_net_save: 9
+ - onsite_web_lead: 80
+ - lead: 80
+ - offsite_conversion.fb_pixel_lead: 80
+ - post_reaction: 23
+
+Ad: v1 (CRIATIVO.ART(GERAL))
+Spend: R$ 213.05
+--- Configured Actions ---
+ - onsite_conversion.total_messaging_connection: 1
+ - link_click: 129
+ - page_engagement: 1395
+ - landing_page_view: 104
+ - omni_landing_page_view: 104
+ - post_engagement: 1395
+ - comment: 9
+ - post_interaction_gross: 122
+ - post: 38
+ - onsite_conversion.post_save: 31
+ - onsite_conversion.post_net_like: 44
+ - onsite_conversion.post_net_save: 31
+ - onsite_web_lead: 48
+ - onsite_conversion.messaging_first_reply: 1
+ - lead: 48
+ - onsite_conversion.messaging_conversation_started_7d: 1
+ - offsite_conversion.fb_pixel_lead: 48
+ - video_view: 1144
+ - post_reaction: 44
+
+Ad: c7 (CRIATIVO.ART(GERAL))
+Spend: R$ 5.82
+--- Configured Actions ---
+ - link_click: 6
+ - page_engagement: 6
+ - landing_page_view: 8
+ - omni_landing_page_view: 8
+ - post_engagement: 6
+ - onsite_web_lead: 2
+ - lead: 2
+ - offsite_conversion.fb_pixel_lead: 2
+
+Total potential 'custom conversions' flags found: 30

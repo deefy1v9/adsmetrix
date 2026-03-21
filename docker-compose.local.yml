@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bilula
+      POSTGRES_PASSWORD: bilula_secret_dev
+      POSTGRES_DB: bilula
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data-local:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://bilula:bilula_secret_dev@db:5432/bilula
+      NODE_ENV: development
+    depends_on:
+      - db
+
+volumes:
+  postgres-data-local:

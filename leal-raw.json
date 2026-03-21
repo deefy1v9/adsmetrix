@@ -1,0 +1,32 @@
+﻿Searching for 'Leal Contabilidade'...
+[MetaAPI] getAdAccounts called. Token defined: true
+[MetaAPI] SDK found total 54 ad accounts.
+Found Leal Contabilidade (Mapped):
+{
+  "id": "act_8284259038302407",
+  "name": "CA 02 - Leal Contabilidade",
+  "account_id": "act_8284259038302407",
+  "currency": "BRL",
+  "account_status": 1,
+  "balance": 53354,
+  "amount_spent": 174168,
+  "spend_cap": 290000,
+  "is_prepay_account": false,
+  "funding_source_details": {
+    "id": "25455832527433475",
+    "coupons": [
+      {
+        "amount": 0,
+        "currency": "BRL",
+        "display_amount": "R$0,00┬áBRL",
+        "expiration": "2026-04-18T11:35:11+0000",
+        "start_date": "2025-10-17T23:35:11+0000",
+        "coupon_id": "24589739264042806",
+        "original_amount": 1,
+        "original_display_amount": "R$0,01┬áBRL"
+      }
+    ],
+    "display_string": "VISA *0452",
+    "type": 1
+  }
+}

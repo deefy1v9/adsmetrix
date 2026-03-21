@@ -1,0 +1,131 @@
+version: "3.8"
+
+# ============================================================================
+# APPLICATION STACK - Bilula + PostgreSQL
+# Deploy: docker stack deploy -c docker-compose.app.yml bilula
+# ============================================================================
+
+services:
+  # ── PostgreSQL Database ────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bilula
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bilula_secret_2024}
+      POSTGRES_DB: bilula
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - internal
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5s
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bilula -d bilula"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── Bilula App (Next.js) ───────────────────────────────────────────────
+  app:
+    image: ${APP_IMAGE:-ghcr.io/deefy1v9/adsmetrix:latest}
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://bilula:${DB_PASSWORD:-bilula_secret_2024}@db:5432/bilula
+      # Safe Fallbacks (the .env file above will override these if present)
+      META_ACCESS_TOKEN: ${META_ACCESS_TOKEN:-}
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
+      CRON_SECRET: ${CRON_SECRET:-}
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_ACCESS_TOKEN: ${WHATSAPP_ACCESS_TOKEN:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      NEXT_PUBLIC_APP_URL: https://ads.metrixbr.com
+      NEXT_PUBLIC_META_APP_ID: ${META_APP_ID:-}
+      NODE_ENV: production
+      NODE_OPTIONS: "--max_old_space_size=2048"
+      BODY_SIZE_LIMIT: 500mb
+    networks:
+      - traefik-public
+      - internal
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 10s
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+      labels:
+        - traefik.enable=true
+        # HTTPS router for ads.metrixbr.com
+        - traefik.http.routers.bilula.rule=Host(`ads.metrixbr.com`)
+        - traefik.http.routers.bilula.entrypoints=websecure
+        - traefik.http.routers.bilula.tls.certresolver=letsencrypt
+        - traefik.http.services.bilula.loadbalancer.server.port=3000
+    depends_on:
+      - db
+
+  # ── Cron Sidekick (Alpine busybox crond) ────────────────────────────
+  # Runs inside the internal overlay network so it can reach http://app:3000
+  cron:
+    image: alpine:3.19
+    depends_on:
+      - app
+    networks:
+      - internal
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-}
+    command:
+      - sh
+      - -c
+      - |
+        mkdir -p /etc/crontabs
+        printf '*/10 * * * * wget -qO /dev/null http://app:3000/api/cron/daily-reports?token=%s\n*/10 * * * * wget -qO /dev/null http://app:3000/api/cron/sync-leads?token=%s\n' "$$CRON_SECRET" "$$CRON_SECRET" > /etc/crontabs/root
+        echo "==> Cron jobs registered:"
+        cat /etc/crontabs/root
+        crond -f -l 8
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    driver: overlay

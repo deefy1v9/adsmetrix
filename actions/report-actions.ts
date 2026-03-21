@@ -1,0 +1,172 @@
+'use server';
+
+import { prisma } from '@/lib/prisma';
+import { fetchAggregatedMetricsAction } from '@/actions/meta-actions';
+import { calculateAvailableBalance } from '@/lib/balance-utils';
+import { generateReportText } from '@/lib/report-utils';
+import { createReportLog } from '@/lib/report-log';
+
+
+/**
+ * Sends a daily WhatsApp Business report for a specific account.
+ * WhatsApp Business API credentials must be configured via environment variables.
+ */
+export async function sendDailyReportAction(accountId: string) {
+    try {
+        const account = await prisma.account.findFirst({
+            where: {
+                OR: [
+                    { id: accountId },
+                    { account_id: accountId },
+                    { account_id: accountId.replace('act_', '') }
+                ]
+            },
+        });
+
+        if (!account || !account.daily_report_enabled) {
+            return { success: false, error: 'Account not found or daily report not enabled' };
+        }
+
+        // WhatsApp Business API not yet configured — skip gracefully
+        if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
+            console.log(`[Report] WhatsApp Business not configured. Skipping report for ${account.account_name}.`);
+            return { success: false, error: 'WhatsApp Business não configurado ainda' };
+        }
+
+        // 2. Fetch Metrics
+        const range = account.daily_report_range || 'today';
+        const metrics = await fetchAggregatedMetricsAction(account.account_id, range);
+
+        if (!metrics) {
+            return { success: false, error: 'Failed to fetch metrics' };
+        }
+
+        // 3. Check if already sent today
+        const now = new Date();
+        if (account.last_wa_report_sent_at) {
+            const lastSent = new Date(account.last_wa_report_sent_at);
+            const lastSentDateBRT = lastSent.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            const nowDateBRT = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            if (lastSentDateBRT === nowDateBRT) {
+                return { success: false, error: 'Report already sent today via WhatsApp' };
+            }
+        }
+
+        // 4. Generate Message
+        const accountInfo = metrics.accountInfo;
+        const fundingSource = accountInfo?.funding_source_details;
+        const isCardAccount = fundingSource?.type === "1" ||
+            fundingSource?.display_string?.toLowerCase().includes("visa") ||
+            fundingSource?.display_string?.toLowerCase().includes("mastercard") ||
+            fundingSource?.display_string?.toLowerCase().includes("cartão") ||
+            fundingSource?.display_string?.toLowerCase().includes("cartao") ||
+            fundingSource?.display_string?.toLowerCase().includes("card");
+        const isPrepay = accountInfo ? (!!accountInfo.is_prepay_account && !isCardAccount) : false;
+        const balance = isPrepay ? calculateAvailableBalance(accountInfo!) : 0;
+        const message = generateReportText({
+            accountName: account.account_name,
+            metrics: { ...metrics, balance },
+            currency: account.currency,
+            range,
+            platform: 'WhatsApp',
+            metricConfig: (account as any).report_metrics_config as Record<string, boolean> | undefined,
+            customMessage: (account as any).report_custom_message || undefined,
+            isPrepay
+        });
+
+        // 5. Send via WhatsApp Business API (placeholder — template name TBD when configured)
+        console.log(`[Report] WhatsApp report ready for ${account.account_name}. Awaiting WhatsApp Business configuration.`);
+        // TODO: When WhatsApp Business is configured, call sendTemplateMessage here
+
+        // 6. Update last_wa_report_sent_at
+        await prisma.account.update({
+            where: { id: accountId },
+            data: { last_wa_report_sent_at: now }
+        });
+
+        await createReportLog({
+            account_id: account.id,
+            account_name: account.account_name,
+            channel: "whatsapp",
+            status: "success",
+            range,
+            workspace_id: account.workspace_id || undefined,
+        });
+
+        return { success: true };
+
+    } catch (error: any) {
+        console.error(`Error sending report for account ${accountId}:`, error);
+        try {
+            const acc = await prisma.account.findFirst({ where: { OR: [{ id: accountId }, { account_id: accountId }] } });
+            if (acc) {
+                await createReportLog({
+                    account_id: acc.id,
+                    account_name: acc.account_name,
+                    channel: "whatsapp",
+                    status: "error",
+                    error_msg: error.message,
+                    workspace_id: acc.workspace_id || undefined,
+                });
+            }
+        } catch { /* ignore */ }
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Trigger to send reports for ALL enabled accounts via WhatsApp Business
+ */
+export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'all') {
+    try {
+        const now = new Date();
+        const brTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+
+        console.log(`[Cron] Starting daily reports run at ${brTime} (BR Time)`);
+
+        const allAccounts = await prisma.account.findMany({
+            where: { daily_report_enabled: true }
+        });
+
+        const waAccounts = allAccounts.filter(account => {
+            if (!account.daily_report_enabled || !account.daily_report_time) return false;
+
+            const isDue = brTime >= account.daily_report_time;
+
+            let alreadySent = false;
+            if (account.last_wa_report_sent_at) {
+                const lastSent = new Date(account.last_wa_report_sent_at);
+                const lastSentDateBRT = lastSent.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                const nowDateBRT = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                alreadySent = lastSentDateBRT === nowDateBRT;
+            }
+
+            return isDue && !alreadySent;
+        });
+
+        if (waAccounts.length > 0) console.log(`[Cron] Found ${waAccounts.length} accounts due for WhatsApp.`);
+
+        const waResults = [];
+        for (const account of waAccounts) {
+            try {
+                const res = await sendDailyReportAction(account.id);
+                waResults.push({ status: 'fulfilled', value: res });
+            } catch (err) {
+                waResults.push({ status: 'rejected', reason: err });
+            }
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+
+        const totalSuccess = waResults.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
+
+        return {
+            success: true,
+            summary: `Sent ${totalSuccess} of ${waResults.length} WhatsApp reports.`,
+            total: waResults.length
+        };
+
+    } catch (error: any) {
+        console.error('Critical error in sendAllDailyReportsAction:', error);
+        return { success: false, error: error.message };
+    }
+}

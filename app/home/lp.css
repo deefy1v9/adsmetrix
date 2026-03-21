@@ -1,0 +1,485 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+.dashcortex-lp {
+  --bg-dark: #030b14;
+  --bg-light: #f6faff;
+  --text-light: #f0f6ff;
+  --text-muted: #8aa4c8;
+  --text-dark: #071627;
+  --accent: #b4f13d;
+  --accent-dark: #8cb528;
+  --accent-light: #d1fb78;
+  --blue-grad: linear-gradient(45deg, #8cb528, #b4f13d, #d1fb78, #b4f13d, #8cb528);
+  --green-grad: linear-gradient(45deg, #ffffff, #e6e6e6, #cccccc, #e6e6e6, #ffffff);
+  --border-sutil: rgba(255, 255, 255, 0.1);
+
+  background-color: transparent;
+  color: var(--text-light);
+  font-family: 'Montserrat', sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Overrides para conflitos com Tailwind em globals.css */
+.dashcortex-lp h1,
+.dashcortex-lp h2,
+.dashcortex-lp h3,
+.dashcortex-lp h4 {
+  color: var(--text-light);
+}
+
+.dashcortex-lp .bg-light-section h1,
+.dashcortex-lp .bg-light-section h2,
+.dashcortex-lp .bg-light-section h3,
+.dashcortex-lp .bg-light-section h4 {
+  color: var(--text-dark);
+}
+
+body:has(.dashcortex-lp) {
+  background-color: #030b14 !important;
+}
+
+/* Dark sections semi-transparent so WebGL bg bleeds through */
+.dashcortex-lp .bg-dark-section {
+  background-color: rgba(3, 11, 20, 0.42) !important;
+}
+
+@keyframes blueflow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes greenflow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes topo-scroll {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 0 -120px, 0 -80px; }
+}
+
+@keyframes card-border-glow {
+  0%, 100% { box-shadow: 0 0 18px rgba(180, 241, 61, 0.08), inset 0 0 0 1px rgba(180, 241, 61, 0.12); }
+  50%       { box-shadow: 0 0 32px rgba(180, 241, 61, 0.18), inset 0 0 0 1px rgba(180, 241, 61, 0.22); }
+}
+
+/* ── Neon Topo Card ── */
+.dashcortex-lp .lp-neon-card {
+  position: relative;
+  isolation: isolate;
+  animation: card-border-glow 4s ease-in-out infinite;
+}
+
+.dashcortex-lp .lp-neon-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 18px,
+      rgba(180, 241, 61, 0.028) 18px,
+      rgba(180, 241, 61, 0.028) 19px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 26px,
+      rgba(180, 241, 61, 0.012) 26px,
+      rgba(180, 241, 61, 0.012) 27px
+    );
+  animation: topo-scroll 10s linear infinite;
+  opacity: 0.8;
+}
+
+.dashcortex-lp .lp-neon-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(180, 241, 61, 0.07) 0%,
+    transparent 65%
+  );
+}
+
+.dashcortex-lp .lp-neon-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes txt-marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.dashcortex-lp .blue-anim {
+  background: var(--blue-grad);
+  background-size: 300% 300%;
+  animation: blueflow 4s linear infinite;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 0.4rem rgba(180, 241, 61, 0.3));
+}
+
+.dashcortex-lp .green-anim {
+  background: var(--green-grad);
+  background-size: 300% 300%;
+  animation: greenflow 4s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashcortex-lp .bg-dark-section {
+  background-color: var(--bg-dark);
+  position: relative;
+}
+
+.dashcortex-lp .bg-light-section {
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+}
+
+/* ── Badge Pill ── */
+.dashcortex-lp .badge-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--border-sutil);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent-light);
+}
+
+/* ── CTA Button ── */
+.dashcortex-lp .cta-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #d1fb78 0%, #b4f13d 60%, #9ddb28 100%);
+  color: #071627;
+  font-weight: 800;
+  padding: 16px 36px;
+  border-radius: 8px;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  cursor: pointer;
+  border: none;
+  font-family: 'Montserrat', sans-serif;
+  text-decoration: none;
+  box-shadow: 0 4px 24px rgba(180, 241, 61, 0.28), 0 1px 0 rgba(255,255,255,0.15) inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashcortex-lp .cta-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.dashcortex-lp .cta-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(180, 241, 61, 0.45), 0 1px 0 rgba(255,255,255,0.2) inset;
+  background: linear-gradient(180deg, #dcfc8a 0%, #c4f857 60%, #a8e530 100%);
+}
+
+.dashcortex-lp .cta-button:active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(180, 241, 61, 0.3);
+}
+
+/* Arrow box inside cta-button */
+.dashcortex-lp .cta-button .arrow-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.dashcortex-lp .cta-button:hover .arrow-box {
+  transform: translate(2px, -2px);
+}
+
+/* ── CTA Glass ── */
+.dashcortex-lp .cta-glass {
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border: 1px solid rgba(180, 241, 61, 0.25);
+  border-radius: 8px;
+  color: white;
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 0 20px rgba(180, 241, 61, 0.08);
+}
+
+.dashcortex-lp .cta-glass:hover {
+  background: radial-gradient(circle, rgba(180, 241, 61, 0.12) 0%, rgba(180, 241, 61, 0.04) 100%);
+  border-color: rgba(180, 241, 61, 0.5);
+  box-shadow: 0 0 30px rgba(180, 241, 61, 0.15);
+}
+
+/* ── Ticker ── */
+.dashcortex-lp .ticker-strip {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  height: 74px;
+}
+
+.dashcortex-lp .ticker-dark {
+  background-color: rgba(3, 11, 20, 0.8);
+  border-top: 1px solid rgba(180, 241, 61, 0.08);
+  border-bottom: 1px solid rgba(180, 241, 61, 0.08);
+}
+
+.dashcortex-lp .ticker-light {
+  background: radial-gradient(101.56% 61.37% at 38.63% 50%, rgb(237, 244, 254) 0%, rgb(203, 221, 251) 100%);
+  color: var(--text-dark);
+}
+
+.dashcortex-lp .ticker-content {
+  display: inline-flex;
+  animation: txt-marquee 40s linear infinite;
+}
+
+.dashcortex-lp .ticker-item {
+  padding: 0 30px;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 2px;
+}
+
+/* ── Feature Card ── */
+.dashcortex-lp .feature-card {
+  background: radial-gradient(50% 50% at 50% 50%, #ffffff 0%, #eaf0fa 100%);
+  border: 1px solid rgba(180, 200, 240, 0.4);
+  border-radius: 14px;
+  padding: 36px 40px;
+  color: var(--text-dark);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0,0,0,0.02);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashcortex-lp .feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+}
+
+.dashcortex-lp .diamond-icon {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #8cb528, #b4f13d);
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 0 20px rgba(180, 241, 61, 0.4);
+  flex-shrink: 0;
+}
+
+.dashcortex-lp .diamond-icon > svg {
+  transform: rotate(-45deg);
+  color: #071627;
+  width: 22px;
+  height: 22px;
+}
+
+/* ── Fade Edges on Marquee ── */
+.dashcortex-lp .fade-edges::before,
+.dashcortex-lp .fade-edges::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  z-index: 2;
+  pointer-events: none;
+}
+.dashcortex-lp .fade-edges::before {
+  left: 0;
+  background: linear-gradient(to right, #030b14, transparent);
+}
+.dashcortex-lp .fade-edges::after {
+  right: 0;
+  background: linear-gradient(to left, #030b14, transparent);
+}
+
+/* ── Price Cards ── */
+.dashcortex-lp .price-card {
+  border-radius: 24px;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashcortex-lp .price-card:hover {
+  transform: translateY(-10px);
+}
+
+.dashcortex-lp .price-card.basic {
+  background: linear-gradient(180deg, #EDF4FE 0%, #CBDDFB 100%);
+  color: var(--text-dark);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+}
+
+.dashcortex-lp .price-card.pro {
+  background: linear-gradient(160deg, #071627 0%, #030b14 100%);
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 40px rgba(180, 241, 61, 0.2), 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.dashcortex-lp .ribbon {
+  position: absolute;
+  top: 28px;
+  right: -38px;
+  background: var(--blue-grad);
+  background-size: 300% 300%;
+  animation: blueflow 4s linear infinite;
+  color: #071627;
+  padding: 8px 52px;
+  transform: rotate(45deg);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ── FAQ ── */
+.dashcortex-lp .faq-item {
+  background: rgba(10, 22, 40, 0.6);
+  border: 1px solid rgba(60, 80, 110, 0.8);
+  border-radius: 18px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.dashcortex-lp .faq-item:hover {
+  border-color: rgba(180, 241, 61, 0.4);
+  background: rgba(10, 22, 40, 0.8);
+}
+
+.dashcortex-lp .faq-item.active {
+  border-color: rgba(180, 241, 61, 0.5);
+  background: rgba(15, 30, 55, 0.7);
+}
+
+.dashcortex-lp .faq-header {
+  padding: 22px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 17px;
+  gap: 16px;
+}
+
+.dashcortex-lp .faq-content {
+  padding: 0 24px 22px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+/* ── Backgrounds ── */
+.dashcortex-lp .hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.12;
+  z-index: 0;
+  mix-blend-mode: overlay;
+}
+
+.dashcortex-lp .pattern-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23b4f13d" fill-opacity="0.04"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+  z-index: 0;
+}
+
+/* ── Scroll Animations ── */
+.dashcortex-lp .showFromBottom {
+  opacity: 0;
+  transform: translateY(40px);
+  filter: blur(4px);
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.dashcortex-lp .ativo {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ── Comparison Table Responsive ── */
+.dashcortex-lp .comparison-wrapper {
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .dashcortex-lp .comparison-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+  }
+  .dashcortex-lp .comparison-table {
+    min-width: 560px;
+  }
+  .dashcortex-lp .cta-button {
+    font-size: 15px;
+    padding: 14px 24px;
+  }
+  .dashcortex-lp .ticker-item {
+    font-size: 15px;
+  }
+}

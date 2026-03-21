@@ -1,0 +1,7 @@
+Verifying for account: AD3
+Sending message to Google Chat...
+Result: {
+  success: false,
+  error: "Cannot find package 'node-fetch' imported from C:\\Users\\User\\Downloads\\bilula\\scripts\\verify-fix-final.js"
+}
+

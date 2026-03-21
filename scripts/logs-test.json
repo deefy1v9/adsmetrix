@@ -1,0 +1,12 @@
+{
+  "timestamp": "2026-02-19T14:21:27.315Z",
+  "results": [
+    {
+      "account": "AD3",
+      "result": {
+        "success": false,
+        "error": "Report already sent today via Google Chat"
+      }
+    }
+  ]
+}

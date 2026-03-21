@@ -1,0 +1,33 @@
+
+> trafego-dpg@0.1.0 build
+> next build
+
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\User\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\User\Downloads\bilula\package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 24.6s
+  Running TypeScript ...
+Failed to compile.
+
+./actions/email-report-actions.ts:42:17
+Type error: Object literal may only specify known properties, but 'email_report_enabled' does not exist in type '(Without<AccountUpdateInput, AccountUncheckedUpdateInput> & AccountUncheckedUpdateInput) | (Without<...> & AccountUpdateInput)'. Did you mean to write 'daily_report_enabled'?
+
+[0m [90m 40 |[39m             where[33m:[39m { id[33m:[39m existingAccount[33m.[39mid }[33m,[39m
+ [90m 41 |[39m             data[33m:[39m {
+[31m[1m>[22m[39m[90m 42 |[39m                 email_report_enabled[33m:[39m data[33m.[39menabled[33m,[39m
+ [90m    |[39m                 [31m[1m^[22m[39m
+ [90m 43 |[39m                 email_report_token[33m:[39m data[33m.[39mtoken [33m||[39m [36mnull[39m[33m,[39m
+ [90m 44 |[39m                 email_report_address[33m:[39m data[33m.[39memailAddress [33m||[39m [36mnull[39m[33m,[39m
+ [90m 45 |[39m                 email_report_campaign_id[33m:[39m data[33m.[39mcampaignId [33m||[39m [36mnull[39m[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

@@ -1,0 +1,160 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-deploy:
+    name: Build, Push & Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # ── Checkout ───────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Lowercase image name (GHCR requires lowercase) ────────────────
+      - name: Set image name
+        run: echo "IMAGE_NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
+      # ── Docker Buildx ─────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Login to GitHub Container Registry ─────────────────────────────
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Build and Push Docker image ────────────────────────────────────
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Generate env file for deploy ───────────────────────────────────
+      # Contains ALL variables (secrets + static) so the server .env is
+      # always complete. Uses printf %s to avoid shell escaping issues.
+      - name: Generate deploy env file
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          META_APP_ID: ${{ secrets.META_APP_ID }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_VERIFY_TOKEN: ${{ secrets.META_VERIFY_TOKEN }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          {
+            # ── Docker image ──
+            printf 'APP_IMAGE=%s\n' "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
+            # ── Secrets (from GitHub Secrets) ──
+            printf 'DB_PASSWORD=%s\n' "${DB_PASSWORD}"
+            printf 'META_ACCESS_TOKEN=%s\n' "${META_ACCESS_TOKEN}"
+            printf 'META_APP_ID=%s\n' "${META_APP_ID}"
+            printf 'META_APP_SECRET=%s\n' "${META_APP_SECRET}"
+            printf 'META_VERIFY_TOKEN=%s\n' "${META_VERIFY_TOKEN}"
+            printf 'CRON_SECRET=%s\n' "${CRON_SECRET}"
+            printf 'GEMINI_API_KEY=%s\n' "${GEMINI_API_KEY}"
+            printf 'CLAUDE_API_KEY=%s\n' "${CLAUDE_API_KEY}"
+
+            # ── WhatsApp Business (será configurado posteriormente) ──
+            printf 'WHATSAPP_PHONE_NUMBER_ID=%s\n' ""
+            printf 'WHATSAPP_ACCESS_TOKEN=%s\n' ""
+
+            # ── Static values (hardcoded) ──
+            printf 'NEXT_PUBLIC_APP_URL=https://ads.metrixbr.com\n'
+            printf 'NEXT_PUBLIC_META_APP_ID=%s\n' "${META_APP_ID}"
+            printf 'NODE_ENV=production\n'
+            printf 'NODE_OPTIONS=--max_old_space_size=2048\n'
+            printf 'BODY_SIZE_LIMIT=500mb\n'
+          } > .env.deploy
+
+      # ── Copy files to server ──────────────────────────────────────────
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.app.yml,.env.deploy,scripts/*"
+          target: "/opt/bilula"
+
+      # ── Deploy to server via SSH ───────────────────────────────────────
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          envs: GHCR_TOKEN,GHCR_USER
+          script: |
+            cd /opt/bilula
+
+            # Login to GHCR on the server
+            echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${GHCR_USER}" --password-stdin
+
+            # Load secrets from persistent env file (SCP'd - no SSH escaping issues)
+            set -a
+            source .env.deploy
+            set +a
+
+            # Merge .env.deploy into .env (preserves manually-added server vars)
+            if [ -f .env ]; then
+              cp .env .env.backup
+              # Start with CI/CD vars
+              cp .env.deploy .env.new
+              # Append manual vars from existing .env that aren't in .env.deploy
+              while IFS= read -r line; do
+                key=$(echo "$line" | cut -d= -f1)
+                [ -z "$key" ] && continue
+                echo "$key" | grep -q '^#' && continue
+                grep -q "^${key}=" .env.new 2>/dev/null || echo "$line" >> .env.new
+              done < .env.backup
+              mv .env.new .env
+              rm -f .env.backup
+            else
+              cp .env.deploy .env
+            fi
+
+            # Safety check: abort if critical vars are empty
+            if [ -z "${APP_IMAGE}" ] || [ -z "${DB_PASSWORD}" ]; then
+              echo "ERROR: Critical env vars are empty. Aborting deploy."
+              exit 1
+            fi
+
+            # Pull the new image
+            docker pull "${APP_IMAGE}"
+
+            # Deploy the stack (entrypoint.sh handles migrations + seed)
+            docker stack deploy -c docker-compose.app.yml --with-registry-auth bilula
+
+            # Wait and verify deployment
+            echo "Waiting for service to stabilize..."
+            sleep 15
+
+            # Check service status
+            docker service ls --filter "name=bilula"
+            echo ""
+            echo "Deploy completed: ${APP_IMAGE}"

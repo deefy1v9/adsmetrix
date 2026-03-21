@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         const duration = (Date.now() - startTime) / 1000;
         return NextResponse.json({
             success: true,
-            syncCount: syncResult.count + totalSynced,
+            syncCount: (syncResult.count ?? 0) + totalSynced,
             duration: `${duration}s`
         });
 

@@ -11,8 +11,7 @@ const featuresClara = [
     { t: "Múltiplas contas", d: "Gerencie dezenas de clientes Meta e Google em um só painel centralizado." },
     { t: "Integração oficial Meta", d: "Parceiro verificado Meta Business — conexão segura via API oficial." },
     { t: "Relatórios automáticos", d: "Relatórios de ROAS, CPA e CPL gerados e entregues sem intervenção manual." },
-    { t: "Criativos integrados", d: "Acesse e publique criativos do Criativo.Art diretamente no fluxo da campanha." },
-    { t: "100% personalizável", d: "Altere cores, logos e campos do dashboard para sua identidade visual." },
+{ t: "100% personalizável", d: "Altere cores, logos e campos do dashboard para sua identidade visual." },
     { t: "Funil completo", d: "Funil de vendas, análise de criativos e perfil de público em um só lugar." },
     { t: "Plug-and-play", d: "Conecte sua conta em 3 cliques. Zero programação necessária." }
 ];
@@ -123,10 +122,10 @@ export default function DashCortexLanding() {
                     {/* Logos Marquee */}
                     <div className="w-full max-w-4xl overflow-hidden mb-16 fade-edges relative">
                         <div className="flex items-center whitespace-nowrap" style={{ animation: 'txt-marquee 22s linear infinite' }}>
-                            {['META BUSINESS PARTNER', 'GOOGLE CLOUD', 'LOOKER', 'CRIATIVO.ART', 'META ADS', 'API OFICIAL', 'GOOGLE ADS', 'LOOKER STUDIO'].map((label, i) => (
+                            {['META BUSINESS PARTNER', 'GOOGLE CLOUD', 'LOOKER', 'META ADS', 'API OFICIAL', 'GOOGLE ADS', 'LOOKER STUDIO'].map((label, i) => (
                                 <div key={i} className="px-8 text-[13px] font-bold opacity-25 tracking-widest uppercase whitespace-nowrap">{label}</div>
                             ))}
-                            {['META BUSINESS PARTNER', 'GOOGLE CLOUD', 'LOOKER', 'CRIATIVO.ART', 'META ADS', 'API OFICIAL', 'GOOGLE ADS', 'LOOKER STUDIO'].map((label, i) => (
+                            {['META BUSINESS PARTNER', 'GOOGLE CLOUD', 'LOOKER', 'META ADS', 'API OFICIAL', 'GOOGLE ADS', 'LOOKER STUDIO'].map((label, i) => (
                                 <div key={i + 10} className="px-8 text-[13px] font-bold opacity-25 tracking-widest uppercase whitespace-nowrap">{label}</div>
                             ))}
                         </div>

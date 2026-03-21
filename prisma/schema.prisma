@@ -77,9 +77,6 @@ model Setting {
 
   whatsapp_enabled Boolean @default(false)
 
-  // Per-workspace integrations
-  criativo_art_api_key String?
-
   criado_em      DateTime  @default(now())
 }
 
@@ -161,7 +158,6 @@ model Campaign {
 model GlobalConfig {
   id                    String   @id @default("singleton")
   meta_access_token     String?
-  criativo_art_api_key  String?
   updated_at            DateTime @updatedAt
 }
 model WebhookLog {

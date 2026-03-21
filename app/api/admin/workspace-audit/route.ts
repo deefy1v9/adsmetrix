@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     // GlobalConfig
     const globalConfig = await (prisma as any).globalConfig.findUnique({
         where: { id: 'singleton' },
-        select: { meta_access_token: true, criativo_art_api_key: true },
+        select: { meta_access_token: true },
     });
 
     // Workspaces
@@ -49,7 +49,6 @@ export async function GET(request: NextRequest) {
             accounts_with_workspace: accountsWithWorkspace,
             accounts_without_workspace: accountsWithoutWorkspace,
             global_meta_token: globalConfig?.meta_access_token ? "✅ configurado" : "❌ não configurado",
-            global_criativo_key: globalConfig?.criativo_art_api_key ? "✅ configurado" : "❌ não configurado",
         },
         workspaces: workspaces.map((w: any) => ({
             ...w,

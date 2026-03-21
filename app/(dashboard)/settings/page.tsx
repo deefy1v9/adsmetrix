@@ -4,7 +4,6 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { CriativoArtSettings } from "@/components/features/criativo-art/CriativoArtSettings";
 
 export default function SettingsPage() {
     return (
@@ -88,9 +87,6 @@ export default function SettingsPage() {
                         <Button variant="outline" size="sm">Conectar</Button>
                     </div>
                 </GlassCard>
-
-                {/* Criativo.Art Integration */}
-                <CriativoArtSettings />
 
                 {/* System Preferences */}
                 <GlassCard className="space-y-4 md:col-span-2">

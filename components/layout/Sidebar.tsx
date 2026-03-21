@@ -27,8 +27,7 @@ type MenuItem =
 const menuItems: MenuItem[] = [
     { name: "Visão Geral", icon: LayoutDashboard, href: "/overview" },
     { name: "Gestor de Tráfego", icon: Target, href: "/gestor-trafego" },
-    { name: "Criativo.Art", imgSrc: "/criativo-art-logo.svg", href: "/criativo-art" },
-    { name: "Dashboard", icon: BarChart3, href: "/" },
+{ name: "Dashboard", icon: BarChart3, href: "/" },
     { name: "Contas", icon: Wallet, href: "/accounts" },
     { name: "Leads", icon: Users, href: "/leads" },
     { name: "Relatórios WhatsApp", icon: MessageSquare, href: "/whatsapp-reports" },

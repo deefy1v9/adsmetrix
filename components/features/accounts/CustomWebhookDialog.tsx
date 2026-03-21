@@ -26,7 +26,7 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
     const [webhookId, setWebhookId] = useState(currentWebhookId || "");
     const [isLoading, setIsLoading] = useState(false);
     const [copied, setCopied] = useState(false);
-    const [activeTab, setActiveTab] = useState<'wordpress' | 'criativoart'>('wordpress');
+    const [activeTab] = useState<'wordpress'>('wordpress');
 
     // In a real environment you probably want to use the absolute origin.
     // Assuming standard deployment or current host.
@@ -105,24 +105,9 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <div className="flex bg-muted/50 p-1 rounded-lg">
-                                <button
-                                    onClick={() => setActiveTab('wordpress')}
-                                    className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-all ${activeTab === 'wordpress' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    WordPress / Elementor
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('criativoart')}
-                                    className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-all ${activeTab === 'criativoart' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    Criativo Art
-                                </button>
-                            </div>
-
                             <div className="space-y-3">
                                 <label className="text-sm font-medium text-foreground">
-                                    URL ({activeTab === 'wordpress' ? 'WordPress' : 'Criativo Art'})
+                                    URL (WordPress / Elementor)
                                 </label>
                                 <div className="flex gap-2">
                                     <Input
@@ -134,21 +119,15 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
                                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                     </Button>
                                 </div>
-                                {activeTab === 'wordpress' ? (
-                                    <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-md border border-border space-y-2">
-                                        <p>Para o <strong>Elementor Forms</strong> ou <strong>Typeform</strong>, cole a url acima para enviar os dados por Webhook.</p>
-                                        <p>Certifique-se de que os campos do seu formulário correspondam a:</p>
-                                        <ul className="list-disc list-inside ml-2 space-y-1 text-[11px] font-mono mt-1">
-                                            <li><span className="text-primary font-semibold">name</span> ou <span className="text-primary font-semibold">full_name</span></li>
-                                            <li><span className="text-primary font-semibold">email</span></li>
-                                            <li><span className="text-primary font-semibold">phone</span> ou <span className="text-primary font-semibold">whatsapp</span></li>
-                                        </ul>
-                                    </div>
-                                ) : (
-                                    <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-md border border-border space-y-2">
-                                        <p>Para a plataforma <strong>Criativo Art</strong>, basta colar a URL acima.</p>
-                                    </div>
-                                )}
+                                <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded-md border border-border space-y-2">
+                                    <p>Para o <strong>Elementor Forms</strong> ou <strong>Typeform</strong>, cole a url acima para enviar os dados por Webhook.</p>
+                                    <p>Certifique-se de que os campos do seu formulário correspondam a:</p>
+                                    <ul className="list-disc list-inside ml-2 space-y-1 text-[11px] font-mono mt-1">
+                                        <li><span className="text-primary font-semibold">name</span> ou <span className="text-primary font-semibold">full_name</span></li>
+                                        <li><span className="text-primary font-semibold">email</span></li>
+                                        <li><span className="text-primary font-semibold">phone</span> ou <span className="text-primary font-semibold">whatsapp</span></li>
+                                    </ul>
+                                </div>
                             </div>
 
                             <div className="mt-4 p-3 bg-card border border-border rounded-md text-xs text-muted-foreground flex items-start gap-2">

@@ -51,13 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ web
         let originUrl: string = 'Webhook Direto';
 
         // 3. Robust field extraction mapping
-        // Detect if this is a "Criativo Art" payload (look for "user" object)
-        if (rawBody?.user && typeof rawBody.user === 'object' && rawBody.user.full_name) {
-            extractedName = String(rawBody.user.full_name);
-            extractedEmail = rawBody.user.email ? String(rawBody.user.email) : null;
-            extractedPhone = rawBody.user.phone ? String(rawBody.user.phone) : null;
-            originUrl = 'Criativo Art';
-        } else {
+        {
             // Standard / Elementor fallback
             const { extractLeadField } = require('@/lib/meta-api');
 

@@ -193,7 +193,6 @@ export function TrafficManagerUI() {
     const [creativePreviewUrl, setCreativePreviewUrl] = useState<string | null>(null);
     const [creativeError, setCreativeError] = useState<string | null>(null);
     const [creativeCopied, setCreativeCopied] = useState(false);
-    const [criativoArtHistory, setCriativoArtHistory] = useState<any[]>([]);
     const [createdAdIds, setCreatedAdIds] = useState<string[]>([]);
     const [adErrors, setAdErrors] = useState<string[]>([]);
 
@@ -203,12 +202,6 @@ export function TrafficManagerUI() {
         }
     }, [selectedAccount]);
 
-    useEffect(() => {
-        try {
-            const stored = JSON.parse(sessionStorage.getItem("criativo_art_history") || "[]");
-            setCriativoArtHistory(stored);
-        } catch {}
-    }, []);
 
     const updateAdSet = (index: number, updates: Partial<AdSetConfig>) => {
         setCampaignParams(prev => {
@@ -264,34 +257,7 @@ export function TrafficManagerUI() {
     };
 
     const handleGenerateCreative = async () => {
-        if (!creativePrompt.trim() || creativeGenerating) return;
-        setCreativeGenerating(true);
-        setCreativeError(null);
-        setCreativePreviewUrl(null);
-        try {
-            const res = await fetch("/api/criativo-art", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: creativePrompt.trim(), format: creativeFormat }),
-            });
-            const data = await res.json();
-            if (!res.ok || data.error) {
-                setCreativeError(data.error || "Erro ao gerar criativo.");
-            } else {
-                const imgUrl = data.data?.image_url || data.image_url || "";
-                if (imgUrl) {
-                    setCreativePreviewUrl(imgUrl);
-                    // Refresh history after new generation
-                    try { setCriativoArtHistory(JSON.parse(sessionStorage.getItem("criativo_art_history") || "[]")); } catch {}
-                } else {
-                    setCreativeError("Imagem não encontrada na resposta.");
-                }
-            }
-        } catch {
-            setCreativeError("Erro de conexão com Criativo.Art.");
-        } finally {
-            setCreativeGenerating(false);
-        }
+        setCreativeError("Geração de criativos não disponível.");
     };
 
     const handleCopyCreativeUrl = async (url: string) => {
@@ -922,28 +888,10 @@ export function TrafficManagerUI() {
                                                                 {/* Tab: Recent */}
                                                                 {creativeTab === 'recent' && (
                                                                     <div>
-                                                                        {criativoArtHistory.length === 0 ? (
-                                                                            <div className="text-[11px] text-muted-foreground text-center py-4 border border-dashed border-border rounded-md">
-                                                                                Nenhum criativo gerado ainda.<br />
-                                                                                <button type="button" onClick={() => setCreativeTab('generate')} className="text-primary hover:underline">Gerar agora</button>
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div className="grid grid-cols-4 gap-1.5">
-                                                                                {criativoArtHistory.slice(0, 8).map((item, idx) => (
-                                                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                                                    <img
-                                                                                        key={idx}
-                                                                                        src={item.image_url}
-                                                                                        alt={`Criativo ${idx + 1}`}
-                                                                                        className={cn(
-                                                                                            "w-full aspect-square object-cover rounded-md border-2 cursor-pointer transition-all hover:opacity-80",
-                                                                                            adSet.creative_image_url === item.image_url ? "border-primary" : "border-transparent"
-                                                                                        )}
-                                                                                        onClick={() => updateAdSet(adSetStep, { creative_image_url: item.image_url })}
-                                                                                    />
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
+                                                                        <div className="text-[11px] text-muted-foreground text-center py-4 border border-dashed border-border rounded-md">
+                                                                            Nenhum criativo gerado ainda.<br />
+                                                                            <button type="button" onClick={() => setCreativeTab('url')} className="text-primary hover:underline">Usar URL</button>
+                                                                        </div>
                                                                         {adSet.creative_image_url && (
                                                                             <div className="mt-2 flex items-center gap-2">
                                                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -991,7 +939,7 @@ export function TrafficManagerUI() {
                                                                             {creativeGenerating ? (
                                                                                 <><Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Gerando...</>
                                                                             ) : (
-                                                                                <><ImageIcon className="mr-1.5 h-3 w-3" /> Gerar com Criativo.Art</>
+                                                                                <><ImageIcon className="mr-1.5 h-3 w-3" /> Gerar Criativo</>
                                                                             )}
                                                                         </Button>
                                                                         {creativePreviewUrl && (

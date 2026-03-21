@@ -38,63 +38,39 @@ export function generateReportText({
     customMessage?: string,
     isPrepay?: boolean
 }) {
-    const today = new Date().toLocaleDateString('pt-BR');
-    const rangeLabel = getRangeLabel(range);
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
 
-    let cpl = metrics.leads > 0 ? metrics.spend / metrics.leads : 0;
-    let cpcv = metrics.conversations > 0 ? metrics.spend / metrics.conversations : 0;
+    const campaigns: any[] = metrics.campaigns || [];
 
-    // We expect balance to be pre-calculated by the caller or use metrics.accountInfo if available
-    const balance = metrics.balance !== undefined ? metrics.balance : 0;
+    const campaignBlocks = campaigns
+        .filter((c: any) => {
+            const ins = c.insights || {};
+            const convs = parseFloat(ins.conversations || '0');
+            const clicks = parseFloat(ins.clicks || '0');
+            const reach = parseFloat(ins.reach || '0');
+            return convs > 0 || clicks > 0 || reach > 0;
+        })
+        .map((c: any) => {
+            const ins = c.insights || {};
+            const clicks = formatNumber(parseFloat(ins.clicks || '0'));
+            const conversations = formatNumber(parseFloat(ins.conversations || '0'));
+            const reach = formatNumber(parseFloat(ins.reach || '0'));
+            return `Segue as métricas: Meta ADS\n${c.name}\n\n🚀 Visitas ao perfil: ${clicks}\n🎯 Iniciaram Conversa: ${conversations}\n📊 Alcance da Campanha: ${reach}`;
+        })
+        .join('\n\n');
 
-    const lines: string[] = [];
-    const pushLine = (id: string, text: string) => {
-        if (!metricConfig || metricConfig[id] !== false) {
-            lines.push(text);
-        }
-    };
+    const closing = customMessage ||
+        'Estamos satisfeitos em ver esses números e continuaremos otimizando para garantir o melhor retorno possível. Caso tenham alguma dúvida ou queiram discutir mais a fundo esses resultados, estou à disposição.';
 
-    pushLine('spend', `💰 *Investimento*: ${formatCurrency(metrics.spend, currency)}`);
-    pushLine('impressions', `👥 *Impressões*: ${formatNumber(metrics.impressions)}`);
-    pushLine('clicks', `👆 *Cliques*: ${formatNumber(metrics.clicks)}`);
-    pushLine('cpc', `📉 *CPC Médio*: ${formatCurrency(parseFloat(metrics.cpc || 0), currency)}`);
-    pushLine('ctr', `📈 *CTR*: ${metrics.ctr}%`);
-    pushLine('reach', `👁️ *Alcance*: ${formatNumber(metrics.reach || 0)}`);
-    pushLine('cpm', `📊 *CPM*: ${formatCurrency(parseFloat(metrics.cpm || '0'), currency)}`);
+    return `🚀 Resultados ${accountName} do dia ${dateStr} 🚀
 
-    lines.push(''); // Add empty line below the main block
+Bom dia, espero que todos estejam bem 🙏🏻
+Segue mais um dia de otimização diária das nossas campanhas para trazer o melhor resultado.
 
-    pushLine('leads', `🎯 *Leads/Conversões*: ${formatNumber(metrics.leads)}`);
-    pushLine('leads', `💵 *Custo por Lead*: ${formatCurrency(cpl, currency)}`); // Tied to leads
-    pushLine('leads_gtm', `🎯 *Leads GTM/Pixel*: ${formatNumber(metrics.leads_gtm || 0)}`);
-    pushLine('leads_form', `📋 *Leads Formulário*: ${formatNumber(metrics.leads_form || 0)}`);
-    pushLine('sales', `🛒 *Vendas*: ${formatNumber(metrics.sales || 0)}`);
+${campaignBlocks}
 
-    lines.push(''); // Add empty line below leads block
-
-    // Always include conversations if there are any, or tie them to leads if needed, standard is to show if relevant, but we'll show always or tie to leads
-    pushLine('leads', `💬 *Conversas Iniciadas*: ${formatNumber(metrics.conversations)}`);
-    pushLine('leads', `💸 *Custo por Conversa*: ${formatCurrency(cpcv, currency)}`);
-    pushLine('post_engagements', `❤️ *Engajamentos*: ${formatNumber(metrics.post_engagements || 0)}`);
-    pushLine('comments', `💬 *Comentários*: ${formatNumber(metrics.comments || 0)}`);
-    pushLine('page_likes', `👥 *Novos Seguidores*: ${formatNumber(metrics.page_likes || 0)}`);
-    pushLine('video_views', `▶️ *Views de Vídeo*: ${formatNumber(metrics.video_views || 0)}`);
-
-    lines.push(''); // Add empty line below conv block
-
-    if (isPrepay) {
-        pushLine('balance', `💳 *Saldo Disponível*: ${formatCurrency(balance, currency)}`);
-    }
-
-    const header = customMessage ? `${customMessage}\n\n📊 *Relatório Diário - ${accountName}*` : `📊 *Relatório Diário - ${accountName}*`;
-
-    return `${header}
-📅 Data: ${today}
-🕒 Período: ${rangeLabel}
-
-${lines.filter(l => l !== '').join('\n').trim()}
-
-_Gerado automaticamente por Tráfego DPG${platform === 'Google Chat' ? ' (Google Chat)' : ''}_`;
+${closing}`;
 }
 
 export function generateEmailHtml({

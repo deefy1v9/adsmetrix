@@ -271,6 +271,7 @@ export async function fetchAggregatedMetricsAction(accountId: string, datePreset
 
     return {
         ...totals,
+        campaigns,
         accountInfo: account ? {
             is_prepay_account: account.is_prepay_account,
             balance: account.balance,

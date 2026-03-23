@@ -136,7 +136,7 @@ export function KPICards({
     const stats = allStats.filter(s => s.show);
 
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 md:gap-6 grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {stats.map((stat, index) => (
                 <GlassCard key={index} className="flex flex-col justify-between hoverEffect">
                     <div className="space-y-4">
@@ -148,7 +148,7 @@ export function KPICards({
                         </div>
 
                         <div>
-                            <div className="text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
+                            <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">{stat.value}</div>
                             {stat.title.includes("Saldo Disponível") && spendCap && spendCap > 0 && (
                                 <div className="mt-2">
                                     <Badge variant="warning" className="text-[9px] px-1.5 font-bold">

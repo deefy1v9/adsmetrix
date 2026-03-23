@@ -18,7 +18,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
                 )}
             >
                 <Header />
-                <main className="px-10 pb-10 animate-in fade-in duration-500">
+                <main className="px-4 sm:px-6 md:px-10 pb-10 animate-in fade-in duration-500">
                     {children}
                 </main>
             </div>

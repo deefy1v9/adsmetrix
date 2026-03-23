@@ -43,7 +43,7 @@ export function AccountSelector() {
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-3 z-50 w-[320px] rounded-2xl border border-border bg-card p-2 shadow-2xl animate-in fade-in zoom-in duration-200 origin-top-left">
+                <div className="absolute left-0 mt-3 z-50 w-[min(320px,calc(100vw-2rem))] rounded-2xl border border-border bg-card p-2 shadow-2xl animate-in fade-in zoom-in duration-200 origin-top-left">
                     <div className="relative mb-2 px-2 pt-1">
                         <Search className="absolute left-5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <input

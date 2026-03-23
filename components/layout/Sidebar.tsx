@@ -20,6 +20,7 @@ import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "@/actions/auth-actions";
 import Image from "next/image";
 import { useEffect } from "react";
+import { useSidebar } from "@/components/providers/SidebarContext";
 
 type MenuItem =
     | { name: string; href: string; icon: React.ElementType; imgSrc?: never }
@@ -37,8 +38,6 @@ const menuItems: MenuItem[] = [
     { name: "Notificações", icon: Bell, href: "/notifications" },
     { name: "Configurações", icon: Settings, href: "/settings" },
 ];
-
-import { useSidebar } from "@/components/providers/SidebarContext";
 
 export function Sidebar() {
     const pathname = usePathname();
@@ -60,14 +59,16 @@ export function Sidebar() {
             )}
 
             <aside
+                data-open={mobileOpen}
                 className={cn(
                     "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
-                    // Mobile: slide in/out, always full width
-                    mobileOpen ? "translate-x-0" : "-translate-x-full",
-                    "w-56",
-                    // Desktop: always visible, width based on isCollapsed
-                    isCollapsed ? "md:w-20" : "md:w-56",
+                    // Base: always hidden on mobile, revealed via data-open
+                    "-translate-x-full data-[open=true]:translate-x-0",
+                    // Desktop: always visible
                     "md:translate-x-0",
+                    // Width
+                    "w-56",
+                    isCollapsed ? "md:w-20" : "md:w-56",
                 )}
             >
                 <div className="flex h-full flex-col px-3 py-8">

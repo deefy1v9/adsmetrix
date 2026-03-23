@@ -61,6 +61,7 @@ export function AccountsList() {
     if (isLoading) {
         return (
             <GlassCard>
+                <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -94,6 +95,7 @@ export function AccountsList() {
                         ))}
                     </TableBody>
                 </Table>
+                </div>
             </GlassCard>
         );
     }
@@ -114,6 +116,7 @@ export function AccountsList() {
 
     return (
         <GlassCard>
+            <div className="overflow-x-auto">
             <Table>
                 <TableHeader>
                     <TableRow>
@@ -165,6 +168,7 @@ export function AccountsList() {
                     )}
                 </TableBody>
             </Table>
+            </div>
         </GlassCard>
     );
 }

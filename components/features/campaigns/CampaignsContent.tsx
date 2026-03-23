@@ -56,7 +56,7 @@ export function CampaignsContent({ metricFilter = 'all' }: { metricFilter?: 'all
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground">Performance das Campanhas</h2>
+                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Performance das Campanhas</h2>
                     <p className="text-muted-foreground">
                         {loading ? "Carregando campanhas..." : `Visualizando campanhas da conta: ${selectedAccount.name}`}
                     </p>
@@ -64,6 +64,7 @@ export function CampaignsContent({ metricFilter = 'all' }: { metricFilter?: 'all
             </div>
 
             <GlassCard>
+                <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -161,6 +162,7 @@ export function CampaignsContent({ metricFilter = 'all' }: { metricFilter?: 'all
                                 }))}
                     </TableBody>
                 </Table>
+                </div>
             </GlassCard>
         </div>
     );

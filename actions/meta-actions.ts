@@ -219,7 +219,7 @@ export async function debugCreativesAction(accountId: string): Promise<any> {
         if (!creativeId) return { error: 'No creative id on ad', ad };
 
         // Step 2: fetch creative object with all possible image fields
-        const creativeUrl = `https://graph.facebook.com/v19.0/${creativeId}?fields=id,picture,image_url,thumbnail_url,video_id,object_story_spec,asset_feed_spec&access_token=${token}`;
+        const creativeUrl = `https://graph.facebook.com/v19.0/${creativeId}?fields=id,thumbnail_url,video_id,object_story_spec&access_token=${token}`;
         const creativeResp = await fetch(creativeUrl);
         const creativeData = await creativeResp.json();
 

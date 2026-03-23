@@ -518,7 +518,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         let creativeMap: Record<string, any> = {}; // creativeId → creative object
         if (creativeIds.length > 0) {
             try {
-                const creativesUrl = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
+                const creativesUrl = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
                 const creativeResp = await fetch(creativesUrl);
                 const creativeData = await creativeResp.json();
                 if (!creativeData.error) {
@@ -542,11 +542,10 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             const spec = creative.object_story_spec || {};
             const videoId = creative.video_id || spec.video_data?.video_id || '';
             const thumbnail_url =
-                creative.picture ||
-                creative.image_url ||
                 creative.thumbnail_url ||
                 spec.video_data?.image_url ||
                 spec.link_data?.picture ||
+                spec.link_data?.image_url ||
                 spec.link_data?.child_attachments?.[0]?.picture ||
                 spec.link_data?.child_attachments?.[0]?.image_url ||
                 spec.link_data?.child_attachments?.[0]?.thumbnail_url ||

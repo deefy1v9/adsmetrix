@@ -106,7 +106,8 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                 </div>
             )}
 
-            <GlassCard className="border-border overflow-visible">
+            <GlassCard className="border-border overflow-hidden">
+                <div className="overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent border-b border-border">
@@ -118,7 +119,7 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                                 />
                             </TableHead>
                             <TableHead className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12">Cliente</TableHead>
-                            <TableHead className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12 text-center">Última Recarga</TableHead>
+                            <TableHead className="hidden sm:table-cell text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12 text-center">Última Recarga</TableHead>
                             <TableHead className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12 text-center">Saldo Disponível</TableHead>
                             <TableHead className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12 text-center">Leads (Mês)</TableHead>
                             <TableHead className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest h-12 text-center">Ações</TableHead>
@@ -134,14 +135,14 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                                         aria-label={`Selecionar ${item.client_name}`}
                                     />
                                 </TableCell>
-                                <TableCell className="py-5">
+                                <TableCell className="py-3 sm:py-5">
                                     <div className="font-bold text-foreground text-sm">{item.client_name}</div>
                                     <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight mt-0.5">ID: {item.id.slice(-8)}</div>
                                 </TableCell>
-                                <TableCell className="py-5 text-center text-xs font-medium text-muted-foreground">
+                                <TableCell className="hidden sm:table-cell py-3 sm:py-5 text-center text-xs font-medium text-muted-foreground">
                                     {item.lastCharge}
                                 </TableCell>
-                                <TableCell className="py-5 text-center">
+                                <TableCell className="py-3 sm:py-5 text-center">
                                     {item.is_prepay ? (
                                         item.balance > 0 ? (
                                             <Badge variant="neon" className="px-3 py-1 font-black text-[11px]">
@@ -158,12 +159,12 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                                         </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell className="py-5 text-center">
+                                <TableCell className="py-3 sm:py-5 text-center">
                                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted border border-border text-sm font-black text-foreground">
                                         {item.leadsMonth}
                                     </div>
                                 </TableCell>
-                                <TableCell className="py-5 text-center">
+                                <TableCell className="py-3 sm:py-5 text-center">
                                     <div className="flex items-center justify-center gap-2">
                                         <button
                                             className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary hover:text-foreground text-muted-foreground transition-all shadow-sm"
@@ -192,7 +193,8 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                     </TableBody>
                     <tfoot>
                         <TableRow className="hover:bg-transparent border-t-2 border-[#1A1A1A]">
-                            <TableCell colSpan={4} className="py-6 text-right font-black text-foreground uppercase tracking-widest text-xs">Total Consolidado</TableCell>
+                            <TableCell colSpan={3} className="hidden sm:table-cell py-6 text-right font-black text-foreground uppercase tracking-widest text-xs">Total Consolidado</TableCell>
+                            <TableCell colSpan={3} className="sm:hidden py-6 text-right font-black text-foreground uppercase tracking-widest text-xs">Total Consolidado</TableCell>
                             <TableCell className="py-6 text-center">
                                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-black font-black text-lg shadow-lg shadow-primary/20">
                                     {totals.leadsMonth}
@@ -202,6 +204,7 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                         </TableRow>
                     </tfoot>
                 </Table>
+                </div>
             </GlassCard>
 
             {editingAccount && (

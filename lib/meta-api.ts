@@ -474,7 +474,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         const fields = [
             'name',
             'status',
-            'creative{id,image_url,thumbnail_url,video_id,object_story_spec,preview_shareable_link}',
+            'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec{link_data{picture,image_hash,child_attachments{picture,image_url,thumbnail_url}},video_data{image_url,video_id}}}',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
 
@@ -508,22 +508,18 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             const creative = ad.creative || {};
 
             // Media extraction with multiple fallbacks
-            const videoId = creative.video_id || '';
-            let thumbnail_url = creative.picture || creative.image_url || creative.thumbnail_url || '';
-
-            // parsing object_story_spec for complex formats (Carousels/Videos)
-            if (!thumbnail_url && creative.object_story_spec) {
-                const spec = creative.object_story_spec;
-                if (spec.video_data && spec.video_data.image_url) {
-                    thumbnail_url = spec.video_data.image_url;
-                } else if (spec.link_data) {
-                    if (spec.link_data.child_attachments) {
-                        thumbnail_url = spec.link_data.child_attachments[0]?.image_url || spec.link_data.child_attachments[0]?.thumbnail_url || '';
-                    } else if (spec.link_data.picture) {
-                        thumbnail_url = spec.link_data.picture;
-                    }
-                }
-            }
+            const spec = creative.object_story_spec || {};
+            const videoId = creative.video_id || spec.video_data?.video_id || '';
+            let thumbnail_url =
+                creative.picture ||
+                creative.image_url ||
+                creative.thumbnail_url ||
+                spec.video_data?.image_url ||
+                spec.link_data?.picture ||
+                spec.link_data?.child_attachments?.[0]?.picture ||
+                spec.link_data?.child_attachments?.[0]?.image_url ||
+                spec.link_data?.child_attachments?.[0]?.thumbnail_url ||
+                '';
 
             // Leads and Custom Conversions calculation
             let totalLeadsValue = 0;

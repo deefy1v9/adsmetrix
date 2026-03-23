@@ -57,7 +57,7 @@ export default function OverviewPage() {
     return (
         <div className="space-y-6">
             <div className="flex flex-col gap-1">
-                <h2 className="text-3xl font-black tracking-tight text-foreground">Visão Geral</h2>
+                <h2 className="text-xl sm:text-3xl font-black tracking-tight text-foreground">Visão Geral</h2>
                 <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Estatísticas Consolidadas</p>
@@ -65,18 +65,18 @@ export default function OverviewPage() {
             </div>
 
             {loading ? (
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-3">
                     {Array.from({ length: 3 }).map((_, i) => <SkeletonKPICard key={i} />)}
                 </div>
             ) : (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-3 sm:gap-6 grid-cols-1 sm:grid-cols-3">
                 <GlassCard className="border-border hoverEffect">
                     <div className="flex flex-row items-center justify-between pb-3">
                         <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Contas Ativas</h3>
                         <Users className="w-4 h-4 text-muted-foreground opacity-50" />
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-black text-foreground">{overviewData.length}</p>
+                        <p className="text-2xl sm:text-3xl font-black text-foreground">{overviewData.length}</p>
                         <Badge variant="neon" className="px-2 py-0.5 text-[9px]">LIVE</Badge>
                     </div>
                 </GlassCard>
@@ -87,7 +87,7 @@ export default function OverviewPage() {
                         <TrendingUp className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-black text-foreground">{totalLeads24h}</p>
+                        <p className="text-2xl sm:text-3xl font-black text-foreground">{totalLeads24h}</p>
                         <Badge variant="neon" className="px-2 py-0.5 text-[9px]">RESUMO 24H</Badge>
                     </div>
                 </GlassCard>
@@ -98,7 +98,7 @@ export default function OverviewPage() {
                         <CalendarIcon className="w-4 h-4 text-muted-foreground opacity-50" />
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <p className="text-3xl font-black text-foreground">
+                        <p className="text-2xl sm:text-3xl font-black text-foreground">
                             {overviewData.reduce((acc, item) => acc + item.leadsMonth, 0)}
                         </p>
                         <Badge variant="neon" className="px-2 py-0.5 text-[9px]">CONSOLIDADO</Badge>

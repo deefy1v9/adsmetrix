@@ -65,8 +65,8 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
                             VIDEO
                         </Badge>
                     )}
-                    <Badge variant={creative.status === 'ACTIVE' ? 'success' : 'default'} className="shadow-lg backdrop-blur-md">
-                        {creative.status}
+                    <Badge variant={(creative.effective_status ?? creative.status) === 'ACTIVE' ? 'success' : 'default'} className="shadow-lg backdrop-blur-md">
+                        {creative.effective_status ?? creative.status}
                     </Badge>
                 </div>
 

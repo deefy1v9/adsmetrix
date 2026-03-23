@@ -474,6 +474,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         const fields = [
             'name',
             'status',
+            'effective_status',
             'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec{link_data{picture,image_hash,child_attachments{picture,image_url,thumbnail_url}},video_data{image_url,video_id}}}',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
@@ -490,11 +491,16 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         }
 
         const allAds = data.data || [];
-        const ads = allAds.filter((ad: any) => ad.status === 'ACTIVE');
-        console.log(`[MetaAPI] Total ads: ${allAds.length} | ACTIVE: ${ads.length}`);
+        // effective_status reflects the real status considering campaign/adset hierarchy
+        // Also include ads with spend data even if currently paused (shows best performers in period)
+        const ads = allAds.filter((ad: any) =>
+            ad.effective_status === 'ACTIVE' ||
+            parseFloat(ad.insights?.data?.[0]?.spend || '0') > 0
+        );
+        console.log(`[MetaAPI] Total ads: ${allAds.length} | with data: ${ads.length}`);
         if (allAds.length > 0) {
             const sample = allAds[0];
-            console.log(`[MetaAPI] Sample ad statuses:`, allAds.slice(0, 5).map((a: any) => `${a.name?.substring(0,20)}: ${a.status}`));
+            console.log(`[MetaAPI] Sample ad statuses:`, allAds.slice(0, 5).map((a: any) => `${a.name?.substring(0,20)}: ${a.status}/${a.effective_status}`));
             console.log(`[MetaAPI] Sample creative fields:`, JSON.stringify(sample.creative || {}).substring(0, 300));
         }
         if (ads.length === 0) {
@@ -566,6 +572,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                 id: ad.id,
                 name: ad.name,
                 status: ad.status,
+                effective_status: ad.effective_status,
                 thumbnail_url,
                 preview_url: creative.preview_shareable_link || '',
                 video_id: videoId || undefined,

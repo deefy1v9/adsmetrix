@@ -13,7 +13,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
             <Sidebar />
             <div
                 className={cn(
-                    "flex-1 transition-all duration-300 ease-in-out",
+                    "flex-1 min-w-0 overflow-x-hidden transition-all duration-300 ease-in-out",
                     isCollapsed ? "md:pl-20" : "md:pl-56"
                 )}
             >

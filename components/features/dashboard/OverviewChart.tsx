@@ -15,6 +15,7 @@ interface WeeklyDay {
     name: string;
     leads: number;
     spend: number;
+    conversations: number;
 }
 
 // Maps Portuguese day abbreviations → days-ago offset (0 = today)
@@ -23,7 +24,6 @@ const DAY_OFFSETS: Record<string, number> = {
 };
 
 export function OverviewChart({ data }: { data: WeeklyDay[] }) {
-    // Convert string day names to real Date timestamps so scaleTime works
     const chartData = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -38,11 +38,17 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
             .sort((a, b) => a.date - b.date);
     }, [data]);
 
+    // Determine which series to show (prefer conversations if non-zero)
+    const hasConversations = chartData.some(d => d.conversations > 0);
+    const hasLeads = chartData.some(d => d.leads > 0);
+
     return (
         <GlassCard className="col-span-4 lg:col-span-4">
             <div className="mb-4">
                 <h3 className="text-lg font-semibold text-foreground">Performance Semanal</h3>
-                <p className="text-sm text-muted-foreground">Relação entre investimento e leads.</p>
+                <p className="text-sm text-muted-foreground">
+                    {hasConversations ? "Conversas iniciadas e investimento." : "Leads e investimento."}
+                </p>
             </div>
 
             <div className="h-[300px] w-full">
@@ -59,18 +65,50 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                         strokeDasharray="3,4"
                     />
 
-                    <Area
-                        dataKey="leads"
-                        fill="#b4f13d"
-                        fillOpacity={0.25}
-                        stroke="#b4f13d"
-                        strokeWidth={2.5}
-                        gradientToOpacity={0}
-                        fadeEdges
-                        animate
-                        showLine
-                        showHighlight
-                    />
+                    {hasConversations && (
+                        <Area
+                            dataKey="conversations"
+                            fill="#b4f13d"
+                            fillOpacity={0.25}
+                            stroke="#b4f13d"
+                            strokeWidth={2.5}
+                            gradientToOpacity={0}
+                            fadeEdges
+                            animate
+                            showLine
+                            showHighlight
+                        />
+                    )}
+
+                    {!hasConversations && hasLeads && (
+                        <Area
+                            dataKey="leads"
+                            fill="#b4f13d"
+                            fillOpacity={0.25}
+                            stroke="#b4f13d"
+                            strokeWidth={2.5}
+                            gradientToOpacity={0}
+                            fadeEdges
+                            animate
+                            showLine
+                            showHighlight
+                        />
+                    )}
+
+                    {!hasConversations && !hasLeads && (
+                        <Area
+                            dataKey="spend"
+                            fill="#5a9bff"
+                            fillOpacity={0.25}
+                            stroke="#5a9bff"
+                            strokeWidth={2.5}
+                            gradientToOpacity={0}
+                            fadeEdges
+                            animate
+                            showLine
+                            showHighlight
+                        />
+                    )}
 
                     <XAxis numTicks={7} tickerHalfWidth={40} />
 
@@ -86,11 +124,16 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                         showCrosshair
                         showDots
                         rows={(point) => [
-                            {
+                            ...(hasConversations ? [{
+                                color: "#b4f13d",
+                                label: "Conversas",
+                                value: typeof point.conversations === "number" ? point.conversations : 0,
+                            }] : []),
+                            ...(!hasConversations && hasLeads ? [{
                                 color: "#b4f13d",
                                 label: "Leads",
                                 value: typeof point.leads === "number" ? point.leads : 0,
-                            },
+                            }] : []),
                             {
                                 color: "#5a9bff",
                                 label: "Gasto",

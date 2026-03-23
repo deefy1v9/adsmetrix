@@ -9,15 +9,23 @@ import { AccountSelector } from "@/components/features/accounts/AccountSelector"
 import { DateSelector } from "./DateSelector";
 
 export function Header() {
-    const { isCollapsed, toggleSidebar } = useSidebar();
+    const { isCollapsed, toggleSidebar, toggleMobile } = useSidebar();
     const user = useUser();
+
+    const handleToggle = () => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+            toggleMobile();
+        } else {
+            toggleSidebar();
+        }
+    };
 
     return (
         <header className="sticky top-0 z-30 mb-8 flex items-center justify-between border-b border-border bg-background/95 px-8 py-4 backdrop-blur-md">
             <div className="flex items-center gap-8">
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={toggleSidebar}
+                        onClick={handleToggle}
                         className="p-2 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
                         title={isCollapsed ? "Expandir menu" : "Recolher menu"}
                     >

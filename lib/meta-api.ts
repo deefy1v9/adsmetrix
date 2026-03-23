@@ -326,6 +326,7 @@ export interface WeeklyDay {
     name: string;
     leads: number;
     spend: number;
+    conversations: number;
 }
 
 export async function getWeeklyBreakdown(accountId: string, workspaceId?: string): Promise<WeeklyDay[]> {
@@ -344,19 +345,24 @@ export async function getWeeklyBreakdown(accountId: string, workspaceId?: string
 
         const PT_DAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const LEAD_TYPES = ['lead', 'offsite_conversion.fb_pixel_lead'];
+        const CONVERSATION_TYPES = ['onsite_conversion.messaging_conversation_started_7d'];
 
         return (data.data || []).map((row: any) => {
             const date = new Date(row.date_start + 'T12:00:00');
             const dayName = PT_DAYS[date.getDay()];
 
             let leads = 0;
+            let conversations = 0;
             if (row.actions) {
                 leads = row.actions
                     .filter((a: any) => LEAD_TYPES.includes(a.action_type))
                     .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                conversations = row.actions
+                    .filter((a: any) => CONVERSATION_TYPES.includes(a.action_type))
+                    .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
             }
 
-            return { name: dayName, leads, spend: parseFloat(row.spend || '0') };
+            return { name: dayName, leads, spend: parseFloat(row.spend || '0'), conversations };
         });
     } catch (error) {
         console.error(`[MetaAPI] getWeeklyBreakdown error for ${accountId}:`, error);

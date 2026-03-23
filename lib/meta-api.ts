@@ -475,7 +475,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             'name',
             'status',
             'effective_status',
-            'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec{link_data{picture,image_hash,child_attachments{picture,image_url,thumbnail_url}},video_data{image_url,video_id}}}',
+            'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec}',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
 
@@ -491,20 +491,21 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         }
 
         const allAds = data.data || [];
-        // effective_status reflects the real status considering campaign/adset hierarchy
-        // Also include ads with spend data even if currently paused (shows best performers in period)
-        const ads = allAds.filter((ad: any) =>
-            ad.effective_status === 'ACTIVE' ||
-            parseFloat(ad.insights?.data?.[0]?.spend || '0') > 0
-        );
-        console.log(`[MetaAPI] Total ads: ${allAds.length} | with data: ${ads.length}`);
+        // Show all ads that have any performance data in the period (spend or impressions)
+        // Don't filter by status — an ad may be paused today but had data in the selected period
+        const ads = allAds.filter((ad: any) => {
+            const insight = ad.insights?.data?.[0];
+            return insight && (
+                parseInt(insight.impressions || '0') > 0 ||
+                parseFloat(insight.spend || '0') > 0
+            );
+        });
+        console.log(`[MetaAPI] Total ads: ${allAds.length} | with insights: ${ads.length} | statuses: ${[...new Set(allAds.map((a: any) => a.effective_status || a.status))].join(',')}`);
         if (allAds.length > 0) {
-            const sample = allAds[0];
-            console.log(`[MetaAPI] Sample ad statuses:`, allAds.slice(0, 5).map((a: any) => `${a.name?.substring(0,20)}: ${a.status}/${a.effective_status}`));
-            console.log(`[MetaAPI] Sample creative fields:`, JSON.stringify(sample.creative || {}).substring(0, 300));
+            console.log(`[MetaAPI] Sample creative fields:`, JSON.stringify(allAds[0].creative || {}).substring(0, 400));
         }
         if (ads.length === 0) {
-            console.warn("[MetaAPI] No ACTIVE ads found.");
+            console.warn("[MetaAPI] No ads with performance data found for this period.");
             return [];
         }
 

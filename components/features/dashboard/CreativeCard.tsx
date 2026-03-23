@@ -33,14 +33,17 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
     };
 
     const isVideo = !!creative.video_id;
+    const imgSrc = creative.thumbnail_url
+        ? `/api/img-proxy?url=${encodeURIComponent(creative.thumbnail_url)}`
+        : null;
 
     return (
         <GlassCard className="overflow-hidden flex flex-col h-full group">
             {/* Ad Preview / Thumbnail */}
             <div className="relative aspect-square w-full bg-zinc-900 overflow-hidden">
-                {creative.thumbnail_url ? (
+                {imgSrc ? (
                     <img
-                        src={creative.thumbnail_url}
+                        src={imgSrc}
                         alt={creative.name}
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                     />

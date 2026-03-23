@@ -180,12 +180,11 @@ export async function fetchTopCreativesAction(accountId: string, datePreset: str
     return await getTopCreatives(accountId, datePreset, workspaceId);
 }
 
-export async function debugCreativesAction(accountId: string): Promise<{ totalAds: number; withInsights: number; statuses: string[]; error?: string; sampleAd?: any }> {
-    if (!accountId) return { totalAds: 0, withInsights: 0, statuses: [], error: 'No accountId' };
+export async function debugCreativesAction(accountId: string): Promise<any> {
+    if (!accountId) return { error: 'No accountId' };
     try {
         const workspaceId = await getWorkspaceId();
         const { prisma } = await import('@/lib/prisma');
-        // get token
         let token = '';
         try {
             const account = await prisma.account.findUnique({
@@ -205,26 +204,32 @@ export async function debugCreativesAction(accountId: string): Promise<{ totalAd
             if (gc?.meta_access_token) token = gc.meta_access_token;
         }
         if (!token) token = process.env.META_ACCESS_TOKEN || '';
-        if (!token) return { totalAds: 0, withInsights: 0, statuses: [], error: 'No token found' };
+        if (!token) return { error: 'No token found' };
 
-        const url = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=name,status,effective_status,insights.date_preset(last_30d){impressions,spend}&limit=50&access_token=${token}`;
+        // Step 1: get first ad with insights + creative id
+        const url = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=name,creative,insights.date_preset(last_30d){impressions,spend}&limit=5&access_token=${token}`;
         const resp = await fetch(url);
         const data = await resp.json();
+        if (data.error) return { step1Error: JSON.stringify(data.error) };
 
-        if (data.error) return { totalAds: 0, withInsights: 0, statuses: [], error: JSON.stringify(data.error) };
+        const ad = (data.data || []).find((a: any) => a.insights?.data?.[0]);
+        if (!ad) return { error: 'No ad with insights found', raw: data.data?.slice(0,3) };
 
-        const allAds = data.data || [];
-        const withInsights = allAds.filter((a: any) => a.insights?.data?.[0]);
-        const statuses = [...new Set(allAds.map((a: any) => `${a.status}/${a.effective_status}`))] as string[];
+        const creativeId = ad.creative?.id;
+        if (!creativeId) return { error: 'No creative id on ad', ad };
+
+        // Step 2: fetch creative object with all possible image fields
+        const creativeUrl = `https://graph.facebook.com/v19.0/${creativeId}?fields=id,picture,image_url,thumbnail_url,video_id,object_story_spec,asset_feed_spec&access_token=${token}`;
+        const creativeResp = await fetch(creativeUrl);
+        const creativeData = await creativeResp.json();
 
         return {
-            totalAds: allAds.length,
-            withInsights: withInsights.length,
-            statuses,
-            sampleAd: allAds[0] ? { name: allAds[0].name, status: allAds[0].status, effective_status: allAds[0].effective_status, hasInsights: !!allAds[0].insights } : null
+            adName: ad.name,
+            creativeId,
+            creativeFields: creativeData
         };
     } catch (e: any) {
-        return { totalAds: 0, withInsights: 0, statuses: [], error: e.message };
+        return { error: e.message };
     }
 }
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "@/components/providers/AccountContext";
 import { useDate } from "@/components/providers/DateContext";
-import { fetchTopCreativesAction } from "@/actions/meta-actions";
+import { fetchTopCreativesAction, debugCreativesAction } from "@/actions/meta-actions";
 import { MetaCreative } from "@/lib/balance-utils";
 import { CreativeCard } from "./CreativeCard";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -15,6 +15,7 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
     const [creatives, setCreatives] = useState<MetaCreative[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
+    const [debugInfo, setDebugInfo] = useState<any>(null);
     const ITEMS_PER_PAGE = 4;
 
     useEffect(() => {
@@ -86,11 +87,30 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
                     </div>
                 </GlassCard>
             ) : (
+                <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {paginatedCreatives.map((creative) => (
                         <CreativeCard key={creative.id} creative={creative} metricFilter={metricFilter} />
                     ))}
                 </div>
+                <div className="flex flex-col items-start gap-2 mt-2">
+                    <button
+                        className="text-xs px-3 py-1.5 rounded bg-muted border border-border hover:border-primary transition-colors opacity-50 hover:opacity-100"
+                        onClick={async () => {
+                            if (!selectedAccount) return;
+                            const info = await debugCreativesAction(selectedAccount.id);
+                            setDebugInfo(info);
+                        }}
+                    >
+                        🔍 Debug Criativo
+                    </button>
+                    {debugInfo && (
+                        <pre className="text-left text-[10px] bg-black/60 p-3 rounded max-w-full overflow-auto border border-border w-full">
+                            {JSON.stringify(debugInfo, null, 2)}
+                        </pre>
+                    )}
+                </div>
+                </>
             )}
         </div>
     );

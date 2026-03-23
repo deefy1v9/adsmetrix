@@ -508,28 +508,35 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             return parseFloat(b.insights?.data?.[0]?.spend || '0') - parseFloat(a.insights?.data?.[0]?.spend || '0');
         }).slice(0, 12);
 
-        // Step 2: Batch-fetch creative details for the top 12 ad IDs
-        const adIds = topAds.map((a: any) => a.id).join(',');
-        const creativeFields = 'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec}';
-        const creativesUrl = `https://graph.facebook.com/v19.0/?ids=${adIds}&fields=${creativeFields}&access_token=${token}`;
+        // Step 2: Batch-fetch creative objects by creative ID (not ad ID)
+        // ad.creative from step 1 returns {id: "..."} — use those IDs to fetch the actual creative objects
+        const creativeIds = [...new Set(topAds.map((a: any) => a.creative?.id).filter(Boolean))] as string[];
+        // Map ad.id → creative.id for later lookup
+        const adToCreativeId: Record<string, string> = {};
+        topAds.forEach((ad: any) => { if (ad.creative?.id) adToCreativeId[ad.id] = ad.creative.id; });
 
-        let creativeMap: Record<string, any> = {};
-        try {
-            const creativeResp = await fetch(creativesUrl);
-            const creativeData = await creativeResp.json();
-            if (!creativeData.error) {
-                creativeMap = creativeData;
-            } else {
-                console.warn("[MetaAPI] Creative batch fetch failed:", JSON.stringify(creativeData.error));
+        let creativeMap: Record<string, any> = {}; // creativeId → creative object
+        if (creativeIds.length > 0) {
+            try {
+                const creativesUrl = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
+                const creativeResp = await fetch(creativesUrl);
+                const creativeData = await creativeResp.json();
+                if (!creativeData.error) {
+                    creativeMap = creativeData;
+                    console.log(`[MetaAPI] Creative batch fetch OK: ${Object.keys(creativeMap).length} creatives`);
+                } else {
+                    console.warn("[MetaAPI] Creative batch fetch failed:", JSON.stringify(creativeData.error));
+                }
+            } catch (e) {
+                console.warn("[MetaAPI] Creative batch fetch threw:", e);
             }
-        } catch (e) {
-            console.warn("[MetaAPI] Creative batch fetch threw:", e);
         }
 
         // Step 3: Build result
         return topAds.map((ad: any) => {
             const insight = ad.insights?.data?.[0] || {};
-            const creative = creativeMap[ad.id]?.creative || {};
+            const creativeId = adToCreativeId[ad.id];
+            const creative = (creativeId && creativeMap[creativeId]) || {};
 
             // Media extraction with multiple fallbacks
             const spec = creative.object_story_spec || {};

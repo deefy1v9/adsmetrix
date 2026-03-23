@@ -180,6 +180,54 @@ export async function fetchTopCreativesAction(accountId: string, datePreset: str
     return await getTopCreatives(accountId, datePreset, workspaceId);
 }
 
+export async function debugCreativesAction(accountId: string): Promise<{ totalAds: number; withInsights: number; statuses: string[]; error?: string; sampleAd?: any }> {
+    if (!accountId) return { totalAds: 0, withInsights: 0, statuses: [], error: 'No accountId' };
+    try {
+        const workspaceId = await getWorkspaceId();
+        const { default: prisma } = await import('@/lib/prisma');
+        // get token
+        let token = '';
+        try {
+            const account = await prisma.account.findUnique({
+                where: { account_id: accountId.startsWith('act_') ? accountId : `act_${accountId}` },
+                select: { access_token: true }
+            });
+            if (account?.access_token) token = account.access_token;
+        } catch {}
+        if (!token && workspaceId) {
+            try {
+                const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId }, select: { meta_access_token: true } });
+                if (workspace?.meta_access_token) token = workspace.meta_access_token;
+            } catch {}
+        }
+        if (!token) {
+            const gc = await prisma.globalConfig.findUnique({ where: { id: 'singleton' }, select: { meta_access_token: true } });
+            if (gc?.meta_access_token) token = gc.meta_access_token;
+        }
+        if (!token) token = process.env.META_ACCESS_TOKEN || '';
+        if (!token) return { totalAds: 0, withInsights: 0, statuses: [], error: 'No token found' };
+
+        const url = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=name,status,effective_status,insights.date_preset(last_30d){impressions,spend}&limit=50&access_token=${token}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (data.error) return { totalAds: 0, withInsights: 0, statuses: [], error: JSON.stringify(data.error) };
+
+        const allAds = data.data || [];
+        const withInsights = allAds.filter((a: any) => a.insights?.data?.[0]);
+        const statuses = [...new Set(allAds.map((a: any) => `${a.status}/${a.effective_status}`))] as string[];
+
+        return {
+            totalAds: allAds.length,
+            withInsights: withInsights.length,
+            statuses,
+            sampleAd: allAds[0] ? { name: allAds[0].name, status: allAds[0].status, effective_status: allAds[0].effective_status, hasInsights: !!allAds[0].insights } : null
+        };
+    } catch (e: any) {
+        return { totalAds: 0, withInsights: 0, statuses: [], error: e.message };
+    }
+}
+
 export async function fetchLeadsAction(accountId: string, forceSync: boolean = false): Promise<MetaLead[]> {
     if (!accountId) return [];
     return await getAllLeads(accountId, forceSync);

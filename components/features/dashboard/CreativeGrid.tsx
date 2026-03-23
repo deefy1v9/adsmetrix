@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "@/components/providers/AccountContext";
 import { useDate } from "@/components/providers/DateContext";
-import { fetchTopCreativesAction } from "@/actions/meta-actions";
+import { fetchTopCreativesAction, debugCreativesAction } from "@/actions/meta-actions";
 import { MetaCreative } from "@/lib/balance-utils";
 import { CreativeCard } from "./CreativeCard";
 import { GlassCard } from "@/components/ui/GlassCard";
@@ -15,6 +15,7 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
     const [creatives, setCreatives] = useState<MetaCreative[]>([]);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(0);
+    const [debugInfo, setDebugInfo] = useState<any>(null);
     const ITEMS_PER_PAGE = 4;
 
     useEffect(() => {
@@ -80,9 +81,24 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
                 </div>
             ) : creatives.length === 0 ? (
                 <GlassCard className="p-8 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center gap-2">
+                    <div className="flex flex-col items-center gap-3">
                         <Sparkles className="h-8 w-8 opacity-20" />
                         <p>Nenhum criativo com dados de performance encontrado.</p>
+                        <button
+                            className="text-xs px-3 py-1.5 rounded bg-muted border border-border hover:border-primary transition-colors"
+                            onClick={async () => {
+                                if (!selectedAccount) return;
+                                const info = await debugCreativesAction(selectedAccount.id);
+                                setDebugInfo(info);
+                            }}
+                        >
+                            🔍 Diagnóstico
+                        </button>
+                        {debugInfo && (
+                            <pre className="text-left text-[10px] bg-black/40 p-3 rounded max-w-full overflow-auto border border-border">
+                                {JSON.stringify(debugInfo, null, 2)}
+                            </pre>
+                        )}
                     </div>
                 </GlassCard>
             ) : (

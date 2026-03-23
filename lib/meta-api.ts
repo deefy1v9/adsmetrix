@@ -329,6 +329,49 @@ export interface WeeklyDay {
     conversations: number;
 }
 
+const accountSummaryCache = new Map<string, { data: { leads24h: number; leadsMonth: number }; ts: number }>();
+
+export async function getAccountLeadsSummary(
+    accountId: string,
+    workspaceId?: string
+): Promise<{ leads24h: number; leadsMonth: number }> {
+    const cleanId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+    const cacheKey = `${cleanId}_summary_${workspaceId}`;
+    const cached = accountSummaryCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.data;
+
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        const LEAD_TYPES = ['lead'];
+        const CONV_TYPES = ['onsite_conversion.messaging_conversation_started_7d'];
+
+        const extractTotal = (resData: any, types: string[]) => {
+            const actions: any[] = resData?.data?.[0]?.actions || [];
+            return actions
+                .filter((a: any) => types.includes(a.action_type))
+                .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+        };
+
+        const [todayRes, monthRes] = await Promise.all([
+            fetch(`https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions&date_preset=today&access_token=${token}`).then(r => r.json()),
+            fetch(`https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions&date_preset=this_month&access_token=${token}`).then(r => r.json()),
+        ]);
+
+        if (todayRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary today error for ${cleanId}:`, todayRes.error.message);
+        if (monthRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary month error for ${cleanId}:`, monthRes.error.message);
+
+        const leads24h = extractTotal(todayRes, LEAD_TYPES) + extractTotal(todayRes, CONV_TYPES);
+        const leadsMonth = extractTotal(monthRes, LEAD_TYPES) + extractTotal(monthRes, CONV_TYPES);
+
+        const result = { leads24h, leadsMonth };
+        accountSummaryCache.set(cacheKey, { data: result, ts: Date.now() });
+        return result;
+    } catch (error) {
+        console.error(`[MetaAPI] getAccountLeadsSummary error for ${accountId}:`, error);
+        return { leads24h: 0, leadsMonth: 0 };
+    }
+}
+
 export async function getWeeklyBreakdown(accountId: string, workspaceId?: string): Promise<WeeklyDay[]> {
     try {
         const token = await getAccessToken(accountId, workspaceId);

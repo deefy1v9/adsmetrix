@@ -1,8 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getAdAccounts, calculateAvailableBalance, getPaymentLabel } from "@/lib/meta-api";
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
+import { getAdAccounts, calculateAvailableBalance, getPaymentLabel, getAccountLeadsSummary } from "@/lib/meta-api";
+import { endOfMonth, startOfMonth, eachDayOfInterval, format } from "date-fns";
 import { headers } from "next/headers";
 
 async function getWorkspaceId(): Promise<string | undefined> {
@@ -57,11 +57,6 @@ export async function fetchGeneralOverviewAction() {
             console.warn("[fetchGeneralOverviewAction] Failed to fetch local accounts:", e.message);
         }
 
-        const now = new Date();
-        const last24h = subDays(now, 1);
-        const monthStart = startOfMonth(now);
-        const monthEnd = endOfMonth(now);
-
         const overviewData = await Promise.all(metaAccounts.map(async (metaAcc) => {
             const relevantLocals = localAccounts.filter(l => l.account_id === metaAcc.account_id || l.account_id === metaAcc.id);
             const isHidden = relevantLocals.some(l => (l as any).is_hidden);
@@ -71,40 +66,13 @@ export async function fetchGeneralOverviewAction() {
 
             const local = relevantLocals[0];
 
-            // Filter out Meta test leads
-            const testLeadFilter = {
-                raw_data: {
-                    not: {
-                        contains: '"is_dummy":true'
-                    }
-                }
-            };
-
-            // Leads in last 24h
+            // Leads (form + messaging/conversations) from Meta API
             let leads24h = 0;
             let leadsMonth = 0;
             try {
-                leads24h = await prisma.lead.count({
-                    where: {
-                        account_id: local?.id,
-                        ...testLeadFilter,
-                        created_time: {
-                            gte: last24h
-                        }
-                    }
-                });
-
-                // Leads in current month
-                leadsMonth = await prisma.lead.count({
-                    where: {
-                        account_id: local?.id,
-                        ...testLeadFilter,
-                        created_time: {
-                            gte: monthStart,
-                            lte: monthEnd
-                        }
-                    }
-                });
+                const summary = await getAccountLeadsSummary(metaAcc.account_id || metaAcc.id, workspaceId);
+                leads24h = summary.leads24h;
+                leadsMonth = summary.leadsMonth;
             } catch (e: any) {
                 console.warn(`[fetchGeneralOverviewAction] Failed to fetch leads for ${metaAcc.account_id}:`, e.message);
             }

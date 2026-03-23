@@ -467,57 +467,74 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             ? datePreset
             : 'last_30d';
 
-        console.log(`[MetaAPI] getTopCreatives Unified for ${accountId} (${metaPreset})`);
+        const token = await getAccessToken(accountId, workspaceId);
 
-        // 1. Unified Query: Fetch Ads + Insights + Creative details in one go
-        // Using v19.0 for better data availability. This query ensures we link performance directly to the ad object.
-        const fields = [
-            'name',
-            'status',
-            'effective_status',
-            'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec}',
+        // Step 1: Fetch ads + insights (no creative fields — keeps query simple and reliable)
+        const insightFields = [
+            'name', 'status', 'effective_status', 'creative',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
+        const adsUrl = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${insightFields}&limit=100&access_token=${token}`;
 
-        const token = await getAccessToken(accountId, workspaceId);
-        const url = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=100&access_token=${token}`;
+        const adsResp = await fetch(adsUrl);
+        const adsData = await adsResp.json();
 
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data.error) {
-            console.error("[MetaAPI] Unified fetch failed:", JSON.stringify(data.error));
+        if (adsData.error) {
+            console.error("[MetaAPI] Ads fetch failed:", JSON.stringify(adsData.error));
             return [];
         }
 
-        const allAds = data.data || [];
-        // Show all ads that have any performance data in the period (spend or impressions)
-        // Don't filter by status — an ad may be paused today but had data in the selected period
-        const ads = allAds.filter((ad: any) => {
+        const allAds: any[] = adsData.data || [];
+        console.log(`[MetaAPI] getTopCreatives: ${allAds.length} total ads for ${accountId} (${metaPreset})`);
+
+        // Filter to ads with performance data in this period
+        const adsWithData = allAds.filter((ad: any) => {
             const insight = ad.insights?.data?.[0];
-            return insight && (
-                parseInt(insight.impressions || '0') > 0 ||
-                parseFloat(insight.spend || '0') > 0
-            );
+            return insight && (parseInt(insight.impressions || '0') > 0 || parseFloat(insight.spend || '0') > 0);
         });
-        console.log(`[MetaAPI] Total ads: ${allAds.length} | with insights: ${ads.length} | statuses: ${[...new Set(allAds.map((a: any) => a.effective_status || a.status))].join(',')}`);
-        if (allAds.length > 0) {
-            console.log(`[MetaAPI] Sample creative fields:`, JSON.stringify(allAds[0].creative || {}).substring(0, 400));
-        }
-        if (ads.length === 0) {
-            console.warn("[MetaAPI] No ads with performance data found for this period.");
-            return [];
+        console.log(`[MetaAPI] Ads with data: ${adsWithData.length}`);
+
+        if (adsWithData.length === 0) return [];
+
+        // Sort by leads then spend, take top 12
+        const topAds = adsWithData.sort((a: any, b: any) => {
+            const getLeads = (ad: any) => {
+                const actions = ad.insights?.data?.[0]?.actions || [];
+                const la = actions.find((x: any) => x.action_type === 'lead' || x.action_type === 'onsite_conversion.lead_grouped');
+                return parseInt(la?.value || '0');
+            };
+            const diff = getLeads(b) - getLeads(a);
+            if (diff !== 0) return diff;
+            return parseFloat(b.insights?.data?.[0]?.spend || '0') - parseFloat(a.insights?.data?.[0]?.spend || '0');
+        }).slice(0, 12);
+
+        // Step 2: Batch-fetch creative details for the top 12 ad IDs
+        const adIds = topAds.map((a: any) => a.id).join(',');
+        const creativeFields = 'creative{id,picture,image_url,thumbnail_url,video_id,preview_shareable_link,object_story_spec}';
+        const creativesUrl = `https://graph.facebook.com/v19.0/?ids=${adIds}&fields=${creativeFields}&access_token=${token}`;
+
+        let creativeMap: Record<string, any> = {};
+        try {
+            const creativeResp = await fetch(creativesUrl);
+            const creativeData = await creativeResp.json();
+            if (!creativeData.error) {
+                creativeMap = creativeData;
+            } else {
+                console.warn("[MetaAPI] Creative batch fetch failed:", JSON.stringify(creativeData.error));
+            }
+        } catch (e) {
+            console.warn("[MetaAPI] Creative batch fetch threw:", e);
         }
 
-        // 2. Process metrics and media
-        const processed = ads.map((ad: any) => {
+        // Step 3: Build result
+        return topAds.map((ad: any) => {
             const insight = ad.insights?.data?.[0] || {};
-            const creative = ad.creative || {};
+            const creative = creativeMap[ad.id]?.creative || {};
 
             // Media extraction with multiple fallbacks
             const spec = creative.object_story_spec || {};
             const videoId = creative.video_id || spec.video_data?.video_id || '';
-            let thumbnail_url =
+            const thumbnail_url =
                 creative.picture ||
                 creative.image_url ||
                 creative.thumbnail_url ||
@@ -528,46 +545,22 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                 spec.link_data?.child_attachments?.[0]?.thumbnail_url ||
                 '';
 
-            // Leads and Custom Conversions calculation
-            let totalLeadsValue = 0;
-            let salesValue = 0;
-            let leadsGTMValue = 0;
-            let leadsMetaValue = 0;
-            let conversationsValue = 0;
-
-            if (insight.actions) {
-                // Generic Leads Total
-                const totalLeadAction = insight.actions.find((a: any) =>
-                    a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead_grouped' || a.action_type === 'offsite_content_view_add_meta_leads'
-                );
-                totalLeadsValue = parseInt(totalLeadAction?.value || '0');
-
-                // GTM Leads
-                const gtmLeadAction = insight.actions.find((a: any) => a.action_type === 'offsite_conversion.fb_pixel_lead');
-                if (gtmLeadAction) {
-                    leadsGTMValue = parseInt(gtmLeadAction.value || '0');
-                }
-
-                // Native
-                leadsMetaValue = Math.max(0, totalLeadsValue - leadsGTMValue);
-
-                // Sales
-                const salesActions = insight.actions.filter((a: any) => a.action_type.includes('purchase'));
-                salesValue = salesActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
-
-                // Conversations started from Click-to-WhatsApp ads
-                const ctwaActions = insight.actions.filter((a: any) =>
-                    a.action_type.includes('messaging_conversation_started')
-                );
-                if (ctwaActions.length > 0) {
-                    conversationsValue = ctwaActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
-                } else {
-                    const firstReplyActions = insight.actions.filter((a: any) =>
-                        a.action_type.includes('messaging_first_reply')
-                    );
-                    conversationsValue = firstReplyActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
-                }
-            }
+            // Metrics
+            const actions: any[] = insight.actions || [];
+            const totalLeadAction = actions.find((a: any) =>
+                a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead_grouped'
+            );
+            const totalLeadsValue = parseInt(totalLeadAction?.value || '0');
+            const gtmAction = actions.find((a: any) => a.action_type === 'offsite_conversion.fb_pixel_lead');
+            const leadsGTMValue = parseInt(gtmAction?.value || '0');
+            const leadsMetaValue = Math.max(0, totalLeadsValue - leadsGTMValue);
+            const salesValue = actions.filter((a: any) => a.action_type.includes('purchase'))
+                .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+            const ctwaActions = actions.filter((a: any) => a.action_type.includes('messaging_conversation_started'));
+            const conversationsValue = ctwaActions.length > 0
+                ? ctwaActions.reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0)
+                : actions.filter((a: any) => a.action_type.includes('messaging_first_reply'))
+                    .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
 
             return {
                 id: ad.id,
@@ -588,21 +581,8 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                     sales: salesValue.toString(),
                     conversations: conversationsValue.toString()
                 }
-            };
+            } as MetaCreative;
         });
-
-        // 3. Rank by Leads (Primary) then Spend (Secondary)
-        return (processed as MetaCreative[])
-            .sort((a, b) => {
-                const leadsA = parseInt(a.insights?.leads || '0');
-                const leadsB = parseInt(b.insights?.leads || '0');
-                if (leadsB !== leadsA) return leadsB - leadsA;
-
-                const spendA = parseFloat(a.insights?.spend || '0');
-                const spendB = parseFloat(b.insights?.spend || '0');
-                return spendB - spendA;
-            })
-            .slice(0, 12);
 
     } catch (error) {
         console.error(`[MetaAPI] Fatal error in getTopCreatives:`, error);

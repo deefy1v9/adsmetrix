@@ -330,6 +330,54 @@ export interface WeeklyDay {
 }
 
 const accountSummaryCache = new Map<string, { data: { leads24h: number; leadsMonth: number }; ts: number }>();
+const accountDailyCache = new Map<string, { data: Record<number, number>; ts: number }>();
+
+export async function getAccountDailyInsights(
+    accountId: string,
+    year: number,
+    month: number,
+    workspaceId?: string
+): Promise<Record<number, number>> {
+    const cleanId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+    const cacheKey = `${cleanId}_daily_${year}_${month}_${workspaceId}`;
+    const cached = accountDailyCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.data;
+
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        const since = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+        const lastDay = new Date(year, month + 1, 0).getDate();
+        const until = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+        const url = `https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions,date_start&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${token}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+            console.warn(`[MetaAPI] getAccountDailyInsights error for ${cleanId}:`, data.error.message);
+            return {};
+        }
+
+        const LEAD_TYPES = ['lead'];
+        const CONV_TYPES = ['onsite_conversion.messaging_conversation_started_7d'];
+        const days: Record<number, number> = {};
+
+        for (const row of data.data || []) {
+            const day = new Date(row.date_start + 'T12:00:00').getDate();
+            const actions: any[] = row.actions || [];
+            const count = actions
+                .filter((a: any) => LEAD_TYPES.includes(a.action_type) || CONV_TYPES.includes(a.action_type))
+                .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+            if (count > 0) days[day] = (days[day] || 0) + count;
+        }
+
+        accountDailyCache.set(cacheKey, { data: days, ts: Date.now() });
+        return days;
+    } catch (error) {
+        console.error(`[MetaAPI] getAccountDailyInsights error for ${accountId}:`, error);
+        return {};
+    }
+}
 
 export async function getAccountLeadsSummary(
     accountId: string,

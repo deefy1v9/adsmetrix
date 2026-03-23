@@ -1,8 +1,8 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
-import { getAdAccounts, calculateAvailableBalance, getPaymentLabel, getAccountLeadsSummary } from "@/lib/meta-api";
-import { endOfMonth, startOfMonth, eachDayOfInterval, format } from "date-fns";
+import { getAdAccounts, calculateAvailableBalance, getPaymentLabel, getAccountLeadsSummary, getAccountDailyInsights } from "@/lib/meta-api";
+import { endOfMonth } from "date-fns";
 import { headers } from "next/headers";
 
 async function getWorkspaceId(): Promise<string | undefined> {
@@ -129,81 +129,25 @@ export async function fetchMonthlyCalendarAction(year: number, month: number) {
         const metaAccounts = await getAdAccounts(workspaceId);
 
         let localAccounts: any[] = [];
-        let leads: any[] = [];
-
         try {
-            // Filter out Meta test leads
-            const testLeadFilter = {
-                raw_data: {
-                    not: {
-                        contains: '"is_dummy":true'
-                    }
-                }
-            };
-
             localAccounts = await prisma.account.findMany({
                 where: workspaceId ? { workspace_id: workspaceId } : {},
             });
-            leads = await prisma.lead.findMany({
-                where: {
-                    ...testLeadFilter,
-                    created_time: { gte: startDate, lte: endDate },
-                    ...(workspaceId ? {
-                        account: { workspace_id: workspaceId }
-                    } : {}),
-                },
-                select: {
-                    created_time: true,
-                    account: {
-                        select: {
-                            account_name: true,
-                            account_id: true
-                        }
-                    }
-                }
-            });
         } catch (e: any) {
-            console.warn("[fetchMonthlyCalendarAction] Database queries failed:", e.message);
+            console.warn("[fetchMonthlyCalendarAction] Failed to fetch local accounts:", e.message);
         }
 
-        // Group leads by account and then by day
+        // Fetch daily insights (form leads + conversations) from Meta API per account
         const accountsMap: Record<string, { name: string, days: Record<number, number> }> = {};
 
-        // Initialize with all known meta accounts, filtering hidden ones
-        metaAccounts.forEach(acc => {
+        await Promise.all(metaAccounts.map(async (acc) => {
             const relevantLocals = localAccounts.filter(l => l.account_id === acc.id || l.account_id === acc.account_id);
             const isHidden = relevantLocals.some(l => (l as any).is_hidden);
-
             if (isHidden) return;
 
-            accountsMap[acc.id] = {
-                name: acc.name,
-                days: {}
-            };
-        });
-
-        leads.forEach(lead => {
-            if (!lead.account) return;
-            const accId = lead.account.account_id;
-            const relevantLocals = localAccounts.filter(l => l.account_id === accId || l.account_id === `act_${accId.replace('act_', '')}`);
-            const isHidden = relevantLocals.some(l => (l as any).is_hidden);
-
-            if (isHidden) return;
-
-            const day = lead.created_time.getDate();
-
-            if (accountsMap[accId]) {
-                accountsMap[accId].days[day] = (accountsMap[accId].days[day] || 0) + 1;
-            } else {
-                // Fallback for accounts not in Meta list (maybe deleted from Meta but we have leads)
-                // We only show it if it's NOT hidden (though if it's not in meta list it doesn't have a local config to be hidden)
-                accountsMap[accId] = {
-                    name: lead.account.account_name,
-                    days: {}
-                };
-                accountsMap[accId].days[day] = 1;
-            }
-        });
+            const days = await getAccountDailyInsights(acc.account_id || acc.id, year, month, workspaceId);
+            accountsMap[acc.id] = { name: acc.name, days };
+        }));
 
         // Convert map to array and sort by total leads
         const sortedAccounts = Object.entries(accountsMap).map(([id, data]) => {

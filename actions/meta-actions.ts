@@ -184,7 +184,7 @@ export async function debugCreativesAction(accountId: string): Promise<{ totalAd
     if (!accountId) return { totalAds: 0, withInsights: 0, statuses: [], error: 'No accountId' };
     try {
         const workspaceId = await getWorkspaceId();
-        const { default: prisma } = await import('@/lib/prisma');
+        const { prisma } = await import('@/lib/prisma');
         // get token
         let token = '';
         try {

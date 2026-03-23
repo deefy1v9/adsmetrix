@@ -469,11 +469,9 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
 
         const token = await getAccessToken(accountId, workspaceId);
 
-        // Single query: ads + insights + creative fields
-        // Note: do NOT include 'picture' or 'image_url' in creative sub-fields — they don't exist on video creatives and cause a fatal API error
+        // Step 1: Fetch ads + insights only (no creative sub-fields to avoid API errors)
         const fields = [
-            'name', 'status', 'effective_status',
-            'creative{id,thumbnail_url,video_id,preview_shareable_link,object_story_spec}',
+            'name', 'status', 'effective_status', 'creative',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
         const adsUrl = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=100&access_token=${token}`;
@@ -487,7 +485,6 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         }
 
         const allAds: any[] = adsData.data || [];
-        console.log(`[MetaAPI] getTopCreatives: ${allAds.length} ads, sample creative:`, JSON.stringify(allAds[0]?.creative || {}).substring(0, 200));
 
         // Filter to ads with performance data in this period
         const adsWithData = allAds.filter((ad: any) => {
@@ -509,10 +506,24 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             return parseFloat(b.insights?.data?.[0]?.spend || '0') - parseFloat(a.insights?.data?.[0]?.spend || '0');
         }).slice(0, 12);
 
+        // Step 2: Fetch creative details individually for each top ad
+        // Individual fetch is used because batch /?ids= and inline creative{} both have field compatibility issues
+        const creativeMap: Record<string, any> = {};
+        await Promise.all(topAds.map(async (ad: any) => {
+            const creativeId = ad.creative?.id;
+            if (!creativeId) return;
+            try {
+                const url = `https://graph.facebook.com/v19.0/${creativeId}?fields=thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (!data.error) creativeMap[ad.id] = data;
+            } catch {}
+        }));
+
         // Build result
         return topAds.map((ad: any) => {
             const insight = ad.insights?.data?.[0] || {};
-            const creative = ad.creative || {};
+            const creative = creativeMap[ad.id] || {};
 
             // Media extraction with multiple fallbacks
             const spec = creative.object_story_spec || {};

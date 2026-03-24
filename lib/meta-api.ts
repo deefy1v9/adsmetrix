@@ -528,15 +528,28 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             // Media extraction with multiple fallbacks
             const spec = creative.object_story_spec || {};
             const videoId = creative.video_id || spec.video_data?.video_id || '';
-            const thumbnail_url =
+            // Upgrade CDN thumbnail: remove stp size restriction to get full-size image
+            const upgradeCdnUrl = (url: string) => {
+                if (!url || !url.includes('fbcdn.net')) return url;
+                try {
+                    const u = new URL(url);
+                    u.searchParams.delete('stp');
+                    return u.toString();
+                } catch { return url; }
+            };
+
+            // Use CDN thumbnail (scontent-*.fbcdn.net) — publicly accessible without auth
+            // facebook.com/ads/image/ URLs require user to be logged in to Facebook
+            const rawThumb =
+                creative.thumbnail_url ||
                 spec.video_data?.image_url ||
                 spec.link_data?.picture ||
                 spec.link_data?.image_url ||
                 spec.link_data?.child_attachments?.[0]?.picture ||
                 spec.link_data?.child_attachments?.[0]?.image_url ||
                 spec.link_data?.child_attachments?.[0]?.thumbnail_url ||
-                creative.thumbnail_url ||
                 '';
+            const thumbnail_url = upgradeCdnUrl(rawThumb);
 
             // Metrics
             const actions: any[] = insight.actions || [];

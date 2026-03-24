@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
 import { MetaCreative } from "@/lib/balance-utils";
@@ -33,7 +34,8 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
     };
 
     const isVideo = !!creative.video_id;
-    const imgSrc = creative.thumbnail_url
+    const [imgFailed, setImgFailed] = useState(false);
+    const imgSrc = creative.thumbnail_url && !imgFailed
         ? `/api/img-proxy?url=${encodeURIComponent(creative.thumbnail_url)}`
         : null;
 
@@ -45,6 +47,7 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
                     <img
                         src={imgSrc}
                         alt={creative.name}
+                        onError={() => setImgFailed(true)}
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                     />
                 ) : (

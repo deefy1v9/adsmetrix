@@ -469,7 +469,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
 
         const token = await getAccessToken(accountId, workspaceId);
 
-        // Step 1: Fetch ads + insights only (no creative sub-fields to avoid API errors)
+        // Fetch all ads with creative ID + optional insights (no status/metric filter)
         const fields = [
             'name', 'status', 'effective_status', 'creative',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
@@ -485,26 +485,10 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         }
 
         const allAds: any[] = adsData.data || [];
+        if (allAds.length === 0) return [];
 
-        // Filter to ads with performance data in this period
-        const adsWithData = allAds.filter((ad: any) => {
-            const insight = ad.insights?.data?.[0];
-            return insight && (parseInt(insight.impressions || '0') > 0 || parseFloat(insight.spend || '0') > 0);
-        });
-
-        if (adsWithData.length === 0) return [];
-
-        // Sort by leads then spend, take top 12
-        const topAds = adsWithData.sort((a: any, b: any) => {
-            const getLeads = (ad: any) => {
-                const actions = ad.insights?.data?.[0]?.actions || [];
-                const la = actions.find((x: any) => x.action_type === 'lead' || x.action_type === 'onsite_conversion.lead_grouped');
-                return parseInt(la?.value || '0');
-            };
-            const diff = getLeads(b) - getLeads(a);
-            if (diff !== 0) return diff;
-            return parseFloat(b.insights?.data?.[0]?.spend || '0') - parseFloat(a.insights?.data?.[0]?.spend || '0');
-        }).slice(0, 12);
+        // Take first 12 — no filtering, no sorting requirement
+        const topAds = allAds.slice(0, 12);
 
         // Step 2: Fetch creative details individually for each top ad
         // Individual fetch is used because batch /?ids= and inline creative{} both have field compatibility issues

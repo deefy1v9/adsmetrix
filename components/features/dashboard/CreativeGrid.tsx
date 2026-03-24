@@ -82,7 +82,7 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
                 <GlassCard className="p-8 text-center text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                         <Sparkles className="h-8 w-8 opacity-20" />
-                        <p>Nenhum criativo com dados de performance encontrado.</p>
+                        <p>Nenhum criativo encontrado nesta conta.</p>
                     </div>
                 </GlassCard>
             ) : (

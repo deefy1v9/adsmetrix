@@ -35,9 +35,10 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
 
     const isVideo = !!creative.video_id;
     const [imgFailed, setImgFailed] = useState(false);
-    const imgSrc = creative.thumbnail_url && !imgFailed
-        ? `/api/img-proxy?url=${encodeURIComponent(creative.thumbnail_url)}`
-        : null;
+    const rawUrl = creative.thumbnail_url;
+    // Route fbcdn.net URLs through server-side proxy to avoid CORS/auth issues
+    const proxyUrl = rawUrl ? `/api/img-proxy?url=${encodeURIComponent(rawUrl)}` : null;
+    const imgSrc = proxyUrl && !imgFailed ? proxyUrl : null;
 
     return (
         <GlassCard className="overflow-hidden flex flex-col h-full group">
@@ -51,8 +52,10 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-zinc-700">
-                        <TrendingUp className="h-12 w-12 opacity-20" />
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-zinc-700 p-2">
+                        <TrendingUp className="h-8 w-8 opacity-20" />
+                        {!rawUrl && <span className="text-[8px] opacity-40 text-center break-all">no url</span>}
+                        {rawUrl && imgFailed && <span className="text-[8px] opacity-40 text-center">load failed</span>}
                     </div>
                 )}
 

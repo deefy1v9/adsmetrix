@@ -490,17 +490,34 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         // Take first 12 — no filtering, no sorting requirement
         const topAds = allAds.slice(0, 12);
 
-        // Step 2: Fetch ALL creatives for the account in a single call via /adcreatives
-        const creativesUrl = `https://graph.facebook.com/v19.0/${accountId}/adcreatives?fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&limit=200&access_token=${token}`;
-        const creativesResp = await fetch(creativesUrl);
-        const creativesData = await creativesResp.json();
+        // Step 2: Fetch creative details for the specific IDs found in topAds
+        const creativeIds = [...new Set(topAds.map((ad: any) => ad.creative?.id).filter(Boolean))];
         const creativeById: Record<string, any> = {};
-        for (const c of (creativesData.data || [])) {
-            creativeById[c.id] = c;
+
+        if (creativeIds.length > 0) {
+            // Use /?ids= batch endpoint to fetch all needed creatives in one call
+            const batchUrl = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
+            const batchResp = await fetch(batchUrl);
+            const batchData = await batchResp.json();
+
+            if (batchData.error) {
+                console.warn("[MetaAPI] Batch creative fetch failed:", JSON.stringify(batchData.error));
+                // Fallback: fetch individually for each creative
+                await Promise.all(creativeIds.map(async (id) => {
+                    try {
+                        const r = await fetch(`https://graph.facebook.com/v19.0/${id}?fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`);
+                        const d = await r.json();
+                        if (!d.error && d.id) creativeById[d.id] = d;
+                    } catch {}
+                }));
+            } else {
+                for (const [id, creative] of Object.entries(batchData)) {
+                    creativeById[id] = creative;
+                }
+            }
         }
-        if (creativesData.error) {
-            console.warn("[MetaAPI] /adcreatives fetch failed:", JSON.stringify(creativesData.error));
-        }
+
+        console.log(`[MetaAPI] creativeIds: ${creativeIds.length}, resolved: ${Object.keys(creativeById).length}`);
 
         // Build result
         return topAds.map((ad: any) => {
@@ -532,6 +549,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                 spec.link_data?.child_attachments?.[0]?.thumbnail_url ||
                 '';
             const thumbnail_url = upgradeCdnUrl(rawThumb);
+            console.log(`[MetaAPI] ad ${ad.id} creativeId=${ad.creative?.id} thumb=${thumbnail_url ? thumbnail_url.substring(0, 60) : 'NONE'}`);
 
             // Metrics
             const actions: any[] = insight.actions || [];

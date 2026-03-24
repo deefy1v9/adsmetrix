@@ -490,24 +490,22 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         // Take first 12 — no filtering, no sorting requirement
         const topAds = allAds.slice(0, 12);
 
-        // Step 2: Fetch creative details individually for each top ad
-        // Individual fetch is used because batch /?ids= and inline creative{} both have field compatibility issues
-        const creativeMap: Record<string, any> = {};
-        await Promise.all(topAds.map(async (ad: any) => {
-            const creativeId = ad.creative?.id;
-            if (!creativeId) return;
-            try {
-                const url = `https://graph.facebook.com/v19.0/${creativeId}?fields=thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
-                const resp = await fetch(url);
-                const data = await resp.json();
-                if (!data.error) creativeMap[ad.id] = data;
-            } catch {}
-        }));
+        // Step 2: Fetch ALL creatives for the account in a single call via /adcreatives
+        const creativesUrl = `https://graph.facebook.com/v19.0/${accountId}/adcreatives?fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&limit=200&access_token=${token}`;
+        const creativesResp = await fetch(creativesUrl);
+        const creativesData = await creativesResp.json();
+        const creativeById: Record<string, any> = {};
+        for (const c of (creativesData.data || [])) {
+            creativeById[c.id] = c;
+        }
+        if (creativesData.error) {
+            console.warn("[MetaAPI] /adcreatives fetch failed:", JSON.stringify(creativesData.error));
+        }
 
         // Build result
         return topAds.map((ad: any) => {
             const insight = ad.insights?.data?.[0] || {};
-            const creative = creativeMap[ad.id] || {};
+            const creative = creativeById[ad.creative?.id] || {};
 
             // Media extraction with multiple fallbacks
             const spec = creative.object_story_spec || {};

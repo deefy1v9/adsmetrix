@@ -64,15 +64,20 @@ export async function sendTextMessage(
     if (!cleanPhone) return { success: false, error: 'Número de telefone inválido' };
 
     try {
+        // uazapiGO (WuzAPI-based) requires @s.whatsapp.net suffix and capital field names
+        const waPhone = `${cleanPhone}@s.whatsapp.net`;
+
         const resp = await fetch(`${baseUrl}${PATHS.sendText}`, {
             method:  'POST',
             headers: buildHeaders(token),
             body: JSON.stringify({
-                // UazAPI POST /send/text body format
-                number:  cleanPhone,
+                // WuzAPI/uazapiGO Go struct fields (capital)
+                Phone:   waPhone,
+                Body:    text,
+                // Lowercase aliases for compatibility
+                number:  waPhone,
+                phone:   waPhone,
                 body:    text,
-                // Some UazAPI versions also accept these aliases:
-                phone:   cleanPhone,
                 message: text,
             }),
         });

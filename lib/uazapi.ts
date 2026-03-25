@@ -48,6 +48,14 @@ function normalizePhone(phone: string): string {
     return phone.replace(/\D/g, '');
 }
 
+function normalizeBaseUrl(url: string): string {
+    const trimmed = url.trim().replace(/\/$/, '');
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return `https://${trimmed}`;
+    }
+    return trimmed;
+}
+
 // ── API Functions ─────────────────────────────────────────────────────────────
 
 /**
@@ -58,13 +66,16 @@ export async function sendTextMessage(
     phone:  string,
     text:   string,
 ): Promise<SendResult> {
-    const { baseUrl, token, instance } = config;
+    const { token, instance } = config;
+    const baseUrl = normalizeBaseUrl(config.baseUrl);
 
     const cleanPhone = normalizePhone(phone);
     if (!cleanPhone) return { success: false, error: 'Número de telefone inválido' };
 
     try {
-        const resp = await fetch(`${baseUrl}${PATHS.sendText}`, {
+        const url = `${baseUrl}${PATHS.sendText}`;
+        console.log('[UazAPI] sendText →', url, 'phone:', cleanPhone);
+        const resp = await fetch(url, {
             method:  'POST',
             headers: buildHeaders(token),
             body: JSON.stringify({
@@ -86,8 +97,9 @@ export async function sendTextMessage(
             messageId: data?.key?.id || data?.id || data?.messageId || undefined,
         };
     } catch (err: any) {
-        console.error('[UazAPI] sendText error:', err.message);
-        return { success: false, error: err.message };
+        const cause = (err as any)?.cause?.message ?? '';
+        console.error('[UazAPI] sendText error:', err.message, cause);
+        return { success: false, error: cause ? `${err.message}: ${cause}` : err.message };
     }
 }
 
@@ -95,7 +107,8 @@ export async function sendTextMessage(
  * Get current connection status of the WhatsApp instance.
  */
 export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceStatus> {
-    const { baseUrl, token } = config;
+    const baseUrl = normalizeBaseUrl(config.baseUrl);
+    const { token } = config;
 
     try {
         const resp = await fetch(`${baseUrl}${PATHS.status}`, {
@@ -126,7 +139,8 @@ export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceS
  * Returns null if already connected or if the request fails.
  */
 export async function getQRCode(config: UazAPIConfig): Promise<string | null> {
-    const { baseUrl, token } = config;
+    const baseUrl = normalizeBaseUrl(config.baseUrl);
+    const { token } = config;
 
     try {
         const resp = await fetch(`${baseUrl}${PATHS.connect}`, {

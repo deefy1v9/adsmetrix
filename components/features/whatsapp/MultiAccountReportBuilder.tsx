@@ -58,16 +58,16 @@ function fmt(value: string | number | undefined, type: keyof EnabledMetrics): st
     return n.toLocaleString('pt-BR');
 }
 
-function metricLine(c: MetaCampaign | MetaAdSet, metrics: EnabledMetrics): string {
+function metricLines(c: MetaCampaign | MetaAdSet, metrics: EnabledMetrics, indent = '   '): string[] {
     const ins = c.insights;
-    const parts: string[] = [];
-    if (metrics.spend)         parts.push(`💰 ${fmt(ins?.spend, 'spend')}`);
-    if (metrics.leads)         parts.push(`🎯 ${fmt(ins?.leads, 'leads')} leads`);
-    if (metrics.clicks)        parts.push(`🖱️ ${fmt(ins?.clicks, 'clicks')} cliques`);
-    if (metrics.conversations) parts.push(`💬 ${fmt(ins?.conversations, 'conversations')} conversas`);
-    if (metrics.ctr)           parts.push(`📈 CTR ${fmt(ins?.ctr, 'ctr')}`);
-    if (metrics.cpc)           parts.push(`💵 CPC ${fmt(ins?.cpc, 'cpc')}`);
-    return parts.join(' | ');
+    const lines: string[] = [];
+    if (metrics.spend)         lines.push(`${indent}💰 Investimento: ${fmt(ins?.spend, 'spend')}`);
+    if (metrics.leads)         lines.push(`${indent}🎯 Leads: ${fmt(ins?.leads, 'leads')}`);
+    if (metrics.clicks)        lines.push(`${indent}🖱️ Cliques: ${fmt(ins?.clicks, 'clicks')}`);
+    if (metrics.conversations) lines.push(`${indent}💬 Conversas: ${fmt(ins?.conversations, 'conversations')}`);
+    if (metrics.ctr)           lines.push(`${indent}📈 CTR: ${fmt(ins?.ctr, 'ctr')}`);
+    if (metrics.cpc)           lines.push(`${indent}💵 CPC: ${fmt(ins?.cpc, 'cpc')}`);
+    return lines;
 }
 
 function getDateLabel(preset: string): string {
@@ -189,7 +189,7 @@ function CampaignRow({
 
             {isChecked && ins && (
                 <p className="ml-10 text-[10px] text-muted-foreground pb-1">
-                    {metricLine(campaign, metrics)}
+                    {metricLines(campaign, metrics, '').join(' · ')}
                 </p>
             )}
 
@@ -208,7 +208,7 @@ function CampaignRow({
                             />
                             {selectedAdSets.has(adset.id) && adset.insights && (
                                 <p className="ml-14 text-[10px] text-muted-foreground pb-1">
-                                    {metricLine(adset, metrics)}
+                                    {metricLines(adset, metrics, '').join(' · ')}
                                 </p>
                             )}
                         </div>
@@ -292,46 +292,43 @@ export function MultiAccountReportBuilder() {
         let totalSpend = 0, totalLeads = 0, totalClicks = 0, totalConversations = 0;
 
         for (const { accountName, accountId, campaigns } of campaignsData) {
-            const selectedForAccount = campaigns.filter(c =>
-                selectedCampaigns.has(c.id)
-            );
+            const selectedForAccount = campaigns.filter(c => selectedCampaigns.has(c.id));
             if (selectedForAccount.length === 0) continue;
 
             lines.push(`*${accountName}*`);
+            lines.push('');
 
             for (const campaign of selectedForAccount) {
-                // Check if any ad sets selected inside this campaign
                 const campaignAdSets = adSetsCache[campaign.id] ?? [];
                 const selectedAdSetsForCampaign = campaignAdSets.filter(a => selectedAdSets.has(a.id));
 
                 if (selectedAdSetsForCampaign.length > 0) {
-                    // Show campaign name + selected ad sets beneath it
-                    lines.push(`  📣 *${campaign.name}*`);
+                    lines.push(`📣 *${campaign.name}*`);
+                    lines.push('');
                     for (const adset of selectedAdSetsForCampaign) {
-                        lines.push(`    ▸ ${adset.name}`);
-                        const mLine = metricLine(adset, metrics);
-                        if (mLine) lines.push(`       ${mLine}`);
+                        lines.push(`▸ ${adset.name}`);
+                        lines.push(...metricLines(adset, metrics));
+                        lines.push('');
                         totalSpend         += parseFloat(adset.insights?.spend ?? '0');
                         totalLeads         += parseInt(adset.insights?.leads ?? '0');
                         totalClicks        += parseInt(adset.insights?.clicks ?? '0');
                         totalConversations += parseInt(adset.insights?.conversations ?? '0');
                     }
                 } else {
-                    lines.push(`  ▸ ${campaign.name}`);
-                    const mLine = metricLine(campaign, metrics);
-                    if (mLine) lines.push(`     ${mLine}`);
+                    lines.push(`▸ ${campaign.name}`);
+                    lines.push(...metricLines(campaign, metrics));
+                    lines.push('');
                     totalSpend         += parseFloat(campaign.insights?.spend ?? '0');
                     totalLeads         += parseInt(campaign.insights?.leads ?? '0');
                     totalClicks        += parseInt(campaign.insights?.clicks ?? '0');
                     totalConversations += parseInt(campaign.insights?.conversations ?? '0');
                 }
             }
-            lines.push('');
         }
 
         // Totals section
         lines.push('━━━━━━━━━━━━━━━━');
-        lines.push('📈 *TOTAIS COMBINADOS*');
+        lines.push('📊 *TOTAIS COMBINADOS*');
         if (metrics.spend)         lines.push(`💰 Investimento: ${fmt(totalSpend, 'spend')}`);
         if (metrics.leads)         lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);
         if (metrics.clicks)        lines.push(`🖱️ Cliques: ${totalClicks.toLocaleString('pt-BR')}`);

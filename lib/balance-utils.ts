@@ -11,6 +11,8 @@ export interface MetaAdSet {
         ctr: string;
         leads: string;
         conversations?: string;
+        reach?: string;
+        page_likes?: string;
     };
 }
 

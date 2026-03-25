@@ -344,13 +344,14 @@ export async function getAdSets(
             (adsets || []).map(async (adset: any) => {
                 try {
                     const insights = await adset.getInsights(
-                        ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'actions'],
+                        ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'actions'],
                         { date_preset: metaPreset }
                     );
                     const insight = insights[0] || {};
 
                     let leadsValue = 0;
                     let conversationsValue = 0;
+                    let pageLikesValue = 0;
 
                     if (insight.actions) {
                         const leadAction = insight.actions.find((a: any) => a.action_type === 'lead');
@@ -360,6 +361,11 @@ export async function getAdSets(
                             a.action_type.includes('messaging_conversation_started')
                         );
                         conversationsValue = ctwaActions.reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+
+                        const pageLikeAction = insight.actions.find((a: any) =>
+                            a.action_type === 'page_like' || a.action_type === 'like'
+                        );
+                        if (pageLikeAction) pageLikesValue = parseInt(pageLikeAction.value || '0');
                     }
 
                     return {
@@ -373,8 +379,10 @@ export async function getAdSets(
                             spend: insight.spend || '0',
                             cpc: insight.cpc || '0',
                             ctr: insight.ctr || '0',
+                            reach: insight.reach || '0',
                             leads: leadsValue.toString(),
                             conversations: conversationsValue.toString(),
+                            page_likes: pageLikesValue.toString(),
                         },
                     } satisfies MetaAdSet;
                 } catch {

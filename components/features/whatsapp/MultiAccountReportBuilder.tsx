@@ -26,6 +26,10 @@ interface EnabledMetrics {
     leads: boolean;
     clicks: boolean;
     conversations: boolean;
+    cost_per_conversation: boolean;
+    reach: boolean;
+    followers: boolean;
+    cost_per_follower: boolean;
     ctr: boolean;
     cpc: boolean;
 }
@@ -34,7 +38,11 @@ const DEFAULT_METRICS: EnabledMetrics = {
     spend: true,
     leads: true,
     clicks: true,
-    conversations: false,
+    conversations: true,
+    cost_per_conversation: true,
+    reach: true,
+    followers: false,
+    cost_per_follower: false,
     ctr: false,
     cpc: false,
 };
@@ -44,6 +52,10 @@ const METRIC_LABELS: Record<keyof EnabledMetrics, string> = {
     leads: 'Leads',
     clicks: 'Cliques',
     conversations: 'Conversas',
+    cost_per_conversation: 'Custo por Conversa',
+    reach: 'Alcance',
+    followers: 'Seguidores Ganhos',
+    cost_per_follower: 'Custo por Seguidor',
     ctr: 'CTR',
     cpc: 'CPC',
 };

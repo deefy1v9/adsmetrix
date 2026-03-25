@@ -7,9 +7,9 @@
  * If your server uses different paths, update the PATHS constants.
  */
 
-// ── Endpoint paths (confirmed by probing metrixbr.uazapi.com) ─────────────────
+// ── Endpoint paths (confirmed via docs.uazapi.com/api/v1/openapi-bundled) ─────
 const PATHS = {
-    sendText: '/send/text',         // POST — send text message
+    sendText: '/send/text',         // POST — body: { number, text }
     status:   '/instance/status',   // GET  — connection state
     connect:  '/instance/connect',  // POST — initiate connection / returns QR code
 } as const;
@@ -64,21 +64,12 @@ export async function sendTextMessage(
     if (!cleanPhone) return { success: false, error: 'Número de telefone inválido' };
 
     try {
-        // uazapiGO (WuzAPI-based) requires @s.whatsapp.net suffix and capital field names
-        const waPhone = `${cleanPhone}@s.whatsapp.net`;
-
         const resp = await fetch(`${baseUrl}${PATHS.sendText}`, {
             method:  'POST',
             headers: buildHeaders(token),
             body: JSON.stringify({
-                // WuzAPI/uazapiGO Go struct fields (capital)
-                Phone:   waPhone,
-                Body:    text,
-                // Lowercase aliases for compatibility
-                number:  waPhone,
-                phone:   waPhone,
-                body:    text,
-                message: text,
+                number: cleanPhone,  // international format, no @suffix
+                text:   text,
             }),
         });
 

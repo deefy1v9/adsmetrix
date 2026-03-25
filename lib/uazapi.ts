@@ -7,12 +7,11 @@
  * If your server uses different paths, update the PATHS constants.
  */
 
-// ── Endpoint paths (adjust if your server version differs) ───────────────────
+// ── Endpoint paths (confirmed by probing metrixbr.uazapi.com) ─────────────────
 const PATHS = {
-    sendText:   '/message/send',       // POST — send text message
-    status:     '/instance/status',    // GET  — connection state
-    qrcode:     '/instance/qrcode',    // GET  — QR code for pairing
-    connect:    '/instance/connect',   // POST — initiate connection
+    sendText: '/send/text',         // POST — send text message
+    status:   '/instance/status',   // GET  — connection state
+    connect:  '/instance/connect',  // POST — initiate connection / returns QR code
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,9 +39,7 @@ export interface InstanceStatus {
 function buildHeaders(token: string) {
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        // Some UazAPI versions also accept token as a plain header:
-        'token': token,
+        'token': token,  // UazAPI uses 'token' header for authentication
     };
 }
 
@@ -71,12 +68,12 @@ export async function sendTextMessage(
             method:  'POST',
             headers: buildHeaders(token),
             body: JSON.stringify({
-                // UazAPI common body format — some versions use "number", others "phone"
-                phone:    cleanPhone,
-                number:   cleanPhone,
-                message:  text,
-                body:     text,
-                instance,
+                // UazAPI POST /send/text body format
+                number:  cleanPhone,
+                body:    text,
+                // Some UazAPI versions also accept these aliases:
+                phone:   cleanPhone,
+                message: text,
             }),
         });
 
@@ -102,24 +99,24 @@ export async function sendTextMessage(
  * Get current connection status of the WhatsApp instance.
  */
 export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceStatus> {
-    const { baseUrl, token, instance } = config;
+    const { baseUrl, token } = config;
 
     try {
-        const resp = await fetch(
-            `${baseUrl}${PATHS.status}?instance=${encodeURIComponent(instance)}`,
-            { headers: buildHeaders(token) },
-        );
+        const resp = await fetch(`${baseUrl}${PATHS.status}`, {
+            headers: buildHeaders(token),
+        });
 
-        const data = await resp.json().catch(() => ({}));
+        const envelope = await resp.json().catch(() => ({}));
 
         if (!resp.ok) {
             return { connected: false, loggedIn: false, state: 'error' };
         }
 
-        // Handle common response shapes from different UazAPI versions
-        const state: string = data?.state || data?.status || data?.connectionState || '';
-        const connected = state === 'open' || state === 'connected' || data?.connected === true;
-        const loggedIn  = connected && (data?.loggedIn !== false);
+        // UazAPI wraps response in { code, message, data: { ... } }
+        const d = envelope?.data || envelope;
+        const state: string = d?.status || d?.state || d?.connection_status || d?.connectionState || '';
+        const connected = state === 'open' || state === 'connected' || state === 'qrReadSuccess' || d?.connected === true;
+        const loggedIn  = connected && (d?.loggedIn !== false);
 
         return { connected, loggedIn, state };
     } catch {
@@ -128,28 +125,32 @@ export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceS
 }
 
 /**
- * Get QR code (base64) for pairing a new WhatsApp account.
+ * Initiate connection and return QR code (base64) for pairing.
+ * POST /instance/connect returns the QR code when the instance is not yet connected.
  * Returns null if already connected or if the request fails.
  */
 export async function getQRCode(config: UazAPIConfig): Promise<string | null> {
-    const { baseUrl, token, instance } = config;
+    const { baseUrl, token } = config;
 
     try {
-        const resp = await fetch(
-            `${baseUrl}${PATHS.qrcode}?instance=${encodeURIComponent(instance)}`,
-            { headers: buildHeaders(token) },
-        );
+        const resp = await fetch(`${baseUrl}${PATHS.connect}`, {
+            method:  'POST',
+            headers: buildHeaders(token),
+            body:    JSON.stringify({}),
+        });
 
-        const data = await resp.json().catch(() => ({}));
+        const envelope = await resp.json().catch(() => ({}));
 
         if (!resp.ok) return null;
 
-        // Handle common response shapes
+        // UazAPI wraps response: { code, message, data: { qrcode: "base64..." } }
+        const d = envelope?.data || envelope;
         return (
-            data?.qrcode?.base64 ||
-            data?.qrcode ||
-            data?.base64 ||
-            data?.code ||
+            d?.qrcode?.base64 ||
+            d?.qrcode ||
+            d?.base64 ||
+            d?.code ||
+            envelope?.qrcode ||
             null
         );
     } catch {
@@ -158,18 +159,8 @@ export async function getQRCode(config: UazAPIConfig): Promise<string | null> {
 }
 
 /**
- * Initiate connection (triggers QR generation on the server).
+ * @deprecated Use getQRCode directly — it triggers connect internally.
  */
 export async function connectInstance(config: UazAPIConfig): Promise<void> {
-    const { baseUrl, token, instance } = config;
-
-    try {
-        await fetch(`${baseUrl}${PATHS.connect}`, {
-            method:  'POST',
-            headers: buildHeaders(token),
-            body:    JSON.stringify({ instance }),
-        });
-    } catch {
-        // Fire and forget — caller will poll status/qrcode separately
-    }
+    await getQRCode(config);
 }

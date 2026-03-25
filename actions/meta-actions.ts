@@ -1,6 +1,6 @@
 "use server";
 
-import { getAdAccounts, getCampaigns, getAllLeads, getTopCreatives, getWeeklyBreakdown, MetaAdAccount, MetaCampaign, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
+import { getAdAccounts, getCampaigns, getAdSets, getAllLeads, getTopCreatives, getWeeklyBreakdown, MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -507,5 +507,49 @@ export async function deleteLeadAction(leadId: string) {
         console.error("[deleteLeadAction] Error:", e);
         return { success: false, error: "Erro ao deletar lead." };
     }
+}
+
+// ── Multi-Account Report Actions ──────────────────────────────────────────────
+
+export interface AccountCampaignsResult {
+    accountId: string;
+    accountName: string;
+    campaigns: MetaCampaign[];
+}
+
+export async function fetchCampaignsMultiAction(
+    accountIds: string[],
+    datePreset: string = 'last_30d'
+): Promise<AccountCampaignsResult[]> {
+    const workspaceId = await getWorkspaceId();
+
+    const results = await Promise.all(
+        accountIds.map(async (accountId) => {
+            try {
+                const [campaigns, dbAccount] = await Promise.all([
+                    getCampaigns(accountId, datePreset, workspaceId),
+                    prisma.account.findUnique({
+                        where: { account_id: accountId.startsWith('act_') ? accountId : `act_${accountId}` },
+                        select: { account_name: true },
+                    }),
+                ]);
+                return { accountId, accountName: dbAccount?.account_name || accountId, campaigns };
+            } catch (e: any) {
+                console.error(`[fetchCampaignsMultiAction] Error for ${accountId}:`, e.message);
+                return { accountId, accountName: accountId, campaigns: [] };
+            }
+        })
+    );
+
+    return results;
+}
+
+export async function fetchAdSetsForCampaignAction(
+    accountId: string,
+    campaignId: string,
+    datePreset: string = 'last_30d'
+): Promise<MetaAdSet[]> {
+    const workspaceId = await getWorkspaceId();
+    return getAdSets(accountId, campaignId, datePreset, workspaceId);
 }
 

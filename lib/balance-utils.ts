@@ -1,3 +1,19 @@
+export interface MetaAdSet {
+    id: string;
+    name: string;
+    status: string;
+    campaign_id: string;
+    insights?: {
+        impressions: string;
+        clicks: string;
+        spend: string;
+        cpc: string;
+        ctr: string;
+        leads: string;
+        conversations?: string;
+    };
+}
+
 export interface MetaCampaign {
     id: string;
     name: string;

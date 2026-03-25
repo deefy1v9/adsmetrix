@@ -137,13 +137,32 @@ export async function getWorkspaceSettingAction() {
     const setting = await prisma.setting.findUnique({
         where:  { workspace_id: workspaceId },
         select: {
-            whatsapp_enabled: true,
-            uazapi_url:       true,
-            uazapi_token:     true,
-            uazapi_instance:  true,
-            whatsapp_number:  true,
+            whatsapp_enabled:        true,
+            uazapi_url:              true,
+            uazapi_token:            true,
+            uazapi_instance:         true,
+            whatsapp_number:         true,
+            combined_report_enabled: true,
         },
     });
 
     return setting;
+}
+
+// ── Combined Report Config ────────────────────────────────────────────────────
+
+export async function toggleCombinedReportAction(enabled: boolean) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        await prisma.setting.upsert({
+            where:  { workspace_id: workspaceId },
+            update: { combined_report_enabled: enabled },
+            create: { workspace_id: workspaceId, combined_report_enabled: enabled },
+        });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
 }

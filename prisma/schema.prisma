@@ -83,6 +83,9 @@ model Setting {
   uazapi_instance String?  // nome/ID da instância (conexão WhatsApp)
   whatsapp_number String?  // número destino dos relatórios automáticos, ex: 5511999999999
 
+  // Relatório combinado diário (multi-conta)
+  combined_report_enabled Boolean @default(false)
+
   criado_em      DateTime  @default(now())
 }
 

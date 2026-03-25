@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { WhatsAppReportBuilder } from '@/components/features/whatsapp/WhatsAppTestPanel';
+import { MultiAccountReportBuilder } from '@/components/features/whatsapp/MultiAccountReportBuilder';
 import {
     getUazAPIStatusAction,
     getUazAPIQRCodeAction,
@@ -13,7 +14,7 @@ import {
     sendTestMessageAction,
     getWorkspaceSettingAction,
 } from '@/actions/uazapi-actions';
-import { Wifi, WifiOff, QrCode, Save, Send, RefreshCw, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { Wifi, WifiOff, QrCode, Save, Send, RefreshCw, CheckCircle2, XCircle, Loader2, Building2, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Connection Panel ──────────────────────────────────────────────────────────
@@ -297,6 +298,47 @@ function ConnectionPanel() {
     );
 }
 
+// ── Report Tabs ────────────────────────────────────────────────────────────────
+
+type ReportTab = 'single' | 'multi';
+
+function ReportSection() {
+    const [tab, setTab] = useState<ReportTab>('single');
+
+    return (
+        <div className="space-y-6">
+            <div className="flex gap-2 p-1 bg-muted rounded-xl w-fit border border-border">
+                <button
+                    onClick={() => setTab('single')}
+                    className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all',
+                        tab === 'single'
+                            ? 'bg-card text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                    )}
+                >
+                    <User className="w-4 h-4" />
+                    Conta Única
+                </button>
+                <button
+                    onClick={() => setTab('multi')}
+                    className={cn(
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all',
+                        tab === 'multi'
+                            ? 'bg-card text-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                    )}
+                >
+                    <Building2 className="w-4 h-4" />
+                    Multi-Conta
+                </button>
+            </div>
+
+            {tab === 'single' ? <WhatsAppReportBuilder /> : <MultiAccountReportBuilder />}
+        </div>
+    );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function WhatsAppReportsPage() {
@@ -317,13 +359,12 @@ export default function WhatsAppReportsPage() {
                 <ConnectionPanel />
             </div>
 
-            {/* Divider */}
             <div className="border-t border-white/5" />
 
-            {/* Section 2: Manual report builder */}
+            {/* Section 2: Report builder with tabs */}
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-foreground">Enviar Relatório Manualmente</h2>
-                <WhatsAppReportBuilder />
+                <h2 className="text-xl font-semibold text-foreground">Enviar Relatório</h2>
+                <ReportSection />
             </div>
         </div>
     );

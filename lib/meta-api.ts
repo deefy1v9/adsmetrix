@@ -45,9 +45,9 @@ function initSdk(token: string) {
     return FacebookAdsApi.init(token);
 }
 
-import { MetaAdAccount, MetaCampaign, MetaLead, MetaCreative, calculateAvailableBalance, getPaymentLabel } from './balance-utils';
+import { MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, calculateAvailableBalance, getPaymentLabel } from './balance-utils';
 
-export { type MetaAdAccount, type MetaCampaign, type MetaLead, type MetaCreative, calculateAvailableBalance, getPaymentLabel };
+export { type MetaAdAccount, type MetaCampaign, type MetaAdSet, type MetaLead, type MetaCreative, calculateAvailableBalance, getPaymentLabel };
 
 
 
@@ -318,6 +318,73 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
         return campaignsWithInsights;
     } catch (error) {
         console.error(`Error fetching campaigns for account ${accountId}:`, error);
+        return [];
+    }
+}
+
+export async function getAdSets(
+    accountId: string,
+    campaignId: string,
+    datePreset: string = 'last_30d',
+    workspaceId?: string
+): Promise<MetaAdSet[]> {
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        initSdk(token);
+
+        const campaign = new Campaign(campaignId);
+        const fields = ['name', 'status'];
+        const adsets = await campaign.getAdSets(fields, { limit: 100 }) as any[];
+
+        const metaPreset = ['today', 'yesterday', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
+            ? datePreset : 'maximum';
+
+        const adsetsWithInsights = await Promise.all(
+            (adsets || []).map(async (adset: any) => {
+                try {
+                    const insights = await adset.getInsights(
+                        ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'actions'],
+                        { date_preset: metaPreset }
+                    );
+                    const insight = insights[0] || {};
+
+                    let leadsValue = 0;
+                    let conversationsValue = 0;
+
+                    if (insight.actions) {
+                        const leadAction = insight.actions.find((a: any) => a.action_type === 'lead');
+                        if (leadAction) leadsValue = parseInt(leadAction.value || '0');
+
+                        const ctwaActions = insight.actions.filter((a: any) =>
+                            a.action_type.includes('messaging_conversation_started')
+                        );
+                        conversationsValue = ctwaActions.reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+                    }
+
+                    return {
+                        id: adset.id,
+                        name: adset.name,
+                        status: adset.status,
+                        campaign_id: campaignId,
+                        insights: {
+                            impressions: insight.impressions || '0',
+                            clicks: insight.clicks || '0',
+                            spend: insight.spend || '0',
+                            cpc: insight.cpc || '0',
+                            ctr: insight.ctr || '0',
+                            leads: leadsValue.toString(),
+                            conversations: conversationsValue.toString(),
+                        },
+                    } satisfies MetaAdSet;
+                } catch {
+                    return { id: adset.id, name: adset.name, status: adset.status, campaign_id: campaignId } satisfies MetaAdSet;
+                }
+            })
+        );
+
+        return adsetsWithInsights;
+    } catch (error) {
+        console.error(`[MetaAPI] getAdSets error for campaign ${campaignId}:`, error);
         return [];
     }
 }

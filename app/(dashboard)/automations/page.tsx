@@ -2,13 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
-import { getUazAPIStatusAction, toggleDailyReportAction } from "@/actions/uazapi-actions";
+import {
+    getUazAPIStatusAction,
+    toggleDailyReportAction,
+    getWorkspaceSettingAction,
+    toggleCombinedReportAction,
+} from "@/actions/uazapi-actions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
-import { Loader2, Zap, Search, MessageSquare, Wifi, WifiOff } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Loader2, Zap, Search, MessageSquare, Wifi, WifiOff, Building2, Layers, Save, CheckCircle2 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function AutomationsPage() {
     const [accounts, setAccounts] = useState<MetaAdAccount[]>([]);
@@ -18,8 +25,13 @@ export default function AutomationsPage() {
     const [waConnected, setWaConnected] = useState(false);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
+    // Combined report state
+    const [combinedEnabled, setCombinedEnabled] = useState(false);
+    const [savingCombined, setSavingCombined] = useState(false);
+    const [combinedSaved, setCombinedSaved] = useState(false);
+
     useEffect(() => {
-        Promise.all([loadAccounts(), checkWAStatus()]);
+        Promise.all([loadAccounts(), checkWAStatus(), loadCombinedConfig()]);
     }, []);
 
     async function loadAccounts() {
@@ -39,6 +51,11 @@ export default function AutomationsPage() {
         setWaConnected(status.connected && status.loggedIn);
     }
 
+    async function loadCombinedConfig() {
+        const setting = await getWorkspaceSettingAction();
+        setCombinedEnabled(setting?.combined_report_enabled ?? false);
+    }
+
     async function handleToggle(account: MetaAdAccount, enabled: boolean) {
         setTogglingId(account.id);
         const res = await toggleDailyReportAction(account.id, enabled);
@@ -50,12 +67,23 @@ export default function AutomationsPage() {
         setTogglingId(null);
     }
 
+    async function handleSaveCombined() {
+        setSavingCombined(true);
+        setCombinedSaved(false);
+        await toggleCombinedReportAction(combinedEnabled);
+        setSavingCombined(false);
+        setCombinedSaved(true);
+        setTimeout(() => setCombinedSaved(false), 3000);
+    }
+
     const filtered = accounts.filter(a =>
         a.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const activeAccounts = accounts.filter(a => a.daily_report_enabled);
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">Automações</h1>
                 <p className="text-muted-foreground">
@@ -89,6 +117,7 @@ export default function AutomationsPage() {
                 </div>
             </div>
 
+            {/* ── Per-account daily reports ── */}
             <div className="relative max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
@@ -104,7 +133,7 @@ export default function AutomationsPage() {
                 <div className="p-6">
                     <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                         <Zap className="text-amber-500" />
-                        Relatórios Diários (WhatsApp)
+                        Relatórios Diários Individuais
                     </h2>
 
                     {loading ? (
@@ -157,6 +186,72 @@ export default function AutomationsPage() {
                             )}
                         </div>
                     )}
+                </div>
+            </GlassCard>
+
+            {/* ── Combined daily report ── */}
+            <GlassCard>
+                <div className="p-6 space-y-6">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                                <Layers className="text-primary" />
+                                Relatório Combinado Diário
+                            </h2>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Envia um único relatório consolidando todas as contas com envio ativo, no mesmo horário.
+                            </p>
+                        </div>
+                        <Switch
+                            checked={combinedEnabled}
+                            onCheckedChange={setCombinedEnabled}
+                            disabled={!waConfigured}
+                            title={waConfigured ? undefined : "Configure o WhatsApp primeiro"}
+                        />
+                    </div>
+
+                    {/* Accounts that will be included */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            Contas incluídas no combinado
+                        </p>
+                        {activeAccounts.length === 0 ? (
+                            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                                <Building2 className="w-4 h-4 shrink-0" />
+                                Nenhuma conta com envio individual ativo. Ative contas acima para incluí-las.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {activeAccounts.map(a => (
+                                    <div
+                                        key={a.id}
+                                        className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg text-sm"
+                                    >
+                                        <Building2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                                        <span className="font-medium text-foreground truncate">{a.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-2">
+                        <Button
+                            onClick={handleSaveCombined}
+                            disabled={savingCombined || !waConfigured}
+                            variant="primary"
+                            className="flex items-center gap-2"
+                        >
+                            {savingCombined
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando…</>
+                                : <><Save className="w-4 h-4" /> Salvar Configuração</>}
+                        </Button>
+                        {combinedSaved && (
+                            <span className="flex items-center gap-1.5 text-sm text-emerald-400 animate-in fade-in slide-in-from-left-2">
+                                <CheckCircle2 className="w-4 h-4" /> Salvo!
+                            </span>
+                        )}
+                    </div>
                 </div>
             </GlassCard>
         </div>

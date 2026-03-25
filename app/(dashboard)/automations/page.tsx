@@ -12,7 +12,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Loader2, Zap, Search, MessageSquare, Wifi, WifiOff, Building2, Layers, Save, CheckCircle2 } from "lucide-react";
+import { Loader2, Zap, Search, MessageSquare, Wifi, WifiOff, Building2, Layers, Save, CheckCircle2, Terminal, Clock } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -251,6 +251,50 @@ export default function AutomationsPage() {
                                 <CheckCircle2 className="w-4 h-4" /> Salvo!
                             </span>
                         )}
+                    </div>
+                </div>
+            </GlassCard>
+
+            {/* ── How to schedule ── */}
+            <GlassCard>
+                <div className="p-6 space-y-5">
+                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                        <Clock className="text-primary" />
+                        Como Agendar o Disparo
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        Os relatórios são disparados via endpoint HTTP. Configure um <strong className="text-foreground">cron job</strong> na sua VPS para chamar esse endpoint no horário desejado.
+                    </p>
+
+                    <div className="space-y-3">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            Endpoint de disparo
+                        </p>
+                        <div className="flex items-center gap-2 p-3 bg-black/30 rounded-xl border border-white/10 font-mono text-sm text-primary overflow-x-auto">
+                            <Terminal className="w-4 h-4 shrink-0 text-muted-foreground" />
+                            <code>GET /api/cron/daily-reports?token=SEU_CRON_SECRET</code>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            Exemplo — crontab (Linux/VPS) todos os dias às 09:00
+                        </p>
+                        <div className="p-3 bg-black/30 rounded-xl border border-white/10 font-mono text-sm text-emerald-400 overflow-x-auto whitespace-pre">
+{`0 9 * * * curl -s "https://SEU_DOMINIO/api/cron/daily-reports?token=SEU_CRON_SECRET"`}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Substitua <code className="text-primary">SEU_DOMINIO</code> pelo seu domínio e <code className="text-primary">SEU_CRON_SECRET</code> pelo valor de <code className="text-primary">CRON_SECRET</code> no seu <code className="text-primary">.env</code>.
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            Testar manualmente agora
+                        </p>
+                        <div className="p-3 bg-black/30 rounded-xl border border-white/10 font-mono text-sm text-amber-400 overflow-x-auto whitespace-pre">
+{`curl -s "https://SEU_DOMINIO/api/cron/daily-reports?token=SEU_CRON_SECRET"`}
+                        </div>
                     </div>
                 </div>
             </GlassCard>

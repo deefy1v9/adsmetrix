@@ -121,11 +121,22 @@ export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceS
             return { connected: false, loggedIn: false, state: 'error' };
         }
 
-        // UazAPI wraps response in { code, message, data: { ... } }
+        // UazAPI response: { code, message, data: { instance: { status: string }, status: { connected: bool, loggedIn: bool } } }
         const d = envelope?.data || envelope;
-        const state: string = d?.status || d?.state || d?.connection_status || d?.connectionState || '';
-        const connected = state === 'open' || state === 'connected' || state === 'qrReadSuccess' || d?.connected === true;
-        const loggedIn  = connected && (d?.loggedIn !== false);
+
+        // d.status is an OBJECT { connected: bool, loggedIn: bool }, not a string
+        const liveStatus  = d?.status;          // { connected, loggedIn }
+        const instanceStr = d?.instance?.status as string | undefined; // "connected" | "disconnected" | "connecting"
+
+        const connected =
+            liveStatus?.connected === true ||
+            instanceStr === 'connected' ||
+            instanceStr === 'open' ||
+            // legacy / other flavours
+            d?.connected === true;
+
+        const loggedIn = connected && (liveStatus?.loggedIn !== false) && (d?.loggedIn !== false);
+        const state    = instanceStr || (connected ? 'connected' : 'disconnected');
 
         return { connected, loggedIn, state };
     } catch {

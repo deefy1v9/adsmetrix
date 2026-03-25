@@ -70,15 +70,26 @@ function fmt(value: string | number | undefined, type: keyof EnabledMetrics): st
     return n.toLocaleString('pt-BR');
 }
 
+function calcCostPer(spend: string | undefined, count: string | undefined): string {
+    const s = parseFloat(spend ?? '0');
+    const c = parseInt(count ?? '0');
+    if (!c || !s) return '—';
+    return `R$ ${(s / c).toFixed(2).replace('.', ',')}`;
+}
+
 function metricLines(c: MetaCampaign | MetaAdSet, metrics: EnabledMetrics, indent = '   '): string[] {
     const ins = c.insights;
     const lines: string[] = [];
-    if (metrics.spend)         lines.push(`${indent}💰 Investimento: ${fmt(ins?.spend, 'spend')}`);
-    if (metrics.leads)         lines.push(`${indent}🎯 Leads: ${fmt(ins?.leads, 'leads')}`);
-    if (metrics.clicks)        lines.push(`${indent}🖱️ Cliques: ${fmt(ins?.clicks, 'clicks')}`);
-    if (metrics.conversations) lines.push(`${indent}💬 Conversas: ${fmt(ins?.conversations, 'conversations')}`);
-    if (metrics.ctr)           lines.push(`${indent}📈 CTR: ${fmt(ins?.ctr, 'ctr')}`);
-    if (metrics.cpc)           lines.push(`${indent}💵 CPC: ${fmt(ins?.cpc, 'cpc')}`);
+    if (metrics.spend)                lines.push(`${indent}💰 Investimento: ${fmt(ins?.spend, 'spend')}`);
+    if (metrics.reach)                lines.push(`${indent}📡 Alcance: ${fmt(ins?.reach, 'clicks')}`);
+    if (metrics.leads)                lines.push(`${indent}🎯 Leads: ${fmt(ins?.leads, 'leads')}`);
+    if (metrics.clicks)               lines.push(`${indent}🖱️ Cliques: ${fmt(ins?.clicks, 'clicks')}`);
+    if (metrics.conversations)        lines.push(`${indent}💬 Conversas: ${fmt(ins?.conversations, 'conversations')}`);
+    if (metrics.cost_per_conversation) lines.push(`${indent}💬 Custo por Conversa: ${calcCostPer(ins?.spend, ins?.conversations)}`);
+    if (metrics.followers)            lines.push(`${indent}👥 Seguidores Ganhos: ${fmt(ins?.page_likes, 'clicks')}`);
+    if (metrics.cost_per_follower)    lines.push(`${indent}👥 Custo por Seguidor: ${calcCostPer(ins?.spend, ins?.page_likes)}`);
+    if (metrics.ctr)                  lines.push(`${indent}📈 CTR: ${fmt(ins?.ctr, 'ctr')}`);
+    if (metrics.cpc)                  lines.push(`${indent}💵 CPC: ${fmt(ins?.cpc, 'cpc')}`);
     return lines;
 }
 
@@ -301,7 +312,7 @@ export function MultiAccountReportBuilder() {
         ];
 
         // Totals accumulators
-        let totalSpend = 0, totalLeads = 0, totalClicks = 0, totalConversations = 0;
+        let totalSpend = 0, totalLeads = 0, totalClicks = 0, totalConversations = 0, totalReach = 0, totalFollowers = 0;
 
         for (const { accountName, accountId, campaigns } of campaignsData) {
             const selectedForAccount = campaigns.filter(c => selectedCampaigns.has(c.id));
@@ -325,6 +336,8 @@ export function MultiAccountReportBuilder() {
                         totalLeads         += parseInt(adset.insights?.leads ?? '0');
                         totalClicks        += parseInt(adset.insights?.clicks ?? '0');
                         totalConversations += parseInt(adset.insights?.conversations ?? '0');
+                        totalReach         += parseInt(adset.insights?.reach ?? '0');
+                        totalFollowers     += parseInt(adset.insights?.page_likes ?? '0');
                     }
                 } else {
                     lines.push(`▸ ${campaign.name}`);
@@ -334,6 +347,8 @@ export function MultiAccountReportBuilder() {
                     totalLeads         += parseInt(campaign.insights?.leads ?? '0');
                     totalClicks        += parseInt(campaign.insights?.clicks ?? '0');
                     totalConversations += parseInt(campaign.insights?.conversations ?? '0');
+                    totalReach         += parseInt(campaign.insights?.reach ?? '0');
+                    totalFollowers     += parseInt(campaign.insights?.page_likes ?? '0');
                 }
             }
         }
@@ -341,10 +356,14 @@ export function MultiAccountReportBuilder() {
         // Totals section
         lines.push('━━━━━━━━━━━━━━━━');
         lines.push('📊 *TOTAIS COMBINADOS*');
-        if (metrics.spend)         lines.push(`💰 Investimento: ${fmt(totalSpend, 'spend')}`);
-        if (metrics.leads)         lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);
-        if (metrics.clicks)        lines.push(`🖱️ Cliques: ${totalClicks.toLocaleString('pt-BR')}`);
-        if (metrics.conversations) lines.push(`💬 Conversas: ${totalConversations.toLocaleString('pt-BR')}`);
+        if (metrics.spend)                lines.push(`💰 Investimento: ${fmt(totalSpend, 'spend')}`);
+        if (metrics.reach)                lines.push(`📡 Alcance: ${totalReach.toLocaleString('pt-BR')}`);
+        if (metrics.leads)                lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);
+        if (metrics.clicks)               lines.push(`🖱️ Cliques: ${totalClicks.toLocaleString('pt-BR')}`);
+        if (metrics.conversations)        lines.push(`💬 Conversas: ${totalConversations.toLocaleString('pt-BR')}`);
+        if (metrics.cost_per_conversation) lines.push(`💬 Custo por Conversa: ${calcCostPer(totalSpend.toString(), totalConversations.toString())}`);
+        if (metrics.followers)            lines.push(`👥 Seguidores Ganhos: ${totalFollowers.toLocaleString('pt-BR')}`);
+        if (metrics.cost_per_follower)    lines.push(`👥 Custo por Seguidor: ${calcCostPer(totalSpend.toString(), totalFollowers.toString())}`);
 
         return lines.join('\n');
     };

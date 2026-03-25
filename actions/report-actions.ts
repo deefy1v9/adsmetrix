@@ -180,10 +180,30 @@ export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'al
 
         const totalSuccess = waResults.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
 
+        // ── Run ReportAutomation records ──────────────────────────────────────
+        const { sendAutomationReport } = await import('@/actions/automation-actions');
+        const automations = await prisma.reportAutomation.findMany({ where: { enabled: true } });
+
+        let autoSuccess = 0;
+        for (const automation of automations) {
+            const isDue = brTime >= automation.schedule_time;
+            let alreadySent = false;
+            if (automation.last_sent_at) {
+                const lastDate = automation.last_sent_at.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                const nowDate  = now.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+                alreadySent = lastDate === nowDate;
+            }
+            if (!isDue || alreadySent) continue;
+            const res = await sendAutomationReport(automation.id, automation.workspace_id);
+            if (res.success) autoSuccess++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        if (automations.length > 0) console.log(`[Cron] Automations: ${autoSuccess}/${automations.length} sent.`);
+
         return {
             success: true,
-            summary: `Sent ${totalSuccess} of ${waResults.length} WhatsApp reports.`,
-            total: waResults.length
+            summary: `Individual: ${totalSuccess}/${waResults.length}. Automações: ${autoSuccess}/${automations.length}.`,
+            total: waResults.length + automations.length,
         };
 
     } catch (error: any) {

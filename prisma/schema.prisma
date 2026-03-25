@@ -68,6 +68,7 @@ model Workspace {
   accounts            Account[]
   settings            Setting[]
   invites             Invite[]
+  automations         ReportAutomation[]
 }
 
 model Setting {
@@ -189,4 +190,24 @@ model ReportLog {
   @@index([sent_at])
   @@index([account_id])
   @@index([channel])
+}
+
+model ReportAutomation {
+  id             String    @id @default(uuid())
+  workspace_id   String
+  workspace      Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  name           String
+  enabled        Boolean   @default(true)
+  account_ids    Json      // string[] — Meta account IDs (ex: ["act_123", "act_456"])
+  date_preset    String    @default("yesterday")
+  schedule_time  String    @default("09:00")
+  metrics_config Json      // Record<string, boolean>
+  custom_message String?
+
+  last_sent_at   DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([workspace_id])
 }

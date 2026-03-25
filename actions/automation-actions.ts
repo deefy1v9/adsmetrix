@@ -1,0 +1,209 @@
+'use server';
+
+import { headers } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+import { MultiReportMetrics } from '@/lib/multi-report-builder';
+
+async function getWorkspaceId(): Promise<string | null> {
+    const h = await headers();
+    return h.get('x-workspace-id');
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface AutomationFormData {
+    name:           string;
+    enabled:        boolean;
+    account_ids:    string[];
+    date_preset:    string;
+    schedule_time:  string;
+    metrics_config: Record<string, boolean>;
+    custom_message: string;
+}
+
+export type AutomationRecord = {
+    id:             string;
+    workspace_id:   string;
+    name:           string;
+    enabled:        boolean;
+    account_ids:    string[];
+    date_preset:    string;
+    schedule_time:  string;
+    metrics_config: Record<string, boolean>;
+    custom_message: string | null;
+    last_sent_at:   Date | null;
+    created_at:     Date;
+    updated_at:     Date;
+};
+
+// ── CRUD ──────────────────────────────────────────────────────────────────────
+
+export async function listAutomationsAction(): Promise<AutomationRecord[]> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return [];
+
+    const rows = await prisma.reportAutomation.findMany({
+        where: { workspace_id: workspaceId },
+        orderBy: { created_at: 'desc' },
+    });
+
+    return rows.map(r => ({
+        ...r,
+        account_ids:    r.account_ids    as string[],
+        metrics_config: r.metrics_config as Record<string, boolean>,
+    }));
+}
+
+export async function createAutomationAction(data: AutomationFormData) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        const row = await prisma.reportAutomation.create({
+            data: {
+                workspace_id:   workspaceId,
+                name:           data.name.trim(),
+                enabled:        data.enabled,
+                account_ids:    data.account_ids,
+                date_preset:    data.date_preset,
+                schedule_time:  data.schedule_time,
+                metrics_config: data.metrics_config,
+                custom_message: data.custom_message.trim() || null,
+            },
+        });
+        return { success: true, id: row.id };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function updateAutomationAction(id: string, data: AutomationFormData) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        await prisma.reportAutomation.update({
+            where:  { id, workspace_id: workspaceId },
+            data: {
+                name:           data.name.trim(),
+                enabled:        data.enabled,
+                account_ids:    data.account_ids,
+                date_preset:    data.date_preset,
+                schedule_time:  data.schedule_time,
+                metrics_config: data.metrics_config,
+                custom_message: data.custom_message.trim() || null,
+            },
+        });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function deleteAutomationAction(id: string) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        await prisma.reportAutomation.delete({ where: { id, workspace_id: workspaceId } });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function toggleAutomationAction(id: string, enabled: boolean) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        await prisma.reportAutomation.update({
+            where: { id, workspace_id: workspaceId },
+            data:  { enabled },
+        });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+
+export async function runAutomationNowAction(id: string) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+    return sendAutomationReport(id, workspaceId);
+}
+
+/**
+ * Core send logic — used both by runAutomationNowAction and the cron job.
+ */
+export async function sendAutomationReport(automationId: string, workspaceId: string) {
+    try {
+        const automation = await prisma.reportAutomation.findFirst({
+            where: { id: automationId, workspace_id: workspaceId },
+        });
+        if (!automation) return { success: false, error: 'Automação não encontrada' };
+
+        const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });
+        if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {
+            return { success: false, error: 'UazAPI não configurado' };
+        }
+        if (!setting?.whatsapp_number) {
+            return { success: false, error: 'Número destino não configurado' };
+        }
+
+        const accountIds    = automation.account_ids    as string[];
+        const metricsConfig = automation.metrics_config as MultiReportMetrics;
+
+        // Fetch campaigns for all configured accounts
+        const { getCampaigns } = await import('@/lib/meta-api');
+        const accountsData = await Promise.all(
+            accountIds.map(async (accountId) => {
+                try {
+                    const [campaigns, dbAccount] = await Promise.all([
+                        getCampaigns(accountId, automation.date_preset, workspaceId),
+                        prisma.account.findUnique({
+                            where:  { account_id: accountId },
+                            select: { account_name: true },
+                        }),
+                    ]);
+                    return { accountName: dbAccount?.account_name || accountId, campaigns };
+                } catch {
+                    return { accountName: accountId, campaigns: [] };
+                }
+            })
+        );
+
+        const { buildMultiAccountReport } = await import('@/lib/multi-report-builder');
+        const message = buildMultiAccountReport(
+            accountsData,
+            metricsConfig,
+            automation.date_preset,
+            automation.custom_message ?? undefined,
+        );
+
+        const { sendTextMessage } = await import('@/lib/uazapi');
+        const result = await sendTextMessage(
+            {
+                baseUrl:  setting.uazapi_url.replace(/\/$/, ''),
+                token:    setting.uazapi_token,
+                instance: setting.uazapi_instance,
+            },
+            setting.whatsapp_number,
+            message,
+        );
+
+        if (!result.success) return { success: false, error: result.error };
+
+        await prisma.reportAutomation.update({
+            where: { id: automationId },
+            data:  { last_sent_at: new Date() },
+        });
+
+        return { success: true };
+    } catch (err: any) {
+        console.error(`[Automation] sendAutomationReport error (${automationId}):`, err.message);
+        return { success: false, error: err.message };
+    }
+}

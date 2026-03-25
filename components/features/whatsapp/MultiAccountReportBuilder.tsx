@@ -315,7 +315,9 @@ export function MultiAccountReportBuilder() {
         let totalSpend = 0, totalLeads = 0, totalClicks = 0, totalConversations = 0, totalReach = 0, totalFollowers = 0;
 
         for (const { accountName, accountId, campaigns } of campaignsData) {
-            const selectedForAccount = campaigns.filter(c => selectedCampaigns.has(c.id));
+            const selectedForAccount = campaigns.filter(c =>
+                selectedCampaigns.has(c.id) && parseFloat(c.insights?.spend ?? '0') > 0
+            );
             if (selectedForAccount.length === 0) continue;
 
             lines.push(`*${accountName}*`);
@@ -323,7 +325,9 @@ export function MultiAccountReportBuilder() {
 
             for (const campaign of selectedForAccount) {
                 const campaignAdSets = adSetsCache[campaign.id] ?? [];
-                const selectedAdSetsForCampaign = campaignAdSets.filter(a => selectedAdSets.has(a.id));
+                const selectedAdSetsForCampaign = campaignAdSets.filter(a =>
+                    selectedAdSets.has(a.id) && parseFloat(a.insights?.spend ?? '0') > 0
+                );
 
                 if (selectedAdSetsForCampaign.length > 0) {
                     lines.push(`📣 *${campaign.name}*`);

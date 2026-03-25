@@ -93,7 +93,9 @@ export function buildMultiAccountReport(
     let totalConversations = 0, totalReach = 0, totalFollowers = 0;
 
     for (const { accountName, campaigns } of accountsData) {
-        const activeCampaigns = campaigns.filter(c => c.insights);
+        const activeCampaigns = campaigns.filter(c =>
+            c.insights && parseFloat(c.insights.spend ?? '0') > 0
+        );
         if (activeCampaigns.length === 0) continue;
 
         lines.push(`*${accountName}*`);

@@ -332,7 +332,8 @@ export async function getAdSets(
         const token = await getAccessToken(accountId, workspaceId);
         initSdk(token);
 
-        const campaign = new Campaign(campaignId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const campaign = new (Campaign as any)(campaignId);
         const fields = ['name', 'status'];
         const adsets = await campaign.getAdSets(fields, { limit: 100 }) as any[];
 

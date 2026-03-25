@@ -80,14 +80,14 @@ function calcCostPer(spend: string | undefined, count: string | undefined): stri
 function metricLines(c: MetaCampaign | MetaAdSet, metrics: EnabledMetrics, indent = '   '): string[] {
     const ins = c.insights;
     const lines: string[] = [];
-    if (metrics.spend)                lines.push(`${indent}💰 Investimento: ${fmt(ins?.spend, 'spend')}`);
-    if (metrics.reach)                lines.push(`${indent}📡 Alcance: ${fmt(ins?.reach, 'clicks')}`);
+    if (metrics.spend)                lines.push(`${indent}💸 Investimento: ${fmt(ins?.spend, 'spend')}`);
+    if (metrics.reach)                lines.push(`${indent}📊 Alcance: ${fmt(ins?.reach, 'clicks')}`);
     if (metrics.leads)                lines.push(`${indent}🎯 Leads: ${fmt(ins?.leads, 'leads')}`);
     if (metrics.clicks)               lines.push(`${indent}🖱️ Cliques: ${fmt(ins?.clicks, 'clicks')}`);
-    if (metrics.conversations)        lines.push(`${indent}💬 Conversas: ${fmt(ins?.conversations, 'conversations')}`);
-    if (metrics.cost_per_conversation) lines.push(`${indent}💬 Custo por Conversa: ${calcCostPer(ins?.spend, ins?.conversations)}`);
-    if (metrics.followers)            lines.push(`${indent}👥 Seguidores Ganhos: ${fmt(ins?.page_likes, 'clicks')}`);
-    if (metrics.cost_per_follower)    lines.push(`${indent}👥 Custo por Seguidor: ${calcCostPer(ins?.spend, ins?.page_likes)}`);
+    if (metrics.conversations)        lines.push(`${indent}🎯 Conversas: ${fmt(ins?.conversations, 'conversations')}`);
+    if (metrics.cost_per_conversation) lines.push(`${indent}💸 Custo por Conversa: ${calcCostPer(ins?.spend, ins?.conversations)}`);
+    if (metrics.followers)            lines.push(`${indent}🎯 Seguidores Ganhos: ${fmt(ins?.page_likes, 'clicks')}`);
+    if (metrics.cost_per_follower)    lines.push(`${indent}💸 Custo por Seguidor: ${calcCostPer(ins?.spend, ins?.page_likes)}`);
     if (metrics.ctr)                  lines.push(`${indent}📈 CTR: ${fmt(ins?.ctr, 'ctr')}`);
     if (metrics.cpc)                  lines.push(`${indent}💵 CPC: ${fmt(ins?.cpc, 'cpc')}`);
     return lines;

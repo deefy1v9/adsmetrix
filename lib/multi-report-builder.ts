@@ -104,14 +104,14 @@ export function buildMultiAccountReport(
         for (const campaign of activeCampaigns) {
             const ins = campaign.insights;
             lines.push(`▸ ${campaign.name}`);
-            if (m.spend)                 lines.push(`   💰 Investimento: ${fmt(ins?.spend, 'currency')}`);
-            if (m.reach)                 lines.push(`   📡 Alcance: ${fmt(ins?.reach, 'number')}`);
+            if (m.spend)                 lines.push(`   💸 Investimento: ${fmt(ins?.spend, 'currency')}`);
+            if (m.reach)                 lines.push(`   📊 Alcance: ${fmt(ins?.reach, 'number')}`);
             if (m.leads)                 lines.push(`   🎯 Leads: ${fmt(ins?.leads, 'number')}`);
             if (m.clicks)                lines.push(`   🖱️ Cliques: ${fmt(ins?.clicks, 'number')}`);
-            if (m.conversations)         lines.push(`   💬 Conversas: ${fmt(ins?.conversations, 'number')}`);
-            if (m.cost_per_conversation) lines.push(`   💬 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
-            if (m.followers)             lines.push(`   👥 Seguidores Ganhos: ${fmt(ins?.page_likes, 'number')}`);
-            if (m.cost_per_follower)     lines.push(`   👥 Custo por Seguidor: ${costPer(ins?.spend, ins?.page_likes)}`);
+            if (m.conversations)         lines.push(`   🎯 Conversas: ${fmt(ins?.conversations, 'number')}`);
+            if (m.cost_per_conversation) lines.push(`   💸 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
+            if (m.followers)             lines.push(`   🎯 Seguidores Ganhos: ${fmt(ins?.page_likes, 'number')}`);
+            if (m.cost_per_follower)     lines.push(`   💸 Custo por Seguidor: ${costPer(ins?.spend, ins?.page_likes)}`);
             if (m.ctr)                   lines.push(`   📈 CTR: ${fmt(ins?.ctr, 'percent')}`);
             if (m.cpc)                   lines.push(`   💵 CPC: ${fmt(ins?.cpc, 'currency')}`);
             lines.push('');
@@ -127,14 +127,14 @@ export function buildMultiAccountReport(
 
     lines.push('━━━━━━━━━━━━━━━━');
     lines.push('📊 *TOTAIS COMBINADOS*');
-    if (m.spend)                 lines.push(`💰 Investimento: ${fmt(totalSpend, 'currency')}`);
-    if (m.reach)                 lines.push(`📡 Alcance: ${totalReach.toLocaleString('pt-BR')}`);
+    if (m.spend)                 lines.push(`💸 Investimento: ${fmt(totalSpend, 'currency')}`);
+    if (m.reach)                 lines.push(`📊 Alcance: ${totalReach.toLocaleString('pt-BR')}`);
     if (m.leads)                 lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);
     if (m.clicks)                lines.push(`🖱️ Cliques: ${totalClicks.toLocaleString('pt-BR')}`);
-    if (m.conversations)         lines.push(`💬 Conversas: ${totalConversations.toLocaleString('pt-BR')}`);
-    if (m.cost_per_conversation) lines.push(`💬 Custo por Conversa: ${costPer(totalSpend.toString(), totalConversations.toString())}`);
-    if (m.followers)             lines.push(`👥 Seguidores Ganhos: ${totalFollowers.toLocaleString('pt-BR')}`);
-    if (m.cost_per_follower)     lines.push(`👥 Custo por Seguidor: ${costPer(totalSpend.toString(), totalFollowers.toString())}`);
+    if (m.conversations)         lines.push(`🎯 Conversas: ${totalConversations.toLocaleString('pt-BR')}`);
+    if (m.cost_per_conversation) lines.push(`💸 Custo por Conversa: ${costPer(totalSpend.toString(), totalConversations.toString())}`);
+    if (m.followers)             lines.push(`🎯 Seguidores Ganhos: ${totalFollowers.toLocaleString('pt-BR')}`);
+    if (m.cost_per_follower)     lines.push(`💸 Custo por Seguidor: ${costPer(totalSpend.toString(), totalFollowers.toString())}`);
 
     return lines.join('\n');
 }

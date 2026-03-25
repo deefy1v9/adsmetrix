@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useAccount } from '@/components/providers/AccountContext';
 import { useDate } from '@/components/providers/DateContext';
-import { sendDailyReportAction, getCampaignMetricsAction } from '@/actions/whatsapp-actions';
+import { getCampaignMetricsAction } from '@/actions/whatsapp-actions';
+import { sendTestMessageAction } from '@/actions/uazapi-actions';
 import { Calendar, Send, CheckSquare, Square, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
@@ -41,8 +42,6 @@ const AVAILABLE_METRICS: Omit<MetricConfig, 'enabled'>[] = [
 export function WhatsAppReportBuilder() {
     const { selectedAccount } = useAccount();
     const { preset: datePreset } = useDate();
-
-    const [whatsappPending] = useState(true); // WhatsApp Business será configurado em breve
 
     const [metrics, setMetrics] = useState<MetricConfig[]>(
         AVAILABLE_METRICS.map(m => ({ ...m, enabled: true }))
@@ -178,7 +177,13 @@ export function WhatsAppReportBuilder() {
     };
 
     const handleSendReport = async () => {
-        alert('Integração WhatsApp Business será configurada em breve.');
+        if (!campaignData) return;
+        setLoading(true);
+        setResult(null);
+        const message = buildReportMessage();
+        const res = await sendTestMessageAction(message);
+        setResult(res);
+        setLoading(false);
     };
 
     return (
@@ -235,12 +240,6 @@ export function WhatsAppReportBuilder() {
                             </div>
                         </div>
 
-                        {/* WhatsApp Business pending notice */}
-                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                            <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                                A integração com WhatsApp Business será configurada em breve. O envio automático estará disponível após a configuração.
-                            </p>
-                        </div>
                     </div>
                 </GlassCard>
 
@@ -326,12 +325,12 @@ export function WhatsAppReportBuilder() {
 
                 <Button
                     onClick={handleSendReport}
-                    disabled={true}
+                    disabled={loading || !campaignData}
                     className="w-full h-14 text-lg shadow-lg shadow-primary/20"
                     variant="primary"
                 >
                     <Send className="w-5 h-5 mr-3" />
-                    ENVIO VIA WHATSAPP BUSINESS (EM BREVE)
+                    {loading ? 'ENVIANDO…' : 'ENVIAR VIA WHATSAPP'}
                 </Button>
 
                 {result && (

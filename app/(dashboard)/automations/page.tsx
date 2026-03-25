@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
+import { getUazAPIStatusAction, toggleDailyReportAction } from "@/actions/uazapi-actions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Switch } from "@/components/ui/Switch";
-import { Button } from "@/components/ui/Button";
-import { Loader2, Zap, Search, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Loader2, Zap, Search, MessageSquare, Wifi, WifiOff } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
+import Link from "next/link";
 
 export default function AutomationsPage() {
     const [accounts, setAccounts] = useState<MetaAdAccount[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [waConfigured, setWaConfigured] = useState(false);
+    const [waConnected, setWaConnected] = useState(false);
+    const [togglingId, setTogglingId] = useState<string | null>(null);
 
     useEffect(() => {
-        loadAccounts();
+        Promise.all([loadAccounts(), checkWAStatus()]);
     }, []);
 
     async function loadAccounts() {
@@ -28,18 +33,59 @@ export default function AutomationsPage() {
         }
     }
 
+    async function checkWAStatus() {
+        const status = await getUazAPIStatusAction();
+        setWaConfigured(status.configured);
+        setWaConnected(status.connected && status.loggedIn);
+    }
+
+    async function handleToggle(account: MetaAdAccount, enabled: boolean) {
+        setTogglingId(account.id);
+        const res = await toggleDailyReportAction(account.id, enabled);
+        if (res.success) {
+            setAccounts(prev => prev.map(a =>
+                a.id === account.id ? { ...a, daily_report_enabled: enabled } : a
+            ));
+        }
+        setTogglingId(null);
+    }
+
+    const filtered = accounts.filter(a =>
+        a.name.toLowerCase().includes(search.toLowerCase())
+    );
+
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                    Automações
-                </h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Automações</h1>
                 <p className="text-muted-foreground">
-                    Gerencie os envios automáticos de relatórios via WhatsApp Business.
+                    Gerencie os envios automáticos de relatórios diários via WhatsApp.
                 </p>
-                <div className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 inline-flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    A integração com WhatsApp Business será configurada em breve.
+
+                {/* WA Status banner */}
+                <div className="mt-3">
+                    {waConnected ? (
+                        <div className="inline-flex items-center gap-2 text-sm text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
+                            <Wifi className="h-4 w-4" />
+                            WhatsApp conectado — envios automáticos ativos
+                        </div>
+                    ) : waConfigured ? (
+                        <div className="inline-flex items-center gap-2 text-sm text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20">
+                            <WifiOff className="h-4 w-4" />
+                            WhatsApp configurado mas desconectado —{" "}
+                            <Link href="/whatsapp-reports" className="underline underline-offset-2 hover:text-amber-300">
+                                reconectar
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-white/5 px-3 py-2 rounded-lg border border-white/10">
+                            <MessageSquare className="h-4 w-4" />
+                            WhatsApp não configurado —{" "}
+                            <Link href="/whatsapp-reports" className="underline underline-offset-2 hover:text-foreground">
+                                configurar agora
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -58,7 +104,7 @@ export default function AutomationsPage() {
                 <div className="p-6">
                     <h2 className="text-xl font-semibold text-foreground mb-6 flex items-center gap-2">
                         <Zap className="text-amber-500" />
-                        Relatórios Diários (WhatsApp Business)
+                        Relatórios Diários (WhatsApp)
                     </h2>
 
                     {loading ? (
@@ -67,36 +113,44 @@ export default function AutomationsPage() {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            {accounts
-                                .filter(a => a.name.toLowerCase().includes(search.toLowerCase()))
-                                .map(account => (
-                                <div key={account.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/50 rounded-lg border border-border gap-4">
+                            {filtered.map(account => (
+                                <div
+                                    key={account.id}
+                                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-muted/50 rounded-lg border border-border gap-4"
+                                >
                                     <div className="space-y-1">
                                         <div className="font-medium text-foreground">{account.name}</div>
                                         <div className="text-sm text-muted-foreground/60">
-                                            Automação via WhatsApp Business — configuração em breve
+                                            {waConfigured
+                                                ? `Horário: ${account.daily_report_time || "09:00"}`
+                                                : "Configure o WhatsApp para ativar envios automáticos"}
                                         </div>
                                     </div>
 
                                     <div className="flex items-center gap-4 self-end sm:self-auto">
                                         <div className="text-right hidden sm:block">
                                             <div className="text-sm font-medium text-foreground">
-                                                {account.daily_report_enabled ? "Ativo" : "Desativado"}
+                                                {account.daily_report_enabled ? "Ativo" : "Inativo"}
                                             </div>
-                                            <div className="text-xs text-muted-foreground">
-                                                Horário: {account.daily_report_time || "09:00"}
-                                            </div>
+                                            {account.daily_report_enabled && (
+                                                <Badge variant="success" className="text-[10px] mt-0.5">AGENDADO</Badge>
+                                            )}
                                         </div>
-                                        <Switch
-                                            checked={account.daily_report_enabled || false}
-                                            onCheckedChange={() => {}}
-                                            disabled={true}
-                                        />
+                                        {togglingId === account.id ? (
+                                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                        ) : (
+                                            <Switch
+                                                checked={account.daily_report_enabled || false}
+                                                onCheckedChange={(checked) => handleToggle(account, checked)}
+                                                disabled={!waConfigured}
+                                                title={waConfigured ? undefined : "Configure o WhatsApp primeiro"}
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             ))}
 
-                            {accounts.filter(a => a.name.toLowerCase().includes(search.toLowerCase())).length === 0 && (
+                            {filtered.length === 0 && (
                                 <div className="text-center text-muted-foreground py-8">
                                     Nenhuma conta encontrada.
                                 </div>

@@ -27,10 +27,19 @@ export async function sendDailyReportAction(accountId: string) {
             return { success: false, error: 'Account not found or daily report not enabled' };
         }
 
-        // WhatsApp Business API not yet configured — skip gracefully
-        if (!process.env.WHATSAPP_PHONE_NUMBER_ID || !process.env.WHATSAPP_ACCESS_TOKEN) {
-            console.log(`[Report] WhatsApp Business not configured. Skipping report for ${account.account_name}.`);
-            return { success: false, error: 'WhatsApp Business não configurado ainda' };
+        // Verificar se UazAPI está configurado para o workspace desta conta
+        if (!account.workspace_id) {
+            return { success: false, error: 'Conta sem workspace vinculado' };
+        }
+        const setting = await prisma.setting.findUnique({
+            where: { workspace_id: account.workspace_id },
+        });
+        if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {
+            console.log(`[Report] UazAPI não configurado para o workspace. Pulando ${account.account_name}.`);
+            return { success: false, error: 'UazAPI não configurado. Configure em Relatórios WhatsApp.' };
+        }
+        if (!setting?.whatsapp_number) {
+            return { success: false, error: 'Número destino não configurado nas configurações.' };
         }
 
         // 2. Fetch Metrics
@@ -74,9 +83,21 @@ export async function sendDailyReportAction(accountId: string) {
             isPrepay
         });
 
-        // 5. Send via WhatsApp Business API (placeholder — template name TBD when configured)
-        console.log(`[Report] WhatsApp report ready for ${account.account_name}. Awaiting WhatsApp Business configuration.`);
-        // TODO: When WhatsApp Business is configured, call sendTemplateMessage here
+        // 5. Enviar via UazAPI
+        const { sendTextMessage } = await import('@/lib/uazapi');
+        const uazResult = await sendTextMessage(
+            {
+                baseUrl:  setting.uazapi_url.replace(/\/$/, ''),
+                token:    setting.uazapi_token,
+                instance: setting.uazapi_instance,
+            },
+            setting.whatsapp_number,
+            message,
+        );
+        if (!uazResult.success) {
+            throw new Error(`Falha ao enviar via UazAPI: ${uazResult.error}`);
+        }
+        console.log(`[Report] Relatório enviado via UazAPI para ${account.account_name}. msgId=${uazResult.messageId}`);
 
         // 6. Update last_wa_report_sent_at
         await prisma.account.update({

@@ -77,6 +77,12 @@ model Setting {
 
   whatsapp_enabled Boolean @default(false)
 
+  // UazAPI (self-hosted WhatsApp gateway) — por workspace
+  uazapi_url      String?  // URL base do servidor UazAPI, ex: https://meu-servidor.com
+  uazapi_token    String?  // API token de autenticação
+  uazapi_instance String?  // nome/ID da instância (conexão WhatsApp)
+  whatsapp_number String?  // número destino dos relatórios automáticos, ex: 5511999999999
+
   criado_em      DateTime  @default(now())
 }
 

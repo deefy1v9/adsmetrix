@@ -33,8 +33,11 @@ export interface MetaCampaign {
         leads_form?: string;
         leads_gtm?: string;
         sales?: string;
+        purchase_value?: string;
+        roas?: string;
         conversations?: string;
         page_likes?: string;
+        instagram_profile_visits?: string;
         post_engagements?: string;
         comments?: string;
         video_views?: string;

@@ -190,7 +190,7 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
         const campaignsWithInsights = await Promise.all(
             campaigns.map(async (campaign: any) => {
                 try {
-                    const insightsFields = ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'cpp', 'actions'];
+                    const insightsFields = ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'cpp', 'actions', 'action_values', 'purchase_roas'];
                     const metaPreset = ['today', 'yesterday', 'last_3d', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
                         ? datePreset
                         : 'maximum';
@@ -206,9 +206,12 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                     let totalLeadsValue = 0;
                     let conversationsValue = 0;
                     let salesValue = 0;
+                    let purchaseValueFloat = 0;
+                    let roasFloat = 0;
                     let leadsGTMValue = 0;
                     let leadsMetaValue = 0;
                     let pagelikesValue = 0;
+                    let instagramProfileVisits = 0;
                     let postEngagementsValue = 0;
                     let commentsValue = 0;
                     let videoViewsValue = 0;
@@ -273,6 +276,28 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             a.action_type === 'video_view'
                         );
                         if (videoViewAction) videoViewsValue = parseInt(videoViewAction.value || '0');
+
+                        // Instagram profile visits
+                        const profileVisitAction = insight.actions.find((a: any) =>
+                            a.action_type === 'profile_visit'
+                        );
+                        if (profileVisitAction) instagramProfileVisits = parseInt(profileVisitAction.value || '0');
+                    }
+
+                    // Purchase value (from action_values)
+                    if (insight.action_values) {
+                        const pvAction = insight.action_values.find((a: any) =>
+                            a.action_type === 'omni_purchase' || a.action_type === 'purchase'
+                        );
+                        if (pvAction) purchaseValueFloat = parseFloat(pvAction.value || '0');
+                    }
+
+                    // ROAS
+                    if (insight.purchase_roas) {
+                        const roasAction = insight.purchase_roas.find((a: any) =>
+                            a.action_type === 'omni_purchase' || a.action_type === 'purchase'
+                        );
+                        if (roasAction) roasFloat = parseFloat(roasAction.value || '0');
                     }
 
                     return {
@@ -290,10 +315,13 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             leads_form: leadsMetaValue.toString(),
                             leads_gtm: leadsGTMValue.toString(),
                             sales: salesValue.toString(),
+                            purchase_value: purchaseValueFloat.toFixed(2),
+                            roas: roasFloat.toFixed(2),
                             conversations: conversationsValue.toString(),
                             reach: insight.reach || '0',
                             cpm: insight.cpp || '0',
                             page_likes: pagelikesValue.toString(),
+                            instagram_profile_visits: instagramProfileVisits.toString(),
                             post_engagements: postEngagementsValue.toString(),
                             comments: commentsValue.toString(),
                             video_views: videoViewsValue.toString(),

@@ -70,8 +70,12 @@ function GroupPicker({ value, name, onChange }: {
     const fetchGroups = async () => {
         setLoading(true);
         setError(null);
-        const result = await listGroupsAction();
-        if (result.length === 0) setError("Nenhum grupo encontrado. Verifique se o WhatsApp está conectado.");
+        const { groups: result, error: apiError } = await listGroupsAction();
+        if (apiError) {
+            setError(`Erro: ${apiError}`);
+        } else if (result.length === 0) {
+            setError("Nenhum grupo encontrado. Verifique se o WhatsApp está conectado.");
+        }
         setGroups(result);
         setFetched(true);
         setLoading(false);

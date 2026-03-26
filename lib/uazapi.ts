@@ -196,28 +196,38 @@ export async function connectInstance(config: UazAPIConfig): Promise<void> {
  * List all WhatsApp groups the connected instance participates in.
  * Returns an empty array if the instance is not connected or the request fails.
  */
-export async function getGroups(config: UazAPIConfig): Promise<WhatsAppGroup[]> {
+export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAppGroup[]; error?: string }> {
     const baseUrl = normalizeBaseUrl(config.baseUrl);
     const { token } = config;
 
     try {
-        const resp = await fetch(`${baseUrl}/group/list`, {
-            headers: buildHeaders(token),
-        });
-        if (!resp.ok) return [];
+        const url = `${baseUrl}/group/list`;
+        console.log('[UazAPI] getGroups →', url);
 
-        const envelope = await resp.json().catch(() => ({}));
+        const resp = await fetch(url, { headers: buildHeaders(token) });
+        const envelope = await resp.json().catch(() => null);
+
+        console.log('[UazAPI] getGroups status:', resp.status, '| body:', JSON.stringify(envelope)?.slice(0, 300));
+
+        if (!resp.ok) {
+            const msg = envelope?.message || envelope?.error || `HTTP ${resp.status}`;
+            return { groups: [], error: msg };
+        }
+
         // UazAPI wraps: { code, message, data: [...] }
         const list: unknown[] = Array.isArray(envelope?.data) ? envelope.data
                               : Array.isArray(envelope)       ? envelope
                               : [];
 
-        return list.map((g: any) => ({
+        const groups = list.map((g: any) => ({
             // UazAPI returns PascalCase fields: JID, Name
             id:   String(g.JID  ?? g.id  ?? g.jid  ?? ''),
             name: String(g.Name ?? g.name ?? g.subject ?? g.JID ?? ''),
         })).filter(g => g.id);
-    } catch {
-        return [];
+
+        return { groups };
+    } catch (err: any) {
+        console.error('[UazAPI] getGroups error:', err.message);
+        return { groups: [], error: err.message };
     }
 }

@@ -151,9 +151,9 @@ export async function getWorkspaceSettingAction() {
 
 // ── Groups ────────────────────────────────────────────────────────────────────
 
-export async function listGroupsAction(): Promise<WhatsAppGroup[]> {
+export async function listGroupsAction(): Promise<{ groups: WhatsAppGroup[]; error?: string }> {
     const config = await getConfig();
-    if (!config) return [];
+    if (!config) return { groups: [], error: 'WhatsApp não configurado' };
     return getGroups(config);
 }
 

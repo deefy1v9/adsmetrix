@@ -8,6 +8,7 @@ export interface MultiReportMetrics {
     cost_per_conversation?: boolean;
     purchases?: boolean;
     purchase_value?: boolean;
+    cost_per_purchase?: boolean;
     roas?: boolean;
     reach?: boolean;
     instagram_profile_visits?: boolean;
@@ -25,6 +26,7 @@ export const DEFAULT_AUTOMATION_METRICS: MultiReportMetrics = {
     cost_per_conversation: true,
     purchases: false,
     purchase_value: false,
+    cost_per_purchase: false,
     roas: false,
     reach: true,
     instagram_profile_visits: false,
@@ -42,6 +44,7 @@ export const METRIC_LABELS: Record<keyof MultiReportMetrics, string> = {
     cost_per_conversation: 'Custo por Conversa',
     purchases: 'Compras',
     purchase_value: 'Valor de Vendas',
+    cost_per_purchase: 'Custo por Compra',
     roas: 'ROAS',
     reach: 'Alcance',
     instagram_profile_visits: 'Visitas ao Perfil',
@@ -131,6 +134,7 @@ export function buildMultiAccountReport(
             if (m.cost_per_conversation)   lines.push(`   💸 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
             if (m.purchases)               lines.push(`   ✅ Compras: ${fmt(ins?.sales, 'number')}`);
             if (m.purchase_value)          lines.push(`   🚀 Valor de Vendas: ${fmt(ins?.purchase_value, 'currency')}`);
+            if (m.cost_per_purchase)       lines.push(`   💸 Custo por Compra: ${costPer(ins?.spend, ins?.sales)}`);
             if (m.roas)                    lines.push(`   🎯 ROAS: ${fmt(ins?.roas, 'ratio')}`);
             if (m.instagram_profile_visits) lines.push(`   ↗️ Visitas ao Perfil: ${fmt(ins?.instagram_profile_visits, 'number')}`);
             if (m.followers)               lines.push(`   📱 Seguidores Novos: ${fmt(ins?.page_likes, 'number')}`);
@@ -161,6 +165,7 @@ export function buildMultiAccountReport(
     if (m.cost_per_conversation)   lines.push(`💸 Custo por Conversa: ${costPer(totalSpend.toString(), totalConversations.toString())}`);
     if (m.purchases)               lines.push(`✅ Compras: ${totalPurchases.toLocaleString('pt-BR')}`);
     if (m.purchase_value)          lines.push(`🚀 Valor de Vendas: ${fmt(totalPurchaseValue, 'currency')}`);
+    if (m.cost_per_purchase)       lines.push(`💸 Custo por Compra: ${costPer(totalSpend.toString(), totalPurchases.toString())}`);
     if (m.roas && totalSpend > 0)  lines.push(`🎯 ROAS: ${(totalPurchaseValue / totalSpend).toFixed(2).replace('.', ',')}`);
     if (m.instagram_profile_visits) lines.push(`↗️ Visitas ao Perfil: ${totalProfileVisits.toLocaleString('pt-BR')}`);
     if (m.followers)               lines.push(`📱 Seguidores Novos: ${totalFollowers.toLocaleString('pt-BR')}`);

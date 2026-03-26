@@ -214,8 +214,15 @@ export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAp
             clearTimeout(timeout);
         }
 
-        const envelope = await resp.json().catch(() => null);
-        console.log('[UazAPI] getGroups status:', resp.status, '| body:', JSON.stringify(envelope)?.slice(0, 300));
+        const rawText = await resp.text().catch(() => '');
+        console.log('[UazAPI] getGroups status:', resp.status, '| raw:', rawText.slice(0, 400));
+
+        let envelope: any = null;
+        try { envelope = JSON.parse(rawText); } catch { /* not JSON */ }
+
+        if (!resp.ok) {
+            return { groups: [], error: `HTTP ${resp.status}: ${rawText.slice(0, 150)}` };
+        }
 
         if (!resp.ok) {
             const msg = envelope?.message || envelope?.error || `HTTP ${resp.status}`;

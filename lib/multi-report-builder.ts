@@ -57,16 +57,23 @@ function costPer(spend: string | undefined, count: string | undefined): string {
 }
 
 export function getDateLabel(preset: string): string {
-    const map: Record<string, string> = {
-        today:      'Hoje',
-        yesterday:  'Ontem',
-        last_7d:    'Últimos 7 dias',
-        last_30d:   'Últimos 30 dias',
-        this_month: 'Este mês',
-        last_month: 'Mês passado',
-        maximum:    'Todo o período',
-    };
-    return map[preset] || preset;
+    const tz  = 'America/Sao_Paulo';
+    const now = new Date();
+    const fmt = (d: Date) => new Intl.DateTimeFormat('pt-BR', { timeZone: tz, day: '2-digit', month: '2-digit' }).format(d);
+    const shift = (days: number) => { const d = new Date(now); d.setDate(d.getDate() + days); return d; };
+
+    if (preset === 'today')      return fmt(now);
+    if (preset === 'yesterday')  return fmt(shift(-1));
+    if (preset === 'last_3d')    return `${fmt(shift(-3))} a ${fmt(shift(-1))}`;
+    if (preset === 'last_7d')    return `${fmt(shift(-7))} a ${fmt(shift(-1))}`;
+    if (preset === 'last_30d')   return `${fmt(shift(-30))} a ${fmt(shift(-1))}`;
+    if (preset === 'this_month') return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(now);
+    if (preset === 'last_month') {
+        const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(d);
+    }
+    if (preset === 'maximum') return 'Todo o período';
+    return preset;
 }
 
 // ── Main builder ──────────────────────────────────────────────────────────────

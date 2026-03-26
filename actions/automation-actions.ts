@@ -153,12 +153,28 @@ export async function runAutomationNowAction(id: string) {
 /**
  * Core send logic — used both by runAutomationNowAction and the cron job.
  */
-export async function sendAutomationReport(automationId: string, workspaceId: string) {
+export async function sendAutomationReport(automationId: string, workspaceId: string, isScheduled = false) {
     try {
+        // Weekend skip — only when triggered by cron (not manual "Enviar Agora")
+        if (isScheduled) {
+            const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+            const day = nowBR.getDay(); // 0=Dom, 1=Seg, ..., 6=Sáb
+            if (day === 0 || day === 6) {
+                return { success: true, skipped: true };
+            }
+        }
+
         const automation = await prisma.reportAutomation.findFirst({
             where: { id: automationId, workspace_id: workspaceId },
         });
         if (!automation) return { success: false, error: 'Automação não encontrada' };
+
+        // Monday rollup: if today is Monday and preset is 'yesterday', pull Fri–Sun (last_3d)
+        const nowBR2 = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const isMonday = isScheduled && nowBR2.getDay() === 1;
+        const effectivePreset = isMonday && automation.date_preset === 'yesterday'
+            ? 'last_3d'
+            : automation.date_preset;
 
         const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });
         if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {
@@ -184,7 +200,7 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
             accountIds.map(async (accountId) => {
                 try {
                     const [campaigns, dbAccount] = await Promise.all([
-                        getCampaigns(accountId, automation.date_preset, workspaceId),
+                        getCampaigns(accountId, effectivePreset, workspaceId),
                         prisma.account.findUnique({
                             where:  { account_id: accountId },
                             select: { account_name: true },
@@ -201,7 +217,7 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         const message = buildMultiAccountReport(
             accountsData,
             metricsConfig,
-            automation.date_preset,
+            effectivePreset,
             automation.custom_message ?? undefined,
         );
 

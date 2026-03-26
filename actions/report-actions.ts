@@ -194,7 +194,7 @@ export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'al
                 alreadySent = lastDate === nowDate;
             }
             if (!isDue || alreadySent) continue;
-            const res = await sendAutomationReport(automation.id, automation.workspace_id);
+            const res = await sendAutomationReport(automation.id, automation.workspace_id, true);
             if (res.success) autoSuccess++;
             await new Promise(resolve => setTimeout(resolve, 500));
         }

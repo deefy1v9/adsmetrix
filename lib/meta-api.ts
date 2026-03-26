@@ -191,7 +191,7 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
             campaigns.map(async (campaign: any) => {
                 try {
                     const insightsFields = ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'cpp', 'actions'];
-                    const metaPreset = ['today', 'yesterday', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
+                    const metaPreset = ['today', 'yesterday', 'last_3d', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
                         ? datePreset
                         : 'maximum';
 

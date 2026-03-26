@@ -213,8 +213,9 @@ export async function getGroups(config: UazAPIConfig): Promise<WhatsAppGroup[]> 
                               : [];
 
         return list.map((g: any) => ({
-            id:   String(g.id ?? g.jid ?? ''),
-            name: String(g.name ?? g.subject ?? g.id ?? ''),
+            // UazAPI returns PascalCase fields: JID, Name
+            id:   String(g.JID  ?? g.id  ?? g.jid  ?? ''),
+            name: String(g.Name ?? g.name ?? g.subject ?? g.JID ?? ''),
         })).filter(g => g.id);
     } catch {
         return [];

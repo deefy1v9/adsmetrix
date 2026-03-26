@@ -232,9 +232,11 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                         // Meta Native Leads (Total leads minus GTM leads)
                         leadsMetaValue = Math.max(0, totalLeadsValue - leadsGTMValue);
 
-                        // Sales / Purchases
-                        const salesActions = insight.actions.filter((a: any) => a.action_type.includes('purchase'));
-                        salesValue = salesActions.reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+                        // Sales / Purchases — prefer omni_purchase (matches Meta Ads Manager), fallback to purchase
+                        const omniPurchase = insight.actions.find((a: any) => a.action_type === 'omni_purchase');
+                        const rawPurchase  = insight.actions.find((a: any) => a.action_type === 'purchase');
+                        const purchaseAction = omniPurchase ?? rawPurchase;
+                        salesValue = parseInt(purchaseAction?.value || '0');
 
                         // Conversations started from Click-to-WhatsApp ads
                         // Priority: messaging_conversation_started_7d (main CTWA metric shown in Meta Ads Manager)

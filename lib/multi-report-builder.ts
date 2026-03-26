@@ -152,7 +152,7 @@ export function buildMultiAccountReport(
     }
 
     lines.push('━━━━━━━━━━━━━━━━');
-    lines.push('📊 *TOTAIS COMBINADOS*');
+    lines.push(`📊 *TOTAIS — ${dateLabel}*`);
     if (m.spend)                   lines.push(`💸 Investimento: ${fmt(totalSpend, 'currency')}`);
     if (m.reach)                   lines.push(`📊 Alcance: ${totalReach.toLocaleString('pt-BR')}`);
     if (m.leads)                   lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);

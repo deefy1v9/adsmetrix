@@ -464,15 +464,18 @@ export async function getAccountDailyInsights(
             return {};
         }
 
-        const LEAD_TYPES = ['lead'];
-        const CONV_TYPES = ['onsite_conversion.messaging_conversation_started_7d'];
+        const RESULT_TYPES = ['lead', 'onsite_conversion.messaging_conversation_started_7d', 'omni_purchase'];
         const days: Record<number, number> = {};
 
         for (const row of data.data || []) {
             const day = new Date(row.date_start + 'T12:00:00').getDate();
             const actions: any[] = row.actions || [];
+            const hasPurchase = actions.some((a: any) => a.action_type === 'omni_purchase');
             const count = actions
-                .filter((a: any) => LEAD_TYPES.includes(a.action_type) || CONV_TYPES.includes(a.action_type))
+                .filter((a: any) => {
+                    if (a.action_type === 'purchase') return !hasPurchase;
+                    return RESULT_TYPES.includes(a.action_type);
+                })
                 .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
             if (count > 0) days[day] = (days[day] || 0) + count;
         }
@@ -496,13 +499,22 @@ export async function getAccountLeadsSummary(
 
     try {
         const token = await getAccessToken(accountId, workspaceId);
-        const LEAD_TYPES = ['lead'];
-        const CONV_TYPES = ['onsite_conversion.messaging_conversation_started_7d'];
+        // Count all meaningful result types: form leads, WA conversations, and purchases
+        const RESULT_TYPES = [
+            'lead',
+            'onsite_conversion.messaging_conversation_started_7d',
+            'omni_purchase',
+        ];
 
-        const extractTotal = (resData: any, types: string[]) => {
+        const extractTotal = (resData: any) => {
             const actions: any[] = resData?.data?.[0]?.actions || [];
+            // For purchases, prefer omni_purchase only (avoids double-counting with 'purchase')
+            const hasPurchase = actions.some((a: any) => a.action_type === 'omni_purchase');
             return actions
-                .filter((a: any) => types.includes(a.action_type))
+                .filter((a: any) => {
+                    if (a.action_type === 'purchase') return !hasPurchase; // only if no omni_purchase
+                    return RESULT_TYPES.includes(a.action_type);
+                })
                 .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
         };
 
@@ -514,8 +526,8 @@ export async function getAccountLeadsSummary(
         if (todayRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary today error for ${cleanId}:`, todayRes.error.message);
         if (monthRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary month error for ${cleanId}:`, monthRes.error.message);
 
-        const leads24h = extractTotal(todayRes, LEAD_TYPES) + extractTotal(todayRes, CONV_TYPES);
-        const leadsMonth = extractTotal(monthRes, LEAD_TYPES) + extractTotal(monthRes, CONV_TYPES);
+        const leads24h = extractTotal(todayRes);
+        const leadsMonth = extractTotal(monthRes);
 
         const result = { leads24h, leadsMonth };
         accountSummaryCache.set(cacheKey, { data: result, ts: Date.now() });

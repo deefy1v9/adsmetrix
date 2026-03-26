@@ -227,13 +227,22 @@ export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAp
                               : Array.isArray(envelope)       ? envelope
                               : [];
 
+        if (list.length === 0) {
+            // Log the full envelope so we can see the raw structure
+            console.log('[UazAPI] getGroups raw envelope:', JSON.stringify(envelope));
+            return { groups: [], error: `API retornou vazio. Raw: ${JSON.stringify(envelope)?.slice(0, 200)}` };
+        }
+
+        // Log first item to debug field names
+        console.log('[UazAPI] getGroups first item keys:', Object.keys(list[0] as object));
+
         const groups = list.map((g: any) => ({
             // UazAPI returns PascalCase fields: JID, Name
             id:   String(g.JID  ?? g.id  ?? g.jid  ?? ''),
             name: String(g.Name ?? g.name ?? g.subject ?? g.JID ?? ''),
         })).filter(g => g.id);
 
-        return { groups };
+        return { groups, error: groups.length === 0 ? `Grupos retornados mas IDs vazios. Primeiras chaves: ${Object.keys(list[0] as object).join(', ')}` : undefined };
     } catch (err: any) {
         console.error('[UazAPI] getGroups error:', err.message);
         return { groups: [], error: err.message };

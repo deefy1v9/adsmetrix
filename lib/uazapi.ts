@@ -204,9 +204,17 @@ export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAp
         const url = `${baseUrl}/group/list`;
         console.log('[UazAPI] getGroups →', url);
 
-        const resp = await fetch(url, { headers: buildHeaders(token) });
-        const envelope = await resp.json().catch(() => null);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
 
+        let resp: Response;
+        try {
+            resp = await fetch(url, { headers: buildHeaders(token), signal: controller.signal });
+        } finally {
+            clearTimeout(timeout);
+        }
+
+        const envelope = await resp.json().catch(() => null);
         console.log('[UazAPI] getGroups status:', resp.status, '| body:', JSON.stringify(envelope)?.slice(0, 300));
 
         if (!resp.ok) {

@@ -438,6 +438,31 @@ export interface WeeklyDay {
 const accountSummaryCache = new Map<string, { data: { leads24h: number; leadsMonth: number }; ts: number }>();
 const accountDailyCache = new Map<string, { data: Record<number, number>; ts: number }>();
 
+/**
+ * Count all meaningful results from a Meta actions array.
+ * Includes: form leads, WA conversations, and purchases.
+ * Uses Math.max across purchase variants to avoid double-counting
+ * (Meta often returns 'purchase', 'omni_purchase', and 'offsite_conversion.fb_pixel_purchase'
+ * for the same event with the same value).
+ */
+function countResults(actions: any[]): number {
+    const val = (type: string) => {
+        const a = actions.find((x: any) => x.action_type === type);
+        return a ? parseInt(a.value || '0') : 0;
+    };
+
+    const leads         = val('lead');
+    const conversations = val('onsite_conversion.messaging_conversation_started_7d');
+    // Take the highest purchase count among all variants (they're the same event)
+    const purchases     = Math.max(
+        val('omni_purchase'),
+        val('purchase'),
+        val('offsite_conversion.fb_pixel_purchase'),
+    );
+
+    return leads + conversations + purchases;
+}
+
 export async function getAccountDailyInsights(
     accountId: string,
     year: number,
@@ -464,19 +489,11 @@ export async function getAccountDailyInsights(
             return {};
         }
 
-        const RESULT_TYPES = ['lead', 'onsite_conversion.messaging_conversation_started_7d', 'omni_purchase'];
         const days: Record<number, number> = {};
 
         for (const row of data.data || []) {
             const day = new Date(row.date_start + 'T12:00:00').getDate();
-            const actions: any[] = row.actions || [];
-            const hasPurchase = actions.some((a: any) => a.action_type === 'omni_purchase');
-            const count = actions
-                .filter((a: any) => {
-                    if (a.action_type === 'purchase') return !hasPurchase;
-                    return RESULT_TYPES.includes(a.action_type);
-                })
-                .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
+            const count = countResults(row.actions || []);
             if (count > 0) days[day] = (days[day] || 0) + count;
         }
 
@@ -499,24 +516,6 @@ export async function getAccountLeadsSummary(
 
     try {
         const token = await getAccessToken(accountId, workspaceId);
-        // Count all meaningful result types: form leads, WA conversations, and purchases
-        const RESULT_TYPES = [
-            'lead',
-            'onsite_conversion.messaging_conversation_started_7d',
-            'omni_purchase',
-        ];
-
-        const extractTotal = (resData: any) => {
-            const actions: any[] = resData?.data?.[0]?.actions || [];
-            // For purchases, prefer omni_purchase only (avoids double-counting with 'purchase')
-            const hasPurchase = actions.some((a: any) => a.action_type === 'omni_purchase');
-            return actions
-                .filter((a: any) => {
-                    if (a.action_type === 'purchase') return !hasPurchase; // only if no omni_purchase
-                    return RESULT_TYPES.includes(a.action_type);
-                })
-                .reduce((sum: number, a: any) => sum + parseInt(a.value || '0'), 0);
-        };
 
         const [todayRes, monthRes] = await Promise.all([
             fetch(`https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions&date_preset=today&access_token=${token}`).then(r => r.json()),
@@ -526,8 +525,8 @@ export async function getAccountLeadsSummary(
         if (todayRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary today error for ${cleanId}:`, todayRes.error.message);
         if (monthRes.error) console.warn(`[MetaAPI] getAccountLeadsSummary month error for ${cleanId}:`, monthRes.error.message);
 
-        const leads24h = extractTotal(todayRes);
-        const leadsMonth = extractTotal(monthRes);
+        const leads24h = countResults(todayRes?.data?.[0]?.actions || []);
+        const leadsMonth = countResults(monthRes?.data?.[0]?.actions || []);
 
         const result = { leads24h, leadsMonth };
         accountSummaryCache.set(cacheKey, { data: result, ts: Date.now() });

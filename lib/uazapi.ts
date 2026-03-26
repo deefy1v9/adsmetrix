@@ -229,9 +229,10 @@ export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAp
             return { groups: [], error: msg };
         }
 
-        // UazAPI wraps: { code, message, data: [...] }
-        const list: unknown[] = Array.isArray(envelope?.data) ? envelope.data
-                              : Array.isArray(envelope)       ? envelope
+        // UazAPI /group/list returns: { groups: [...] }
+        const list: unknown[] = Array.isArray(envelope?.groups) ? envelope.groups
+                              : Array.isArray(envelope?.data)   ? envelope.data
+                              : Array.isArray(envelope)         ? envelope
                               : [];
 
         if (list.length === 0) {

@@ -201,58 +201,35 @@ export async function getGroups(config: UazAPIConfig): Promise<{ groups: WhatsAp
     const { token } = config;
 
     try {
-        const url = `${baseUrl}/group/list`;
-        console.log('[UazAPI] getGroups →', url);
-
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10_000);
+        const timeoutId  = setTimeout(() => controller.abort(), 10_000);
 
-        let resp: Response;
-        try {
-            resp = await fetch(url, { headers: buildHeaders(token), signal: controller.signal });
-        } finally {
-            clearTimeout(timeout);
-        }
+        const resp = await fetch(`${baseUrl}/group/list`, {
+            headers: buildHeaders(token),
+            signal:  controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
 
-        const rawText = await resp.text().catch(() => '');
-        console.log('[UazAPI] getGroups status:', resp.status, '| raw:', rawText.slice(0, 400));
-
-        let envelope: any = null;
-        try { envelope = JSON.parse(rawText); } catch { /* not JSON */ }
+        const text = await resp.text();
+        let data: any = null;
+        try { data = JSON.parse(text); } catch { /* not JSON */ }
 
         if (!resp.ok) {
-            return { groups: [], error: `HTTP ${resp.status}: ${rawText.slice(0, 150)}` };
+            return { groups: [], error: `HTTP ${resp.status}: ${text.slice(0, 120)}` };
         }
 
-        if (!resp.ok) {
-            const msg = envelope?.message || envelope?.error || `HTTP ${resp.status}`;
-            return { groups: [], error: msg };
-        }
+        // Response: { groups: [{ JID, Name, ... }] }
+        const list: any[] = Array.isArray(data?.groups) ? data.groups
+                          : Array.isArray(data?.data)   ? data.data
+                          : Array.isArray(data)         ? data
+                          : [];
 
-        // UazAPI /group/list returns: { groups: [...] }
-        const list: unknown[] = Array.isArray(envelope?.groups) ? envelope.groups
-                              : Array.isArray(envelope?.data)   ? envelope.data
-                              : Array.isArray(envelope)         ? envelope
-                              : [];
-
-        if (list.length === 0) {
-            // Log the full envelope so we can see the raw structure
-            console.log('[UazAPI] getGroups raw envelope:', JSON.stringify(envelope));
-            return { groups: [], error: `API retornou vazio. Raw: ${JSON.stringify(envelope)?.slice(0, 200)}` };
-        }
-
-        // Log first item to debug field names
-        console.log('[UazAPI] getGroups first item keys:', Object.keys(list[0] as object));
-
-        const groups = list.map((g: any) => ({
-            // UazAPI returns PascalCase fields: JID, Name
-            id:   String(g.JID  ?? g.id  ?? g.jid  ?? ''),
-            name: String(g.Name ?? g.name ?? g.subject ?? g.JID ?? ''),
+        const groups = list.map(g => ({
+            id:   String(g.JID  ?? g.id   ?? g.jid     ?? ''),
+            name: String(g.Name ?? g.name ?? g.subject  ?? g.JID ?? ''),
         })).filter(g => g.id);
 
-        return { groups, error: groups.length === 0 ? `Grupos retornados mas IDs vazios. Primeiras chaves: ${Object.keys(list[0] as object).join(', ')}` : undefined };
+        return { groups };
     } catch (err: any) {
-        console.error('[UazAPI] getGroups error:', err.message);
-        return { groups: [], error: err.message };
+        return { groups: [], error: err.name === 'AbortError' ? 'Timeout de 10s — verifique a URL do servidor' : err.message };
     }
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
-import { getUazAPIStatusAction } from "@/actions/uazapi-actions";
+import { getUazAPIStatusAction, listGroupsAction } from "@/actions/uazapi-actions";
+import type { WhatsAppGroup } from "@/lib/uazapi";
 import {
     listAutomationsAction,
     createAutomationAction,
@@ -19,7 +20,8 @@ import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
-    Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap,
+    Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
+    Phone, Users,
 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import {
@@ -40,14 +42,101 @@ const DATE_PRESETS = [
 ];
 
 const EMPTY_FORM: AutomationFormData = {
-    name:           "",
-    enabled:        true,
-    account_ids:    [],
-    date_preset:    "yesterday",
-    schedule_time:  "09:00",
-    metrics_config: { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean>,
-    custom_message: "",
+    name:             "",
+    enabled:          true,
+    account_ids:      [],
+    date_preset:      "yesterday",
+    schedule_time:    "09:00",
+    metrics_config:   { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean>,
+    custom_message:   "",
+    destination_type: "default",
+    destination_id:   "",
+    destination_name: "",
 };
+
+// ── Group Picker ──────────────────────────────────────────────────────────────
+
+function GroupPicker({ value, name, onChange }: {
+    value: string;
+    name:  string;
+    onChange: (id: string, label: string) => void;
+}) {
+    const [search,  setSearch]  = useState("");
+    const [groups,  setGroups]  = useState<WhatsAppGroup[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [fetched, setFetched] = useState(false);
+    const [error,   setError]   = useState<string | null>(null);
+
+    const fetchGroups = async () => {
+        setLoading(true);
+        setError(null);
+        const result = await listGroupsAction();
+        if (result.length === 0) setError("Nenhum grupo encontrado. Verifique se o WhatsApp está conectado.");
+        setGroups(result);
+        setFetched(true);
+        setLoading(false);
+    };
+
+    const filtered = groups.filter((g: WhatsAppGroup) =>
+        g.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    return (
+        <div className="space-y-2 mt-2">
+            <div className="flex gap-2">
+                <input
+                    value={search}
+                    onChange={(e: { target: { value: string } }) => setSearch(e.target.value)}
+                    placeholder={value ? (name || value) : "Pesquisar grupo..."}
+                    className="flex-1 px-3 py-2 text-sm bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <button
+                    type="button"
+                    onClick={fetchGroups}
+                    disabled={loading}
+                    title="Buscar grupos"
+                    className="p-2 rounded-xl bg-muted border border-border hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground"
+                >
+                    {loading
+                        ? <Loader2 className="w-4 h-4 animate-spin" />
+                        : <Search className="w-4 h-4" />}
+                </button>
+            </div>
+
+            {value && !fetched && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 border border-primary/30 rounded-xl text-sm text-foreground">
+                    <Users className="w-3.5 h-3.5 text-primary shrink-0" />
+                    {name || value}
+                </div>
+            )}
+
+            {fetched && (
+                <div className="max-h-44 overflow-y-auto rounded-xl border border-border bg-muted/50 divide-y divide-border">
+                    {error && (
+                        <p className="text-xs text-muted-foreground px-3 py-2">{error}</p>
+                    )}
+                    {filtered.map((g: WhatsAppGroup) => (
+                        <button
+                            key={g.id}
+                            type="button"
+                            onClick={() => onChange(g.id, g.name)}
+                            className={cn(
+                                "w-full text-left px-3 py-2.5 text-sm transition-colors flex items-center gap-2",
+                                g.id === value
+                                    ? "bg-primary/10 text-foreground font-medium"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                            )}
+                        >
+                            <Users className="w-3.5 h-3.5 shrink-0 opacity-60" />
+                            <span className="truncate">{g.name}</span>
+                            {g.id === value && <CheckSquare className="w-3.5 h-3.5 text-primary ml-auto shrink-0" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
 
 // ── Automation Card ───────────────────────────────────────────────────────────
 
@@ -113,6 +202,17 @@ function AutomationCard({
                 <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                     {activeMetrics} métricas
                 </span>
+                {automation.destination_type === "group" && (
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                        <Users className="w-3 h-3" />
+                        {automation.destination_name || "Grupo"}
+                    </span>
+                )}
+                {automation.destination_type === "number" && automation.destination_id && (
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
+                        <Phone className="w-3 h-3" /> {automation.destination_id}
+                    </span>
+                )}
                 {automation.last_sent_at && (
                     <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         Último envio: {new Date(automation.last_sent_at).toLocaleString("pt-BR", {
@@ -173,13 +273,16 @@ function AutomationForm({
 }) {
     const [form, setForm] = useState<AutomationFormData>(() => initial
         ? {
-            name:           initial.name,
-            enabled:        initial.enabled,
-            account_ids:    initial.account_ids ?? [],
-            date_preset:    initial.date_preset,
-            schedule_time:  initial.schedule_time,
-            metrics_config: initial.metrics_config ?? {},
-            custom_message: initial.custom_message ?? "",
+            name:             initial.name,
+            enabled:          initial.enabled,
+            account_ids:      initial.account_ids ?? [],
+            date_preset:      initial.date_preset,
+            schedule_time:    initial.schedule_time,
+            metrics_config:   initial.metrics_config ?? {},
+            custom_message:   initial.custom_message ?? "",
+            destination_type: initial.destination_type ?? "default",
+            destination_id:   initial.destination_id   ?? "",
+            destination_name: initial.destination_name ?? "",
         }
         : { ...EMPTY_FORM, metrics_config: { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean> }
     );
@@ -339,6 +442,57 @@ function AutomationForm({
                         rows={3}
                         className="w-full px-4 py-3 bg-muted border border-border rounded-2xl text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary resize-none"
                     />
+                </div>
+
+                {/* Destination */}
+                <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                        Destino do Relatório
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {([
+                            { value: "default", label: "Número padrão",      icon: <Phone className="w-4 h-4 shrink-0" /> },
+                            { value: "number",  label: "Número específico",   icon: <Phone className="w-4 h-4 shrink-0" /> },
+                            { value: "group",   label: "Grupo do WhatsApp",   icon: <Users className="w-4 h-4 shrink-0" /> },
+                        ] as const).map(opt => {
+                            const checked = form.destination_type === opt.value;
+                            return (
+                                <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => setForm(f => ({ ...f, destination_type: opt.value, destination_id: "", destination_name: "" }))}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-medium text-left transition-all",
+                                        checked
+                                            ? "bg-primary/10 border-primary/30 text-foreground"
+                                            : "bg-muted border-border text-muted-foreground/60 hover:text-foreground"
+                                    )}
+                                >
+                                    {checked
+                                        ? <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                                        : <Square className="w-4 h-4 shrink-0" />}
+                                    {opt.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {form.destination_type === "number" && (
+                        <input
+                            value={form.destination_id}
+                            onChange={e => setForm(f => ({ ...f, destination_id: e.target.value }))}
+                            placeholder="5511999999999 (com DDI, sem espaços)"
+                            className="w-full px-3 py-2 text-sm bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                        />
+                    )}
+
+                    {form.destination_type === "group" && (
+                        <GroupPicker
+                            value={form.destination_id}
+                            name={form.destination_name}
+                            onChange={(id, label) => setForm(f => ({ ...f, destination_id: id, destination_name: label }))}
+                        />
+                    )}
                 </div>
 
                 {error && (

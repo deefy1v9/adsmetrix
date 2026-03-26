@@ -12,28 +12,34 @@ async function getWorkspaceId(): Promise<string | null> {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface AutomationFormData {
-    name:           string;
-    enabled:        boolean;
-    account_ids:    string[];
-    date_preset:    string;
-    schedule_time:  string;
-    metrics_config: Record<string, boolean>;
-    custom_message: string;
+    name:             string;
+    enabled:          boolean;
+    account_ids:      string[];
+    date_preset:      string;
+    schedule_time:    string;
+    metrics_config:   Record<string, boolean>;
+    custom_message:   string;
+    destination_type: string;  // "default" | "number" | "group"
+    destination_id:   string;  // phone or group JID
+    destination_name: string;  // display label (group name)
 }
 
 export type AutomationRecord = {
-    id:             string;
-    workspace_id:   string;
-    name:           string;
-    enabled:        boolean;
-    account_ids:    string[];
-    date_preset:    string;
-    schedule_time:  string;
-    metrics_config: Record<string, boolean>;
-    custom_message: string | null;
-    last_sent_at:   Date | null;
-    created_at:     Date;
-    updated_at:     Date;
+    id:               string;
+    workspace_id:     string;
+    name:             string;
+    enabled:          boolean;
+    account_ids:      string[];
+    date_preset:      string;
+    schedule_time:    string;
+    metrics_config:   Record<string, boolean>;
+    custom_message:   string | null;
+    destination_type: string;
+    destination_id:   string | null;
+    destination_name: string | null;
+    last_sent_at:     Date | null;
+    created_at:       Date;
+    updated_at:       Date;
 };
 
 // ── CRUD ──────────────────────────────────────────────────────────────────────
@@ -49,8 +55,11 @@ export async function listAutomationsAction(): Promise<AutomationRecord[]> {
 
     return rows.map(r => ({
         ...r,
-        account_ids:    r.account_ids    as string[],
-        metrics_config: r.metrics_config as Record<string, boolean>,
+        account_ids:      r.account_ids    as string[],
+        metrics_config:   r.metrics_config as Record<string, boolean>,
+        destination_type: (r as any).destination_type ?? 'default',
+        destination_id:   (r as any).destination_id   ?? null,
+        destination_name: (r as any).destination_name ?? null,
     }));
 }
 
@@ -61,15 +70,18 @@ export async function createAutomationAction(data: AutomationFormData) {
     try {
         const row = await prisma.reportAutomation.create({
             data: {
-                workspace_id:   workspaceId,
-                name:           data.name.trim(),
-                enabled:        data.enabled,
-                account_ids:    data.account_ids,
-                date_preset:    data.date_preset,
-                schedule_time:  data.schedule_time,
-                metrics_config: data.metrics_config,
-                custom_message: data.custom_message.trim() || null,
-            },
+                workspace_id:     workspaceId,
+                name:             data.name.trim(),
+                enabled:          data.enabled,
+                account_ids:      data.account_ids,
+                date_preset:      data.date_preset,
+                schedule_time:    data.schedule_time,
+                metrics_config:   data.metrics_config,
+                custom_message:   data.custom_message.trim() || null,
+                destination_type: data.destination_type || 'default',
+                destination_id:   data.destination_id.trim()   || null,
+                destination_name: data.destination_name.trim() || null,
+            } as any,
         });
         return { success: true, id: row.id };
     } catch (err: any) {
@@ -85,14 +97,17 @@ export async function updateAutomationAction(id: string, data: AutomationFormDat
         await prisma.reportAutomation.update({
             where:  { id, workspace_id: workspaceId },
             data: {
-                name:           data.name.trim(),
-                enabled:        data.enabled,
-                account_ids:    data.account_ids,
-                date_preset:    data.date_preset,
-                schedule_time:  data.schedule_time,
-                metrics_config: data.metrics_config,
-                custom_message: data.custom_message.trim() || null,
-            },
+                name:             data.name.trim(),
+                enabled:          data.enabled,
+                account_ids:      data.account_ids,
+                date_preset:      data.date_preset,
+                schedule_time:    data.schedule_time,
+                metrics_config:   data.metrics_config,
+                custom_message:   data.custom_message.trim() || null,
+                destination_type: data.destination_type || 'default',
+                destination_id:   data.destination_id.trim()   || null,
+                destination_name: data.destination_name.trim() || null,
+            } as any,
         });
         return { success: true };
     } catch (err: any) {
@@ -149,7 +164,14 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {
             return { success: false, error: 'UazAPI não configurado' };
         }
-        if (!setting?.whatsapp_number) {
+        const destType = (automation as any).destination_type ?? 'default';
+        const destId   = (automation as any).destination_id   ?? null;
+
+        const destination = (destType !== 'default' && destId)
+            ? destId
+            : setting?.whatsapp_number;
+
+        if (!destination) {
             return { success: false, error: 'Número destino não configurado' };
         }
 
@@ -190,7 +212,7 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
                 token:    setting.uazapi_token,
                 instance: setting.uazapi_instance,
             },
-            setting.whatsapp_number,
+            destination,
             message,
         );
 

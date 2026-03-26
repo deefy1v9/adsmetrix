@@ -305,11 +305,7 @@ export function MultiAccountReportBuilder() {
     const buildReport = (): string => {
         if (campaignsData.length === 0) return '';
 
-        const dateLabel = getDateLabel(datePreset);
-        const lines: string[] = [
-            `📊 *Relatório Multi-Conta* (${dateLabel})`,
-            '',
-        ];
+        const lines: string[] = [];
 
         // Totals accumulators
         let totalSpend = 0, totalLeads = 0, totalClicks = 0, totalConversations = 0, totalReach = 0, totalFollowers = 0;

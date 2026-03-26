@@ -16,6 +16,11 @@ const PATHS = {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface WhatsAppGroup {
+    id:   string; // e.g. "120363XXXXXXXXX@g.us"
+    name: string;
+}
+
 export interface UazAPIConfig {
     baseUrl:  string;  // ex: https://meu-servidor.com (sem trailing slash)
     token:    string;  // API key de autenticação
@@ -44,7 +49,8 @@ function buildHeaders(token: string) {
 }
 
 function normalizePhone(phone: string): string {
-    // Remove all non-digits
+    // Group JIDs like 120363XXXXXXXXX@g.us must be passed as-is
+    if (phone.includes('@')) return phone.trim();
     return phone.replace(/\D/g, '');
 }
 
@@ -184,4 +190,33 @@ export async function getQRCode(config: UazAPIConfig): Promise<string | null> {
  */
 export async function connectInstance(config: UazAPIConfig): Promise<void> {
     await getQRCode(config);
+}
+
+/**
+ * List all WhatsApp groups the connected instance participates in.
+ * Returns an empty array if the instance is not connected or the request fails.
+ */
+export async function getGroups(config: UazAPIConfig): Promise<WhatsAppGroup[]> {
+    const baseUrl = normalizeBaseUrl(config.baseUrl);
+    const { token } = config;
+
+    try {
+        const resp = await fetch(`${baseUrl}/group/list`, {
+            headers: buildHeaders(token),
+        });
+        if (!resp.ok) return [];
+
+        const envelope = await resp.json().catch(() => ({}));
+        // UazAPI wraps: { code, message, data: [...] }
+        const list: unknown[] = Array.isArray(envelope?.data) ? envelope.data
+                              : Array.isArray(envelope)       ? envelope
+                              : [];
+
+        return list.map((g: any) => ({
+            id:   String(g.id ?? g.jid ?? ''),
+            name: String(g.name ?? g.subject ?? g.id ?? ''),
+        })).filter(g => g.id);
+    } catch {
+        return [];
+    }
 }

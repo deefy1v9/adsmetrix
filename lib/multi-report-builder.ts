@@ -86,8 +86,6 @@ export function buildMultiAccountReport(
         lines.push('');
     }
 
-    lines.push(`📊 *Relatório Multi-Conta* (${dateLabel})`);
-    lines.push('');
 
     let totalSpend = 0, totalLeads = 0, totalClicks = 0;
     let totalConversations = 0, totalReach = 0, totalFollowers = 0;

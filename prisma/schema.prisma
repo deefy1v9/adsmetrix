@@ -203,7 +203,11 @@ model ReportAutomation {
   date_preset    String    @default("yesterday")
   schedule_time  String    @default("09:00")
   metrics_config Json      // Record<string, boolean>
-  custom_message String?
+  custom_message   String?
+
+  destination_type String    @default("default")  // "default" | "number" | "group"
+  destination_id   String?   // phone number or group JID (e.g. 120363XXX@g.us)
+  destination_name String?   // human-readable label (group name)
 
   last_sent_at   DateTime?
   created_at     DateTime  @default(now())

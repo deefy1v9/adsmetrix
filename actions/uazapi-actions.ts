@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
-import { sendTextMessage, getInstanceStatus, getQRCode, connectInstance, UazAPIConfig } from '@/lib/uazapi';
+import { sendTextMessage, getInstanceStatus, getQRCode, connectInstance, getGroups, WhatsAppGroup, UazAPIConfig } from '@/lib/uazapi';
 
 async function getWorkspaceId(): Promise<string | null> {
     const h = await headers();
@@ -147,6 +147,14 @@ export async function getWorkspaceSettingAction() {
     });
 
     return setting;
+}
+
+// ── Groups ────────────────────────────────────────────────────────────────────
+
+export async function listGroupsAction(): Promise<WhatsAppGroup[]> {
+    const config = await getConfig();
+    if (!config) return [];
+    return getGroups(config);
 }
 
 // ── Combined Report Config ────────────────────────────────────────────────────

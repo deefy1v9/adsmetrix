@@ -11,6 +11,12 @@ async function getWorkspaceId(): Promise<string | null> {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export interface CampaignSummary {
+    id:        string;
+    name:      string;
+    accountId: string;
+}
+
 export interface AutomationFormData {
     name:             string;
     enabled:          boolean;
@@ -18,6 +24,7 @@ export interface AutomationFormData {
     date_preset:      string;
     schedule_time:    string;
     metrics_config:   Record<string, boolean>;
+    campaign_metrics: Record<string, Record<string, boolean>>;  // campaignId → per-campaign override
     custom_message:   string;
     destination_type: string;  // "default" | "number" | "group"
     destination_id:   string;  // phone or group JID
@@ -33,6 +40,7 @@ export type AutomationRecord = {
     date_preset:      string;
     schedule_time:    string;
     metrics_config:   Record<string, boolean>;
+    campaign_metrics: Record<string, Record<string, boolean>>;
     custom_message:   string | null;
     destination_type: string;
     destination_id:   string | null;
@@ -57,6 +65,7 @@ export async function listAutomationsAction(): Promise<AutomationRecord[]> {
         ...r,
         account_ids:      r.account_ids    as string[],
         metrics_config:   r.metrics_config as Record<string, boolean>,
+        campaign_metrics: ((r as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>,
         destination_type: (r as any).destination_type ?? 'default',
         destination_id:   (r as any).destination_id   ?? null,
         destination_name: (r as any).destination_name ?? null,
@@ -77,6 +86,7 @@ export async function createAutomationAction(data: AutomationFormData) {
                 date_preset:      data.date_preset,
                 schedule_time:    data.schedule_time,
                 metrics_config:   data.metrics_config,
+                campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
@@ -103,6 +113,7 @@ export async function updateAutomationAction(id: string, data: AutomationFormDat
                 date_preset:      data.date_preset,
                 schedule_time:    data.schedule_time,
                 metrics_config:   data.metrics_config,
+                campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
@@ -140,6 +151,26 @@ export async function toggleAutomationAction(id: string, enabled: boolean) {
     } catch (err: any) {
         return { success: false, error: err.message };
     }
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+
+// ── Campaign list (for UI picker — no insights, fast) ─────────────────────────
+
+export async function fetchCampaignListAction(accountIds: string[]): Promise<CampaignSummary[]> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId || accountIds.length === 0) return [];
+
+    const { getCampaignNames } = await import('@/lib/meta-api');
+
+    const results = await Promise.allSettled(
+        accountIds.map(async (accountId) => {
+            const campaigns = await getCampaignNames(accountId, workspaceId);
+            return campaigns.map(c => ({ id: c.id, name: c.name, accountId }));
+        })
+    );
+
+    return results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 }
 
 // ── Send ──────────────────────────────────────────────────────────────────────
@@ -192,7 +223,8 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         }
 
         const accountIds    = automation.account_ids    as string[];
-        const metricsConfig = automation.metrics_config as MultiReportMetrics;
+        const metricsConfig  = automation.metrics_config  as MultiReportMetrics;
+        const campaignMetrics = ((automation as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>;
 
         // Fetch campaigns for all configured accounts
         const { getCampaigns } = await import('@/lib/meta-api');
@@ -219,6 +251,7 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
             metricsConfig,
             effectivePreset,
             automation.custom_message ?? undefined,
+            campaignMetrics,
         );
 
         const { sendTextMessage } = await import('@/lib/uazapi');

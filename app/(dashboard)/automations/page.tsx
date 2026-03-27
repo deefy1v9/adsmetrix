@@ -11,8 +11,10 @@ import {
     deleteAutomationAction,
     toggleAutomationAction,
     runAutomationNowAction,
+    fetchCampaignListAction,
     AutomationRecord,
     AutomationFormData,
+    type CampaignSummary,
 } from "@/actions/automation-actions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -48,6 +50,7 @@ const EMPTY_FORM: AutomationFormData = {
     date_preset:      "yesterday",
     schedule_time:    "09:00",
     metrics_config:   { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean>,
+    campaign_metrics: {},
     custom_message:   "",
     destination_type: "default",
     destination_id:   "",
@@ -138,6 +141,154 @@ function GroupPicker({ value, name, onChange }: {
                     ))}
                 </div>
             )}
+        </div>
+    );
+}
+
+// ── Campaign Metrics Picker ───────────────────────────────────────────────────
+
+function CampaignMetricsPicker({ accountIds, globalMetrics, value, onChange }: {
+    accountIds:   string[];
+    globalMetrics: Record<string, boolean>;
+    value:        Record<string, Record<string, boolean>>;
+    onChange:     (v: Record<string, Record<string, boolean>>) => void;
+}) {
+    const [campaigns,    setCampaigns]    = useState<CampaignSummary[]>([]);
+    const [loading,      setLoading]      = useState(false);
+    const [fetched,      setFetched]      = useState(false);
+    const [expandedId,   setExpandedId]   = useState<string | null>(null);
+
+    const fetch = async () => {
+        if (accountIds.length === 0) return;
+        setLoading(true);
+        const list = await fetchCampaignListAction(accountIds);
+        setCampaigns(list);
+        setFetched(true);
+        setLoading(false);
+    };
+
+    const enableOverride = (id: string) => {
+        onChange({ ...value, [id]: { ...globalMetrics } });
+        setExpandedId(id);
+    };
+
+    const removeOverride = (id: string) => {
+        const next = { ...value };
+        delete next[id];
+        onChange(next);
+        if (expandedId === id) setExpandedId(null);
+    };
+
+    const toggleMetric = (campaignId: string, key: string) => {
+        onChange({
+            ...value,
+            [campaignId]: { ...value[campaignId], [key]: !value[campaignId]?.[key] },
+        });
+    };
+
+    const overriddenIds = new Set(Object.keys(value));
+
+    return (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Métricas por Campanha
+                    {overriddenIds.size > 0 && (
+                        <span className="ml-2 text-primary normal-case font-normal">
+                            ({overriddenIds.size} personalizada{overriddenIds.size > 1 ? 's' : ''})
+                        </span>
+                    )}
+                </label>
+                <button
+                    type="button"
+                    onClick={fetch}
+                    disabled={loading || accountIds.length === 0}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-muted border border-border text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+                >
+                    {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    Buscar Campanhas
+                </button>
+            </div>
+
+            {!fetched && overriddenIds.size === 0 && (
+                <p className="text-xs text-muted-foreground">
+                    Clique em "Buscar Campanhas" para personalizar métricas por campanha. Por padrão, todas usam as métricas globais acima.
+                </p>
+            )}
+
+            {fetched && campaigns.length === 0 && (
+                <p className="text-xs text-muted-foreground">Nenhuma campanha encontrada.</p>
+            )}
+
+            <div className="space-y-2">
+                {campaigns.map(c => {
+                    const overridden = overriddenIds.has(c.id);
+                    const expanded   = expandedId === c.id && overridden;
+                    return (
+                        <div key={c.id} className="border border-border rounded-xl overflow-hidden">
+                            <div className="flex items-center justify-between gap-2 px-3 py-2.5 bg-muted">
+                                <span className="text-sm text-foreground truncate font-medium flex-1 min-w-0">
+                                    {c.name}
+                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {overridden && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setExpandedId(expanded ? null : c.id)}
+                                            className="text-xs text-primary hover:underline"
+                                        >
+                                            {expanded ? "Fechar" : "Editar"}
+                                        </button>
+                                    )}
+                                    {overridden ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => removeOverride(c.id)}
+                                            className="text-xs text-red-400 hover:text-red-300"
+                                        >
+                                            Resetar
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => enableOverride(c.id)}
+                                            className="text-xs border border-border rounded-md px-2 py-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            Personalizar
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {expanded && (
+                                <div className="p-3 grid grid-cols-2 sm:grid-cols-3 gap-2 bg-background/30">
+                                    {(Object.keys(METRIC_LABELS) as (keyof MultiReportMetrics)[]).map(key => {
+                                        const checked = !!value[c.id]?.[key];
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => toggleMetric(c.id, key)}
+                                                className={cn(
+                                                    "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all",
+                                                    checked
+                                                        ? "bg-primary/10 border-primary/30 text-foreground"
+                                                        : "bg-muted border-border text-muted-foreground/50"
+                                                )}
+                                            >
+                                                {checked
+                                                    ? <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                                                    : <Square className="w-4 h-4 shrink-0" />}
+                                                <span className="text-xs">{METRIC_LABELS[key]}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -282,8 +433,9 @@ function AutomationForm({
             account_ids:      initial.account_ids ?? [],
             date_preset:      initial.date_preset,
             schedule_time:    initial.schedule_time,
-            metrics_config:   initial.metrics_config ?? {},
-            custom_message:   initial.custom_message ?? "",
+            metrics_config:   initial.metrics_config   ?? {},
+            campaign_metrics: initial.campaign_metrics  ?? {},
+            custom_message:   initial.custom_message   ?? "",
             destination_type: initial.destination_type ?? "default",
             destination_id:   initial.destination_id   ?? "",
             destination_name: initial.destination_name ?? "",
@@ -433,6 +585,14 @@ function AutomationForm({
                         })}
                     </div>
                 </div>
+
+                {/* Per-campaign metrics */}
+                <CampaignMetricsPicker
+                    accountIds={form.account_ids}
+                    globalMetrics={form.metrics_config}
+                    value={form.campaign_metrics}
+                    onChange={v => setForm((f: AutomationFormData) => ({ ...f, campaign_metrics: v }))}
+                />
 
                 {/* Custom message */}
                 <div className="space-y-2">

@@ -202,7 +202,8 @@ model ReportAutomation {
   account_ids    Json      // string[] — Meta account IDs (ex: ["act_123", "act_456"])
   date_preset    String    @default("yesterday")
   schedule_time  String    @default("09:00")
-  metrics_config Json      // Record<string, boolean>
+  metrics_config   Json      // Record<string, boolean>
+  campaign_metrics Json      @default("{}")  // Record<campaignId, Record<string, boolean>>
   custom_message   String?
 
   destination_type String    @default("default")  // "default" | "number" | "group"

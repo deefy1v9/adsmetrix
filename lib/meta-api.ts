@@ -161,6 +161,30 @@ export async function getAdAccounts(workspaceId?: string): Promise<MetaAdAccount
     }
 }
 
+/**
+ * Lightweight fetch — only campaign id, name, status. No insights. Used for UI pickers.
+ */
+export async function getCampaignNames(
+    accountId: string,
+    workspaceId?: string,
+): Promise<{ id: string; name: string; status: string }[]> {
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        initSdk(token);
+        const account = new AdAccount(accountId.startsWith('act_') ? accountId : `act_${accountId}`);
+        let collection = await account.getCampaigns(['name', 'status'], { limit: 100 });
+        let campaigns = [...(collection || [])];
+        let cur: any = collection;
+        while (cur?.hasNext?.()) {
+            cur = await cur.next();
+            if (cur) campaigns = [...campaigns, ...cur];
+        }
+        return campaigns.map((c: any) => ({ id: c.id, name: c.name, status: c.status ?? '' }));
+    } catch {
+        return [];
+    }
+}
+
 export async function getCampaigns(accountId: string, datePreset: string = 'maximum', workspaceId?: string): Promise<MetaCampaign[]> {
     const cacheKey = `${accountId}_${datePreset}`;
     const cached = campaignsCache.get(cacheKey);

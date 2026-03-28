@@ -504,7 +504,7 @@ export async function getAccountDailyInsights(
         const lastDay = new Date(year, month + 1, 0).getDate();
         const until = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-        const url = `https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions,date_start&time_range={"since":"${since}","until":"${until}"}&time_increment=1&access_token=${token}`;
+        const url = `https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions,date_start&time_range={"since":"${since}","until":"${until}"}&time_increment=1&limit=31&access_token=${token}`;
         const res = await fetch(url);
         const data = await res.json();
 

@@ -52,6 +52,7 @@ const EMPTY_FORM: AutomationFormData = {
     metrics_config:   { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean>,
     campaign_metrics: {},
     custom_message:   "",
+    skip_weekends:    false,
     destination_type: "default",
     destination_id:   "",
     destination_name: "",
@@ -357,6 +358,11 @@ function AutomationCard({
                 <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                     {activeMetrics} métricas
                 </span>
+                {automation.skip_weekends && (
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-amber-400">
+                        Seg–Sex
+                    </span>
+                )}
                 {automation.destination_type === "group" && (
                     <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <Users className="w-3 h-3" />
@@ -436,6 +442,7 @@ function AutomationForm({
             metrics_config:   initial.metrics_config   ?? {},
             campaign_metrics: initial.campaign_metrics  ?? {},
             custom_message:   initial.custom_message   ?? "",
+            skip_weekends:    initial.skip_weekends    ?? false,
             destination_type: initial.destination_type ?? "default",
             destination_id:   initial.destination_id   ?? "",
             destination_name: initial.destination_name ?? "",
@@ -527,6 +534,28 @@ function AutomationForm({
                         </select>
                     </div>
                 </div>
+
+                {/* Skip weekends */}
+                <button
+                    type="button"
+                    onClick={() => setForm((f: AutomationFormData) => ({ ...f, skip_weekends: !f.skip_weekends }))}
+                    className={cn(
+                        "flex items-center gap-3 w-full px-4 py-3 rounded-xl border transition-all text-left",
+                        form.skip_weekends
+                            ? "bg-primary/10 border-primary/30 text-foreground"
+                            : "bg-muted border-border text-muted-foreground"
+                    )}
+                >
+                    {form.skip_weekends
+                        ? <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                        : <Square className="w-4 h-4 shrink-0" />}
+                    <div>
+                        <p className="text-sm font-medium">Pular fins de semana</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Sábado e domingo não enviam. Na segunda-feira puxa métricas de sexta a domingo.
+                        </p>
+                    </div>
+                </button>
 
                 {/* Accounts */}
                 <div className="space-y-3">

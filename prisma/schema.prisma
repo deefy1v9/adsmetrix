@@ -210,6 +210,8 @@ model ReportAutomation {
   destination_id   String?   // phone number or group JID (e.g. 120363XXX@g.us)
   destination_name String?   // human-readable label (group name)
 
+  skip_weekends  Boolean   @default(false)  // skip Sat & Sun; on Mon pulls Fri–Sun
+
   last_sent_at   DateTime?
   created_at     DateTime  @default(now())
   updated_at     DateTime  @updatedAt

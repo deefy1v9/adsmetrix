@@ -26,6 +26,7 @@ export interface AutomationFormData {
     metrics_config:   Record<string, boolean>;
     campaign_metrics: Record<string, Record<string, boolean>>;  // campaignId → per-campaign override
     custom_message:   string;
+    skip_weekends:    boolean;
     destination_type: string;  // "default" | "number" | "group"
     destination_id:   string;  // phone or group JID
     destination_name: string;  // display label (group name)
@@ -42,6 +43,7 @@ export type AutomationRecord = {
     metrics_config:   Record<string, boolean>;
     campaign_metrics: Record<string, Record<string, boolean>>;
     custom_message:   string | null;
+    skip_weekends:    boolean;
     destination_type: string;
     destination_id:   string | null;
     destination_name: string | null;
@@ -66,6 +68,7 @@ export async function listAutomationsAction(): Promise<AutomationRecord[]> {
         account_ids:      r.account_ids    as string[],
         metrics_config:   r.metrics_config as Record<string, boolean>,
         campaign_metrics: ((r as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>,
+        skip_weekends:    (r as any).skip_weekends ?? false,
         destination_type: (r as any).destination_type ?? 'default',
         destination_id:   (r as any).destination_id   ?? null,
         destination_name: (r as any).destination_name ?? null,
@@ -88,6 +91,7 @@ export async function createAutomationAction(data: AutomationFormData) {
                 metrics_config:   data.metrics_config,
                 campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
+                skip_weekends:    data.skip_weekends ?? false,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
                 destination_name: data.destination_name.trim() || null,
@@ -115,6 +119,7 @@ export async function updateAutomationAction(id: string, data: AutomationFormDat
                 metrics_config:   data.metrics_config,
                 campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
+                skip_weekends:    data.skip_weekends ?? false,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
                 destination_name: data.destination_name.trim() || null,
@@ -186,23 +191,23 @@ export async function runAutomationNowAction(id: string) {
  */
 export async function sendAutomationReport(automationId: string, workspaceId: string, isScheduled = false) {
     try {
-        // Weekend skip — only when triggered by cron (not manual "Enviar Agora")
-        if (isScheduled) {
-            const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-            const day = nowBR.getDay(); // 0=Dom, 1=Seg, ..., 6=Sáb
-            if (day === 0 || day === 6) {
-                return { success: true, skipped: true };
-            }
-        }
-
         const automation = await prisma.reportAutomation.findFirst({
             where: { id: automationId, workspace_id: workspaceId },
         });
         if (!automation) return { success: false, error: 'Automação não encontrada' };
 
+        // Weekend skip — only when triggered by cron (not manual "Enviar Agora")
+        const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const dayBR = nowBR.getDay(); // 0=Dom, 1=Seg, …, 6=Sáb
+
+        if (isScheduled && (automation as any).skip_weekends) {
+            if (dayBR === 0 || dayBR === 6) {
+                return { success: true, skipped: true, reason: 'weekend' };
+            }
+        }
+
         // Monday rollup: if today is Monday and preset is 'yesterday', pull Fri–Sun (last_3d)
-        const nowBR2 = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-        const isMonday = isScheduled && nowBR2.getDay() === 1;
+        const isMonday = isScheduled && (automation as any).skip_weekends && dayBR === 1;
         const effectivePreset = isMonday && automation.date_preset === 'yesterday'
             ? 'last_3d'
             : automation.date_preset;

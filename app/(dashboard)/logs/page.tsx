@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ScrollText, MessageSquare, CheckCircle2, XCircle } from "lucide-react";
@@ -7,9 +8,19 @@ interface SearchParams {
     channel?: string;
 }
 
+function getWorkspaceId(): string | undefined {
+    try {
+        return headers().get("x-workspace-id") ?? undefined;
+    } catch {
+        return undefined;
+    }
+}
+
 async function getReportLogsAction(channel?: string, limit = 200) {
     try {
+        const workspaceId = getWorkspaceId();
         const where: any = {};
+        if (workspaceId) where.workspace_id = workspaceId;
         if (channel && channel !== "all") where.channel = channel;
 
         const logs = await (prisma as any).reportLog.findMany({
@@ -25,11 +36,15 @@ async function getReportLogsAction(channel?: string, limit = 200) {
 
 async function getTodayStats() {
     try {
+        const workspaceId = getWorkspaceId();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        const where: any = { sent_at: { gte: today } };
+        if (workspaceId) where.workspace_id = workspaceId;
+
         const logs = await (prisma as any).reportLog.findMany({
-            where: { sent_at: { gte: today } },
+            where,
         }) as any[];
 
         const stats = {

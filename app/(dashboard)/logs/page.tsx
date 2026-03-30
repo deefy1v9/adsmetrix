@@ -8,9 +8,10 @@ interface SearchParams {
     channel?: string;
 }
 
-function getWorkspaceId(): string | undefined {
+async function getWorkspaceId(): Promise<string | undefined> {
     try {
-        return headers().get("x-workspace-id") ?? undefined;
+        const h = await headers();
+        return h.get("x-workspace-id") ?? undefined;
     } catch {
         return undefined;
     }
@@ -18,7 +19,7 @@ function getWorkspaceId(): string | undefined {
 
 async function getReportLogsAction(channel?: string, limit = 200) {
     try {
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
         const where: any = {};
         if (workspaceId) where.workspace_id = workspaceId;
         if (channel && channel !== "all") where.channel = channel;
@@ -36,7 +37,7 @@ async function getReportLogsAction(channel?: string, limit = 200) {
 
 async function getTodayStats() {
     try {
-        const workspaceId = getWorkspaceId();
+        const workspaceId = await getWorkspaceId();
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 

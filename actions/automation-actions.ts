@@ -196,18 +196,27 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         });
         if (!automation) return { success: false, error: 'Automação não encontrada' };
 
-        // Weekend skip — only when triggered by cron (not manual "Enviar Agora")
+        // Never send disabled automations (defense-in-depth for scheduled runs)
+        if (isScheduled && !automation.enabled) {
+            return { success: true, skipped: true, reason: 'disabled' };
+        }
+
+        // Weekend / Monday logic — only for scheduled runs
         const nowBR = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
         const dayBR = nowBR.getDay(); // 0=Dom, 1=Seg, …, 6=Sáb
+        const skipWeekends = !!(automation as any).skip_weekends;
 
-        if (isScheduled && (automation as any).skip_weekends) {
+        if (isScheduled && skipWeekends) {
+            // Saturday (6) or Sunday (0) → skip
             if (dayBR === 0 || dayBR === 6) {
                 return { success: true, skipped: true, reason: 'weekend' };
             }
         }
 
-        // Monday rollup: if today is Monday and preset is 'yesterday', pull Fri–Sun (excl. today)
-        const isMonday = isScheduled && (automation as any).skip_weekends && dayBR === 1;
+        // Monday rollup: on Monday, if skip_weekends is on and preset is 'yesterday',
+        // pull Fri–Sun (last 3 complete days) so the weekend data is included.
+        // After sending, nothing changes in the DB — Tuesday+ the preset goes back to 'yesterday' naturally.
+        const isMonday = isScheduled && skipWeekends && dayBR === 1;
         const effectivePreset = isMonday && automation.date_preset === 'yesterday'
             ? 'last_3d_completed'
             : automation.date_preset;

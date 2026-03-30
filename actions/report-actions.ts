@@ -182,6 +182,11 @@ export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'al
 
         // ── Run ReportAutomation records ──────────────────────────────────────
         const { sendAutomationReport } = await import('@/actions/automation-actions');
+        // ── Weekend skip at batch level ───────────────────────────────────────
+        const nowBRBatch   = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const dayBRBatch   = nowBRBatch.getDay(); // 0=Dom, 6=Sáb
+        const isWeekendNow = dayBRBatch === 0 || dayBRBatch === 6;
+
         const automations = await prisma.reportAutomation.findMany({ where: { enabled: true } });
 
         let autoSuccess = 0;
@@ -194,6 +199,8 @@ export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'al
                 alreadySent = lastDate === nowDate;
             }
             if (!isDue || alreadySent) continue;
+            // Skip weekend at batch level (fast path — avoids re-fetching from DB inside sendAutomationReport)
+            if (isWeekendNow && (automation as any).skip_weekends) continue;
             const res = await sendAutomationReport(automation.id, automation.workspace_id, true);
             if (res.success) autoSuccess++;
             await new Promise(resolve => setTimeout(resolve, 500));

@@ -80,7 +80,8 @@ export function getDateLabel(preset: string): string {
 
     if (preset === 'today')      return fmt(now);
     if (preset === 'yesterday')  return fmt(shift(-1));
-    if (preset === 'last_3d')    return `${fmt(shift(-3))} a ${fmt(shift(-1))}`;
+    if (preset === 'last_3d')           return `${fmt(shift(-3))} a ${fmt(shift(-1))}`;
+    if (preset === 'last_3d_completed') return `${fmt(shift(-3))} a ${fmt(shift(-1))}`;
     if (preset === 'last_7d')    return `${fmt(shift(-7))} a ${fmt(shift(-1))}`;
     if (preset === 'last_30d')   return `${fmt(shift(-30))} a ${fmt(shift(-1))}`;
     if (preset === 'this_month') return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(now);

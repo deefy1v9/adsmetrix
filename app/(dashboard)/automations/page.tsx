@@ -35,12 +35,13 @@ import { cn } from "@/lib/utils";
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const DATE_PRESETS = [
-    { value: "yesterday",  label: "Ontem" },
-    { value: "today",      label: "Hoje" },
-    { value: "last_7d",    label: "Últimos 7 dias" },
-    { value: "last_30d",   label: "Últimos 30 dias" },
-    { value: "this_month", label: "Este mês" },
-    { value: "last_month", label: "Mês passado" },
+    { value: "yesterday",         label: "Ontem" },
+    { value: "today",             label: "Hoje" },
+    { value: "last_3d_completed", label: "Últimos 3 dias" },
+    { value: "last_7d",           label: "Últimos 7 dias" },
+    { value: "last_30d",          label: "Últimos 30 dias" },
+    { value: "this_month",        label: "Este mês" },
+    { value: "last_month",        label: "Mês passado" },
 ];
 
 const EMPTY_FORM: AutomationFormData = {

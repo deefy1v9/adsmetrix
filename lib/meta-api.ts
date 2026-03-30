@@ -45,6 +45,26 @@ function initSdk(token: string) {
     return FacebookAdsApi.init(token);
 }
 
+/** Presets that Meta API accepts natively as date_preset */
+const NATIVE_META_PRESETS = ['today', 'yesterday', 'last_3d', 'last_7d', 'last_14d', 'last_28d', 'last_30d', 'last_90d', 'this_month', 'last_month', 'maximum'];
+
+/**
+ * Returns the correct insights params object for a given preset.
+ * - Native Meta presets  → { date_preset: '...' }
+ * - 'last_3d_completed'  → { time_range: { since, until } } covering the last 3 COMPLETE days (excl. today)
+ */
+function getInsightsParams(datePreset: string): Record<string, any> {
+    if (datePreset === 'last_3d_completed') {
+        // Compute in BR timezone: since = 3 days ago, until = yesterday
+        const nowBR  = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const fmt    = (d: Date) => d.toISOString().slice(0, 10);
+        const yesterday = new Date(nowBR); yesterday.setDate(nowBR.getDate() - 1);
+        const threeDaysAgo = new Date(nowBR); threeDaysAgo.setDate(nowBR.getDate() - 3);
+        return { time_range: { since: fmt(threeDaysAgo), until: fmt(yesterday) } };
+    }
+    return { date_preset: NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'maximum' };
+}
+
 import { MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, calculateAvailableBalance, getPaymentLabel } from './balance-utils';
 
 export { type MetaAdAccount, type MetaCampaign, type MetaAdSet, type MetaLead, type MetaCreative, calculateAvailableBalance, getPaymentLabel };
@@ -215,11 +235,7 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
             campaigns.map(async (campaign: any) => {
                 try {
                     const insightsFields = ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'cpp', 'actions', 'action_values', 'purchase_roas'];
-                    const metaPreset = ['today', 'yesterday', 'last_3d', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
-                        ? datePreset
-                        : 'maximum';
-
-                    const insights = await campaign.getInsights(insightsFields, { date_preset: metaPreset });
+                    const insights = await campaign.getInsights(insightsFields, getInsightsParams(datePreset));
                     const insight = insights[0] || {};
 
                     if (!insights[0]) {
@@ -391,15 +407,12 @@ export async function getAdSets(
         const fields = ['name', 'status'];
         const adsets = await campaign.getAdSets(fields, { limit: 100 }) as any[];
 
-        const metaPreset = ['today', 'yesterday', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
-            ? datePreset : 'maximum';
-
         const adsetsWithInsights = await Promise.all(
             (adsets || []).map(async (adset: any) => {
                 try {
                     const insights = await adset.getInsights(
                         ['impressions', 'clicks', 'spend', 'cpc', 'ctr', 'reach', 'actions'],
-                        { date_preset: metaPreset }
+                        getInsightsParams(datePreset)
                     );
                     const insight = insights[0] || {};
 
@@ -604,9 +617,7 @@ export async function getWeeklyBreakdown(accountId: string, workspaceId?: string
 
 export async function getTopCreatives(accountId: string, datePreset: string = 'last_30d', workspaceId?: string): Promise<MetaCreative[]> {
     try {
-        const metaPreset = ['today', 'yesterday', 'last_7d', 'last_30d', 'this_month', 'last_month', 'maximum'].includes(datePreset)
-            ? datePreset
-            : 'last_30d';
+        const metaPreset = NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'last_30d';
 
         const token = await getAccessToken(accountId, workspaceId);
 

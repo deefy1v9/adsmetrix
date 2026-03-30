@@ -206,10 +206,10 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
             }
         }
 
-        // Monday rollup: if today is Monday and preset is 'yesterday', pull Fri–Sun (last_3d)
+        // Monday rollup: if today is Monday and preset is 'yesterday', pull Fri–Sun (excl. today)
         const isMonday = isScheduled && (automation as any).skip_weekends && dayBR === 1;
         const effectivePreset = isMonday && automation.date_preset === 'yesterday'
-            ? 'last_3d'
+            ? 'last_3d_completed'
             : automation.date_preset;
 
         const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });

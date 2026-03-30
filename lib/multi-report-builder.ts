@@ -101,6 +101,7 @@ export function buildMultiAccountReport(
     datePreset: string,
     customMessage?: string,
     campaignMetrics?: Record<string, Record<string, boolean>>,
+    totalsOnly = false,
 ): string {
     const m = metricsConfig;
     const dateLabel = getDateLabel(datePreset);
@@ -125,8 +126,10 @@ export function buildMultiAccountReport(
         );
         if (activeCampaigns.length === 0) continue;
 
-        lines.push(`*${accountName}*`);
-        lines.push('');
+        if (!totalsOnly) {
+            lines.push(`*${accountName}*`);
+            lines.push('');
+        }
 
         for (const campaign of activeCampaigns) {
             const ins = campaign.insights;
@@ -138,27 +141,26 @@ export function buildMultiAccountReport(
             const hasN = (v?: string) => parseInt(v ?? '0') > 0;
             const hasF = (v?: string) => parseFloat(v ?? '0') > 0;
 
-            lines.push(`▸ ${campaign.name}`);
-            // Always show spend (every active campaign has it)
-            if (cm.spend)   lines.push(`   💸 Investimento: ${fmt(ins?.spend, 'currency')}`);
-            if (cm.reach)   lines.push(`   📊 Alcance: ${fmt(ins?.reach, 'number')}`);
-            if (cm.clicks && hasN(ins?.clicks))  lines.push(`   🖱️ Cliques: ${fmt(ins?.clicks, 'number')}`);
-            // Leads / conversations — only if the campaign generated them
-            if (cm.leads          && hasN(ins?.leads))         lines.push(`   🎯 Leads: ${fmt(ins?.leads, 'number')}`);
-            if (cm.conversations  && hasN(ins?.conversations))  lines.push(`   💬 Conversas: ${fmt(ins?.conversations, 'number')}`);
-            if (cm.cost_per_conversation && hasN(ins?.conversations)) lines.push(`   💸 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
-            // Purchase metrics — only if the campaign has purchases
-            if (cm.purchases      && hasN(ins?.sales))          lines.push(`   ✅ Compras: ${fmt(ins?.sales, 'number')}`);
-            if (cm.purchase_value && hasF(ins?.purchase_value)) lines.push(`   🚀 Valor de Vendas: ${fmt(ins?.purchase_value, 'currency')}`);
-            if (cm.cost_per_purchase && hasN(ins?.sales))       lines.push(`   💸 Custo por Compra: ${costPer(ins?.spend, ins?.sales)}`);
-            if (cm.roas           && hasF(ins?.roas))           lines.push(`   🎯 ROAS: ${fmt(ins?.roas, 'ratio')}`);
-            // Instagram metrics — only if generated
-            if (cm.instagram_profile_visits && hasN(ins?.instagram_profile_visits)) lines.push(`   ↗️ Visitas ao Perfil: ${fmt(ins?.instagram_profile_visits, 'number')}`);
-            if (cm.followers      && hasN(ins?.page_likes))     lines.push(`   📱 Seguidores Novos: ${fmt(ins?.page_likes, 'number')}`);
-            if (cm.cost_per_follower && hasN(ins?.page_likes))  lines.push(`   💸 Custo por Seguidor: ${costPer(ins?.spend, ins?.page_likes)}`);
-            if (cm.ctr && hasF(ins?.ctr))  lines.push(`   📈 CTR: ${fmt(ins?.ctr, 'percent')}`);
-            if (cm.cpc && hasF(ins?.cpc))  lines.push(`   💵 CPC: ${fmt(ins?.cpc, 'currency')}`);
-            lines.push('');
+            if (!totalsOnly) {
+                lines.push(`▸ ${campaign.name}`);
+                // Always show spend (every active campaign has it)
+                if (cm.spend)   lines.push(`   💸 Investimento: ${fmt(ins?.spend, 'currency')}`);
+                if (cm.reach)   lines.push(`   📊 Alcance: ${fmt(ins?.reach, 'number')}`);
+                if (cm.clicks && hasN(ins?.clicks))  lines.push(`   🖱️ Cliques: ${fmt(ins?.clicks, 'number')}`);
+                if (cm.leads          && hasN(ins?.leads))         lines.push(`   🎯 Leads: ${fmt(ins?.leads, 'number')}`);
+                if (cm.conversations  && hasN(ins?.conversations))  lines.push(`   💬 Conversas: ${fmt(ins?.conversations, 'number')}`);
+                if (cm.cost_per_conversation && hasN(ins?.conversations)) lines.push(`   💸 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
+                if (cm.purchases      && hasN(ins?.sales))          lines.push(`   ✅ Compras: ${fmt(ins?.sales, 'number')}`);
+                if (cm.purchase_value && hasF(ins?.purchase_value)) lines.push(`   🚀 Valor de Vendas: ${fmt(ins?.purchase_value, 'currency')}`);
+                if (cm.cost_per_purchase && hasN(ins?.sales))       lines.push(`   💸 Custo por Compra: ${costPer(ins?.spend, ins?.sales)}`);
+                if (cm.roas           && hasF(ins?.roas))           lines.push(`   🎯 ROAS: ${fmt(ins?.roas, 'ratio')}`);
+                if (cm.instagram_profile_visits && hasN(ins?.instagram_profile_visits)) lines.push(`   ↗️ Visitas ao Perfil: ${fmt(ins?.instagram_profile_visits, 'number')}`);
+                if (cm.followers      && hasN(ins?.page_likes))     lines.push(`   📱 Seguidores Novos: ${fmt(ins?.page_likes, 'number')}`);
+                if (cm.cost_per_follower && hasN(ins?.page_likes))  lines.push(`   💸 Custo por Seguidor: ${costPer(ins?.spend, ins?.page_likes)}`);
+                if (cm.ctr && hasF(ins?.ctr))  lines.push(`   📈 CTR: ${fmt(ins?.ctr, 'percent')}`);
+                if (cm.cpc && hasF(ins?.cpc))  lines.push(`   💵 CPC: ${fmt(ins?.cpc, 'currency')}`);
+                lines.push('');
+            }
 
             totalSpend         += parseFloat(ins?.spend ?? '0');
             totalLeads         += parseInt(ins?.leads ?? '0');

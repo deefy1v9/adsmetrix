@@ -27,6 +27,7 @@ export interface AutomationFormData {
     campaign_metrics: Record<string, Record<string, boolean>>;  // campaignId → per-campaign override
     custom_message:   string;
     skip_weekends:    boolean;
+    totals_only:      boolean;
     destination_type: string;  // "default" | "number" | "group"
     destination_id:   string;  // phone or group JID
     destination_name: string;  // display label (group name)
@@ -44,6 +45,7 @@ export type AutomationRecord = {
     campaign_metrics: Record<string, Record<string, boolean>>;
     custom_message:   string | null;
     skip_weekends:    boolean;
+    totals_only:      boolean;
     destination_type: string;
     destination_id:   string | null;
     destination_name: string | null;
@@ -69,6 +71,7 @@ export async function listAutomationsAction(): Promise<AutomationRecord[]> {
         metrics_config:   r.metrics_config as Record<string, boolean>,
         campaign_metrics: ((r as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>,
         skip_weekends:    (r as any).skip_weekends ?? false,
+        totals_only:      (r as any).totals_only   ?? false,
         destination_type: (r as any).destination_type ?? 'default',
         destination_id:   (r as any).destination_id   ?? null,
         destination_name: (r as any).destination_name ?? null,
@@ -92,6 +95,7 @@ export async function createAutomationAction(data: AutomationFormData) {
                 campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
                 skip_weekends:    data.skip_weekends ?? false,
+                totals_only:      data.totals_only   ?? false,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
                 destination_name: data.destination_name.trim() || null,
@@ -120,6 +124,7 @@ export async function updateAutomationAction(id: string, data: AutomationFormDat
                 campaign_metrics: data.campaign_metrics ?? {},
                 custom_message:   data.custom_message.trim() || null,
                 skip_weekends:    data.skip_weekends ?? false,
+                totals_only:      data.totals_only   ?? false,
                 destination_type: data.destination_type || 'default',
                 destination_id:   data.destination_id.trim()   || null,
                 destination_name: data.destination_name.trim() || null,
@@ -237,8 +242,9 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         }
 
         const accountIds    = automation.account_ids    as string[];
-        const metricsConfig  = automation.metrics_config  as MultiReportMetrics;
+        const metricsConfig   = automation.metrics_config  as MultiReportMetrics;
         const campaignMetrics = ((automation as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>;
+        const totalsOnly      = (automation as any).totals_only ?? false;
 
         // Fetch campaigns for all configured accounts
         const { getCampaigns } = await import('@/lib/meta-api');
@@ -266,6 +272,7 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
             effectivePreset,
             automation.custom_message ?? undefined,
             campaignMetrics,
+            totalsOnly,
         );
 
         const { sendTextMessage } = await import('@/lib/uazapi');

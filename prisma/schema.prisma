@@ -211,6 +211,7 @@ model ReportAutomation {
   destination_name String?   // human-readable label (group name)
 
   skip_weekends  Boolean   @default(false)  // skip Sat & Sun; on Mon pulls Fri–Sun
+  totals_only    Boolean   @default(false)  // send only combined totals, no per-campaign breakdown
 
   last_sent_at   DateTime?
   created_at     DateTime  @default(now())

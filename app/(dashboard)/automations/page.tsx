@@ -54,6 +54,7 @@ const EMPTY_FORM: AutomationFormData = {
     campaign_metrics: {},
     custom_message:   "",
     skip_weekends:    false,
+    totals_only:      false,
     destination_type: "default",
     destination_id:   "",
     destination_name: "",
@@ -364,6 +365,11 @@ function AutomationCard({
                         Seg–Sex
                     </span>
                 )}
+                {automation.totals_only && (
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-primary">
+                        Só totais
+                    </span>
+                )}
                 {automation.destination_type === "group" && (
                     <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
                         <Users className="w-3 h-3" />
@@ -444,6 +450,7 @@ function AutomationForm({
             campaign_metrics: initial.campaign_metrics  ?? {},
             custom_message:   initial.custom_message   ?? "",
             skip_weekends:    initial.skip_weekends    ?? false,
+            totals_only:      initial.totals_only      ?? false,
             destination_type: initial.destination_type ?? "default",
             destination_id:   initial.destination_id   ?? "",
             destination_name: initial.destination_name ?? "",
@@ -554,6 +561,28 @@ function AutomationForm({
                         <p className="text-sm font-medium">Pular fins de semana</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
                             Sábado e domingo não enviam. Na segunda-feira puxa métricas de sexta a domingo.
+                        </p>
+                    </div>
+                </button>
+
+                {/* Totals only */}
+                <button
+                    type="button"
+                    onClick={() => setForm((f: AutomationFormData) => ({ ...f, totals_only: !f.totals_only }))}
+                    className={cn(
+                        "flex items-center gap-3 w-full px-4 py-3 rounded-xl border transition-all text-left",
+                        form.totals_only
+                            ? "bg-primary/10 border-primary/30 text-foreground"
+                            : "bg-muted border-border text-muted-foreground"
+                    )}
+                >
+                    {form.totals_only
+                        ? <CheckSquare className="w-4 h-4 text-primary shrink-0" />
+                        : <Square className="w-4 h-4 shrink-0" />}
+                    <div>
+                        <p className="text-sm font-medium">Somente totais</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Envia apenas o resumo combinado de todas as campanhas, sem detalhamento por campanha.
                         </p>
                     </div>
                 </button>

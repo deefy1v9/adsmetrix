@@ -199,7 +199,9 @@ export async function getCampaignNames(
             cur = await cur.next();
             if (cur) campaigns = [...campaigns, ...cur];
         }
-        return campaigns.map((c: any) => ({ id: c.id, name: c.name, status: c.status ?? '' }));
+        return campaigns
+            .map((c: any) => ({ id: c.id, name: c.name, status: c.status ?? '' }))
+            .filter(c => c.status === 'ACTIVE');
     } catch {
         return [];
     }

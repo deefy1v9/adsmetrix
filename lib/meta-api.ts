@@ -410,40 +410,42 @@ export async function getAccountTotals(
         initSdk(token);
         const account = new AdAccount(accountId);
         const insights = await (account as any).getInsights(
-            ['reach', 'actions'],
+            ['reach', 'actions', 'unique_actions'],
             getInsightsParams(datePreset),
         );
         const insight = insights?.[0] ?? {};
 
+        // Log all fields returned so we can diagnose what Meta actually sends
+        const insightKeys = Object.keys(insight).join(', ');
+        console.log(`[MetaAPI] getAccountTotals ${accountId} — insight fields: ${insightKeys}`);
+
         let followers    = 0;
         let profileVisits = 0;
 
-        if (insight.actions) {
-            // Always log every action type+value to diagnose which names Meta uses for this account
-            const types = insight.actions.map((a: any) => `${a.action_type}=${a.value}`).join(' | ');
-            console.log(`[MetaAPI] getAccountTotals ${accountId} — all actions: ${types}`);
+        // Helper: search for follow/profile actions in whichever array Meta returns
+        const searchActions = (arr: any[] | undefined) => {
+            if (!arr?.length) return;
+            const types = arr.map((a: any) => `${a.action_type}=${a.value}`).join(' | ');
+            console.log(`[MetaAPI] getAccountTotals ${accountId} — actions: ${types}`);
 
-            // Followers: match any action type containing 'follow'
-            const followAction = insight.actions.find((a: any) =>
-                (a.action_type as string).includes('follow')
-            );
+            const followAction = arr.find((a: any) => (a.action_type as string).includes('follow'));
             if (followAction) {
                 followers = parseInt(followAction.value || '0');
-                console.log(`[MetaAPI] followers matched via "${followAction.action_type}" = ${followers}`);
+                console.log(`[MetaAPI] followers via "${followAction.action_type}" = ${followers}`);
             }
-
-            // Profile visits: match any action type containing 'profile_visit' or 'profile_view'
-            const profileAction = insight.actions.find((a: any) =>
+            const profileAction = arr.find((a: any) =>
                 (a.action_type as string).includes('profile_visit') ||
                 (a.action_type as string).includes('profile_view')
             );
             if (profileAction) {
                 profileVisits = parseInt(profileAction.value || '0');
-                console.log(`[MetaAPI] profileVisits matched via "${profileAction.action_type}" = ${profileVisits}`);
+                console.log(`[MetaAPI] profileVisits via "${profileAction.action_type}" = ${profileVisits}`);
             }
-        } else {
-            console.log(`[MetaAPI] getAccountTotals ${accountId} — no actions in response`);
-        }
+        };
+
+        searchActions(insight.actions);
+        // Fallback: try unique_actions if actions didn't have what we need
+        if (followers === 0 && profileVisits === 0) searchActions(insight.unique_actions);
 
         const reach = parseInt(insight.reach || '0');
         console.log(`[MetaAPI] getAccountTotals ${accountId} — reach: ${reach}, followers: ${followers}, profileVisits: ${profileVisits}`);

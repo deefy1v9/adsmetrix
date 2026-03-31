@@ -184,18 +184,19 @@ export async function previewAutomationAction(
         const campaignMetrics = ((automation as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>;
         const totalsOnly     = (automation as any).totals_only ?? false;
 
-        const { getCampaigns } = await import('@/lib/meta-api');
+        const { getCampaigns, getAccountTotals } = await import('@/lib/meta-api');
         const accountsData = await Promise.all(
             accountIds.map(async (accountId) => {
                 try {
-                    const [campaigns, dbAccount] = await Promise.all([
+                    const [campaigns, dbAccount, accountTotals] = await Promise.all([
                         getCampaigns(accountId, automation.date_preset, workspaceId),
                         prisma.account.findUnique({
                             where:  { account_id: accountId },
                             select: { account_name: true },
                         }),
+                        getAccountTotals(accountId, automation.date_preset, workspaceId),
                     ]);
-                    return { accountName: dbAccount?.account_name || accountId, campaigns };
+                    return { accountName: dbAccount?.account_name || accountId, campaigns, accountTotals };
                 } catch {
                     return { accountName: accountId, campaigns: [] };
                 }
@@ -299,19 +300,20 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         const campaignMetrics = ((automation as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>;
         const totalsOnly      = (automation as any).totals_only ?? false;
 
-        // Fetch campaigns for all configured accounts
-        const { getCampaigns } = await import('@/lib/meta-api');
+        // Fetch campaigns and account-level totals (deduplicated reach/followers)
+        const { getCampaigns, getAccountTotals } = await import('@/lib/meta-api');
         const accountsData = await Promise.all(
             accountIds.map(async (accountId) => {
                 try {
-                    const [campaigns, dbAccount] = await Promise.all([
+                    const [campaigns, dbAccount, accountTotals] = await Promise.all([
                         getCampaigns(accountId, effectivePreset, workspaceId),
                         prisma.account.findUnique({
                             where:  { account_id: accountId },
                             select: { account_name: true },
                         }),
+                        getAccountTotals(accountId, effectivePreset, workspaceId),
                     ]);
-                    return { accountName: dbAccount?.account_name || accountId, campaigns };
+                    return { accountName: dbAccount?.account_name || accountId, campaigns, accountTotals };
                 } catch {
                     return { accountName: accountId, campaigns: [] };
                 }

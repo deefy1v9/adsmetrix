@@ -96,7 +96,7 @@ export function getDateLabel(preset: string): string {
 // ── Main builder ──────────────────────────────────────────────────────────────
 
 export function buildMultiAccountReport(
-    accountsData: { accountName: string; campaigns: MetaCampaign[] }[],
+    accountsData: { accountName: string; campaigns: MetaCampaign[]; accountTotals?: { reach: number; followers: number } }[],
     metricsConfig: MultiReportMetrics,
     datePreset: string,
     customMessage?: string,
@@ -120,7 +120,7 @@ export function buildMultiAccountReport(
     let totalConversations = 0, totalPurchases = 0, totalPurchaseValue = 0;
     let totalReach = 0, totalProfileVisits = 0, totalFollowers = 0;
 
-    for (const { accountName, campaigns } of accountsData) {
+    for (const { accountName, campaigns, accountTotals } of accountsData) {
         const activeCampaigns = campaigns.filter(c =>
             c.insights && parseFloat(c.insights.spend ?? '0') > 0
         );
@@ -168,9 +168,20 @@ export function buildMultiAccountReport(
             totalConversations += parseInt(ins?.conversations ?? '0');
             totalPurchases     += parseInt(ins?.sales ?? '0');
             totalPurchaseValue += parseFloat(ins?.purchase_value ?? '0');
-            totalReach         += parseInt(ins?.reach ?? '0');
             totalProfileVisits += parseInt(ins?.instagram_profile_visits ?? '0');
-            totalFollowers     += parseInt(ins?.page_likes ?? '0');
+
+            // Reach and followers: use account-level totals (deduplicated) when available.
+            // Summing campaign-level reach overcounts because the same user appears in each campaign.
+            if (!accountTotals) {
+                totalReach     += parseInt(ins?.reach ?? '0');
+                totalFollowers += parseInt(ins?.page_likes ?? '0');
+            }
+        }
+
+        // Account-level reach/followers (deduplicated — matches Ads Manager)
+        if (accountTotals) {
+            totalReach     += accountTotals.reach;
+            totalFollowers += accountTotals.followers;
         }
     }
 

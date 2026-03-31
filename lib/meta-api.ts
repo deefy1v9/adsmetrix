@@ -407,6 +407,52 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
     }
 }
 
+/**
+ * Fetches account-level insights: deduplicated reach and followers.
+ * Reach at account level is NOT the sum of campaign reaches — Meta deduplicates
+ * users who saw multiple campaigns, so this matches what Ads Manager shows.
+ */
+export async function getAccountTotals(
+    accountId: string,
+    datePreset: string,
+    workspaceId?: string,
+): Promise<{ reach: number; followers: number }> {
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        initSdk(token);
+        const account = new AdAccount(accountId);
+        const insights = await account.getInsights(
+            ['reach', 'actions'],
+            getInsightsParams(datePreset),
+        );
+        const insight = insights?.[0] ?? {};
+
+        let followers = 0;
+        if (insight.actions) {
+            const FOLLOWER_TYPES = [
+                'onsite_conversion.follow',
+                'follow',
+                'page_follow',
+                'onsite_conversion.page_follow',
+            ];
+            const followAction = insight.actions.find((a: any) => FOLLOWER_TYPES.includes(a.action_type));
+            if (followAction) {
+                followers = parseInt(followAction.value || '0');
+            } else {
+                const types = insight.actions.map((a: any) => a.action_type).join(', ');
+                console.log(`[MetaAPI] getAccountTotals ${accountId} — all action types: ${types}`);
+            }
+        }
+
+        const reach = parseInt(insight.reach || '0');
+        console.log(`[MetaAPI] getAccountTotals ${accountId} — reach: ${reach}, followers: ${followers}`);
+        return { reach, followers };
+    } catch (err: any) {
+        console.error(`[MetaAPI] getAccountTotals error (${accountId}):`, err.message);
+        return { reach: 0, followers: 0 };
+    }
+}
+
 export async function getAdSets(
     accountId: string,
     campaignId: string,

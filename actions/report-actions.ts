@@ -141,7 +141,15 @@ export async function sendDailyReportAction(accountId: string) {
 export async function sendAllDailyReportsAction(platformType: 'all' | 'wa' = 'all') {
     try {
         const now = new Date();
+        const nowBR  = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const brHour = nowBR.getHours();
         const brTime = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+
+        // Only send between 09:00 and 10:00 BRT — prevents sending outside the allowed window
+        if (brHour < 9 || brHour >= 10) {
+            console.log(`[Cron] Outside allowed window (09:00–10:00 BRT). Current time: ${brTime}. Skipping all sends.`);
+            return { success: true, summary: 'Fora da janela de envio (09:00–10:00 BRT)', total: 0 };
+        }
 
         console.log(`[Cron] Starting daily reports run at ${brTime} (BR Time)`);
 

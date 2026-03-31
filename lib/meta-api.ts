@@ -53,16 +53,22 @@ const NATIVE_META_PRESETS = ['today', 'yesterday', 'last_3d', 'last_7d', 'last_1
  * - Native Meta presets  → { date_preset: '...' }
  * - 'last_3d_completed'  → { time_range: { since, until } } covering the last 3 COMPLETE days (excl. today)
  */
+// Attribution windows matching Meta Ads Manager default (7d_click + 1d_view)
+const DEFAULT_ATTRIBUTION_WINDOWS = ['7d_click', '1d_view'];
+
 function getInsightsParams(datePreset: string): Record<string, any> {
+    const base: Record<string, any> = {
+        action_attribution_windows: DEFAULT_ATTRIBUTION_WINDOWS,
+    };
     if (datePreset === 'last_3d_completed') {
         // Compute in BR timezone: since = 3 days ago, until = yesterday
         const nowBR  = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
         const fmt    = (d: Date) => d.toISOString().slice(0, 10);
         const yesterday = new Date(nowBR); yesterday.setDate(nowBR.getDate() - 1);
         const threeDaysAgo = new Date(nowBR); threeDaysAgo.setDate(nowBR.getDate() - 3);
-        return { time_range: { since: fmt(threeDaysAgo), until: fmt(yesterday) } };
+        return { ...base, time_range: { since: fmt(threeDaysAgo), until: fmt(yesterday) } };
     }
-    return { date_preset: NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'maximum' };
+    return { ...base, date_preset: NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'maximum' };
 }
 
 import { MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, calculateAvailableBalance, getPaymentLabel } from './balance-utils';

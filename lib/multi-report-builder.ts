@@ -96,7 +96,7 @@ export function getDateLabel(preset: string): string {
 // ── Main builder ──────────────────────────────────────────────────────────────
 
 export function buildMultiAccountReport(
-    accountsData: { accountName: string; campaigns: MetaCampaign[]; accountTotals?: { reach: number; followers: number } }[],
+    accountsData: { accountName: string; campaigns: MetaCampaign[]; accountTotals?: { reach: number; followers: number; profileVisits: number } }[],
     metricsConfig: MultiReportMetrics,
     datePreset: string,
     customMessage?: string,

@@ -421,7 +421,7 @@ export async function getAccountTotals(
         const token = await getAccessToken(accountId, workspaceId);
         initSdk(token);
         const account = new AdAccount(accountId);
-        const insights = await account.getInsights(
+        const insights = await (account as any).getInsights(
             ['reach', 'actions'],
             getInsightsParams(datePreset),
         );

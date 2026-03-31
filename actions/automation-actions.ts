@@ -165,6 +165,59 @@ export async function toggleAutomationAction(id: string, enabled: boolean) {
 
 // ── Send ──────────────────────────────────────────────────────────────────────
 
+// ── Preview ───────────────────────────────────────────────────────────────────
+
+export async function previewAutomationAction(
+    id: string,
+): Promise<{ success: boolean; message?: string; error?: string }> {
+    try {
+        const workspaceId = await getWorkspaceId();
+        if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+        const automation = await prisma.reportAutomation.findFirst({
+            where: { id, workspace_id: workspaceId },
+        });
+        if (!automation) return { success: false, error: 'Automação não encontrada' };
+
+        const accountIds     = automation.account_ids    as string[];
+        const metricsConfig  = automation.metrics_config as MultiReportMetrics;
+        const campaignMetrics = ((automation as any).campaign_metrics ?? {}) as Record<string, Record<string, boolean>>;
+        const totalsOnly     = (automation as any).totals_only ?? false;
+
+        const { getCampaigns } = await import('@/lib/meta-api');
+        const accountsData = await Promise.all(
+            accountIds.map(async (accountId) => {
+                try {
+                    const [campaigns, dbAccount] = await Promise.all([
+                        getCampaigns(accountId, automation.date_preset, workspaceId),
+                        prisma.account.findUnique({
+                            where:  { account_id: accountId },
+                            select: { account_name: true },
+                        }),
+                    ]);
+                    return { accountName: dbAccount?.account_name || accountId, campaigns };
+                } catch {
+                    return { accountName: accountId, campaigns: [] };
+                }
+            })
+        );
+
+        const { buildMultiAccountReport } = await import('@/lib/multi-report-builder');
+        const message = buildMultiAccountReport(
+            accountsData,
+            metricsConfig,
+            automation.date_preset,
+            automation.custom_message ?? undefined,
+            campaignMetrics,
+            totalsOnly,
+        );
+
+        return { success: true, message };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
 // ── Campaign list (for UI picker — no insights, fast) ─────────────────────────
 
 export async function fetchCampaignListAction(accountIds: string[]): Promise<CampaignSummary[]> {

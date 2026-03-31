@@ -297,11 +297,12 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             }
                         }
 
-                        // Page likes (new followers from ads)
-                        const pageLikeAction = insight.actions.find((a: any) =>
-                            a.action_type === 'page_like' || a.action_type === 'like'
+                        // Instagram new followers from ads (onsite_conversion.follow)
+                        // page_like = Facebook page likes (different metric)
+                        const followAction = insight.actions.find((a: any) =>
+                            a.action_type === 'onsite_conversion.follow' || a.action_type === 'follow'
                         );
-                        if (pageLikeAction) pagelikesValue = parseInt(pageLikeAction.value || '0');
+                        if (followAction) pagelikesValue = parseInt(followAction.value || '0');
 
                         // Post engagements
                         const postEngagementAction = insight.actions.find((a: any) =>

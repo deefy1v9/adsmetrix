@@ -32,7 +32,6 @@ const menuItems: MenuItem[] = [
     { name: "Dashboard", icon: BarChart3, href: "/" },
     { name: "Contas", icon: Wallet, href: "/accounts" },
     { name: "Leads", icon: Users, href: "/leads" },
-    { name: "Relatórios WhatsApp", icon: MessageSquare, href: "/whatsapp-reports" },
     { name: "Automações", icon: Zap, href: "/automations" },
     { name: "Logs", icon: ScrollText, href: "/logs" },
     { name: "Notificações", icon: Bell, href: "/notifications" },

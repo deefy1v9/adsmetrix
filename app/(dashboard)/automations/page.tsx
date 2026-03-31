@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
 import { getUazAPIStatusAction, listGroupsAction } from "@/actions/uazapi-actions";
+import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
 import type { WhatsAppGroup } from "@/lib/uazapi";
 import {
     listAutomationsAction,
@@ -12,6 +13,7 @@ import {
     toggleAutomationAction,
     runAutomationNowAction,
     fetchCampaignListAction,
+    previewAutomationAction,
     AutomationRecord,
     AutomationFormData,
     type CampaignSummary,
@@ -23,7 +25,7 @@ import { Badge } from "@/components/ui/Badge";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
     Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
-    Phone, Users,
+    Phone, Users, Eye, EyeOff,
 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import {
@@ -308,7 +310,7 @@ function AutomationCard({
     onDelete: () => void;
     onRunNow: () => void;
 }) {
-    const [running, setRunning] = useState(false);
+    const [running,   setRunning]   = useState(false);
     const [runResult, setRunResult] = useState<{ success: boolean; error?: string } | null>(null);
 
     const accountNames = (automation.account_ids ?? [])
@@ -425,6 +427,7 @@ function AutomationCard({
                     {runResult.success ? "✓ Relatório enviado!" : `✗ ${runResult.error}`}
                 </div>
             )}
+
         </GlassCard>
     );
 }
@@ -458,7 +461,29 @@ function AutomationForm({
         : { ...EMPTY_FORM, metrics_config: { ...DEFAULT_AUTOMATION_METRICS } as Record<string, boolean> }
     );
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error,  setError]  = useState<string | null>(null);
+
+    // ── Live preview ──────────────────────────────────────────────────────────
+    const [previewing,  setPreviewing]  = useState(false);
+    const [previewText, setPreviewText] = useState<string | null>(null);
+    const [previewErr,  setPreviewErr]  = useState<string | null>(null);
+
+    // Reload preview whenever key form fields change (only for existing automations)
+    useEffect(() => {
+        if (!initial) return; // no preview for unsaved automations
+        let cancelled = false;
+        setPreviewing(true);
+        setPreviewText(null);
+        setPreviewErr(null);
+        previewAutomationAction(initial.id).then(res => {
+            if (cancelled) return;
+            if (res.success && res.message) setPreviewText(res.message);
+            else setPreviewErr(res.error ?? 'Erro ao carregar');
+            setPreviewing(false);
+        });
+        return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initial?.id, form.date_preset, form.metrics_config, form.campaign_metrics, form.totals_only]);
 
     const toggleAccount = (id: string) => {
         setForm(f => ({
@@ -718,6 +743,33 @@ function AutomationForm({
                     )}
                 </div>
 
+                {/* Live preview — only shown when editing an existing automation */}
+                {initial && (
+                    <div className="rounded-xl overflow-hidden border border-border">
+                        <div className="px-3 py-2 bg-muted flex items-center justify-between">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                <Eye className="w-3 h-3" /> Pré-visualização
+                            </span>
+                            <span className="text-xs text-muted-foreground">{getDateLabel(form.date_preset)}</span>
+                        </div>
+                        {previewing && (
+                            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground text-sm">
+                                <Loader2 className="w-4 h-4 animate-spin" /> Buscando dados reais…
+                            </div>
+                        )}
+                        {previewErr && !previewing && (
+                            <div className="px-4 py-3 text-sm text-red-400">{previewErr}</div>
+                        )}
+                        {previewText && !previewing && (
+                            <div className="bg-[#0d1117] px-4 py-4 max-h-[420px] overflow-y-auto">
+                                <pre className="text-sm text-[#e6edf3] font-mono whitespace-pre-wrap leading-relaxed">
+                                    {previewText}
+                                </pre>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {error && (
                     <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
                         {error}
@@ -826,30 +878,8 @@ export default function AutomationsPage() {
                 </Button>
             </div>
 
-            {/* WA status banner */}
-            <div>
-                {waConnected ? (
-                    <div className="inline-flex items-center gap-2 text-sm text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
-                        <Wifi className="h-4 w-4" /> WhatsApp conectado — envios automáticos ativos
-                    </div>
-                ) : waConfigured ? (
-                    <div className="inline-flex items-center gap-2 text-sm text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-500/20">
-                        <WifiOff className="h-4 w-4" />
-                        WhatsApp desconectado —{" "}
-                        <Link href="/whatsapp-reports" className="underline underline-offset-2 hover:text-amber-300">
-                            reconectar
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-white/5 px-3 py-2 rounded-lg border border-white/10">
-                        <MessageSquare className="h-4 w-4" />
-                        WhatsApp não configurado —{" "}
-                        <Link href="/whatsapp-reports" className="underline underline-offset-2 hover:text-foreground">
-                            configurar agora
-                        </Link>
-                    </div>
-                )}
-            </div>
+            {/* UazAPI config panel */}
+            <UazAPIPanel />
 
             {/* Automation list */}
             {loading ? (

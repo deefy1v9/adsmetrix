@@ -416,7 +416,7 @@ export async function getAccountTotals(
     accountId: string,
     datePreset: string,
     workspaceId?: string,
-): Promise<{ reach: number; followers: number }> {
+): Promise<{ reach: number; followers: number; profileVisits: number }> {
     try {
         const token = await getAccessToken(accountId, workspaceId);
         initSdk(token);
@@ -427,8 +427,14 @@ export async function getAccountTotals(
         );
         const insight = insights?.[0] ?? {};
 
-        let followers = 0;
+        let followers    = 0;
+        let profileVisits = 0;
+
         if (insight.actions) {
+            // Log all action types to help identify correct names
+            const types = insight.actions.map((a: any) => `${a.action_type}=${a.value}`).join(', ');
+            console.log(`[MetaAPI] getAccountTotals ${accountId} — actions: ${types}`);
+
             const FOLLOWER_TYPES = [
                 'onsite_conversion.follow',
                 'follow',
@@ -436,20 +442,23 @@ export async function getAccountTotals(
                 'onsite_conversion.page_follow',
             ];
             const followAction = insight.actions.find((a: any) => FOLLOWER_TYPES.includes(a.action_type));
-            if (followAction) {
-                followers = parseInt(followAction.value || '0');
-            } else {
-                const types = insight.actions.map((a: any) => a.action_type).join(', ');
-                console.log(`[MetaAPI] getAccountTotals ${accountId} — all action types: ${types}`);
-            }
+            if (followAction) followers = parseInt(followAction.value || '0');
+
+            const PROFILE_VISIT_TYPES = [
+                'profile_visit',
+                'onsite_conversion.profile_visit',
+                'instagram_profile_visit',
+            ];
+            const profileAction = insight.actions.find((a: any) => PROFILE_VISIT_TYPES.includes(a.action_type));
+            if (profileAction) profileVisits = parseInt(profileAction.value || '0');
         }
 
         const reach = parseInt(insight.reach || '0');
-        console.log(`[MetaAPI] getAccountTotals ${accountId} — reach: ${reach}, followers: ${followers}`);
-        return { reach, followers };
+        console.log(`[MetaAPI] getAccountTotals ${accountId} — reach: ${reach}, followers: ${followers}, profileVisits: ${profileVisits}`);
+        return { reach, followers, profileVisits };
     } catch (err: any) {
         console.error(`[MetaAPI] getAccountTotals error (${accountId}):`, err.message);
-        return { reach: 0, followers: 0 };
+        return { reach: 0, followers: 0, profileVisits: 0 };
     }
 }
 

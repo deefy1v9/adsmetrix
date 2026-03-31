@@ -168,20 +168,21 @@ export function buildMultiAccountReport(
             totalConversations += parseInt(ins?.conversations ?? '0');
             totalPurchases     += parseInt(ins?.sales ?? '0');
             totalPurchaseValue += parseFloat(ins?.purchase_value ?? '0');
-            totalProfileVisits += parseInt(ins?.instagram_profile_visits ?? '0');
 
-            // Reach and followers: use account-level totals (deduplicated) when available.
-            // Summing campaign-level reach overcounts because the same user appears in each campaign.
+            // Reach, followers, profile visits: use account-level (deduplicated) when available.
+            // Campaign-level sums overcount unique users and miss actions not returned per-campaign (e.g. CTWA).
             if (!accountTotals) {
-                totalReach     += parseInt(ins?.reach ?? '0');
-                totalFollowers += parseInt(ins?.page_likes ?? '0');
+                totalReach         += parseInt(ins?.reach ?? '0');
+                totalFollowers     += parseInt(ins?.page_likes ?? '0');
+                totalProfileVisits += parseInt(ins?.instagram_profile_visits ?? '0');
             }
         }
 
-        // Account-level reach/followers (deduplicated — matches Ads Manager)
+        // Account-level totals (deduplicated — matches Ads Manager)
         if (accountTotals) {
-            totalReach     += accountTotals.reach;
-            totalFollowers += accountTotals.followers;
+            totalReach         += accountTotals.reach;
+            totalFollowers     += accountTotals.followers;
+            totalProfileVisits += accountTotals.profileVisits;
         }
     }
 

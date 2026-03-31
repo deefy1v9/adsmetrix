@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
 import { getUazAPIStatusAction, listGroupsAction } from "@/actions/uazapi-actions";
 import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
@@ -294,6 +294,34 @@ function CampaignMetricsPicker({ accountIds, globalMetrics, value, onChange }: {
                     );
                 })}
             </div>
+        </div>
+    );
+}
+
+// ── WhatsApp Text Renderer ────────────────────────────────────────────────────
+
+function parseWhatsAppLine(line: string): React.ReactNode {
+    const parts = line.split(/(\*[^*\n]+\*)/g);
+    return parts.map((part, j) =>
+        part.startsWith('*') && part.endsWith('*') && part.length > 2
+            ? <strong key={j} className="font-bold">{part.slice(1, -1)}</strong>
+            : <span key={j}>{part}</span>
+    );
+}
+
+function WhatsAppText({ text }: { text: string }) {
+    const lines = text.split('\n');
+    return (
+        <div className="text-sm leading-[1.45] font-sans">
+            {lines.map((line, i) => {
+                if (/^━{3,}/.test(line)) {
+                    return <div key={i} className="border-t border-white/20 my-1.5" />;
+                }
+                if (line === '') {
+                    return <div key={i} className="h-1.5" />;
+                }
+                return <div key={i}>{parseWhatsAppLine(line)}</div>;
+            })}
         </div>
     );
 }
@@ -745,28 +773,34 @@ function AutomationForm({
 
                 {/* Live preview — only shown when editing an existing automation */}
                 {initial && (
-                    <div className="rounded-xl overflow-hidden border border-border">
-                        <div className="px-3 py-2 bg-muted flex items-center justify-between">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                                <Eye className="w-3 h-3" /> Pré-visualização
-                            </span>
-                            <span className="text-xs text-muted-foreground">{getDateLabel(form.date_preset)}</span>
+                    <div className="space-y-2">
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                            <Eye className="w-3 h-3" /> Pré-visualização
+                        </span>
+
+                        {/* WhatsApp-style chat background */}
+                        <div className="rounded-2xl overflow-hidden bg-[#0b141a] p-4 min-h-[80px]">
+                            {previewing && (
+                                <div className="flex items-center gap-2 text-[#8696a0] text-sm">
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Buscando dados reais…
+                                </div>
+                            )}
+                            {previewErr && !previewing && (
+                                <p className="text-sm text-red-400">{previewErr}</p>
+                            )}
+                            {previewText && !previewing && (
+                                <div className="flex justify-end">
+                                    {/* Sent message bubble */}
+                                    <div className="relative max-w-[85%] bg-[#005c4b] text-white rounded-2xl rounded-tr-sm px-3 pt-2 pb-5 shadow-md">
+                                        <WhatsAppText text={previewText} />
+                                        {/* Timestamp */}
+                                        <span className="absolute bottom-1.5 right-2.5 text-[10px] text-[#8696a0] whitespace-nowrap">
+                                            {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        {previewing && (
-                            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground text-sm">
-                                <Loader2 className="w-4 h-4 animate-spin" /> Buscando dados reais…
-                            </div>
-                        )}
-                        {previewErr && !previewing && (
-                            <div className="px-4 py-3 text-sm text-red-400">{previewErr}</div>
-                        )}
-                        {previewText && !previewing && (
-                            <div className="bg-[#0d1117] px-4 py-4 max-h-[420px] overflow-y-auto">
-                                <pre className="text-sm text-[#e6edf3] font-mono whitespace-pre-wrap leading-relaxed">
-                                    {previewText}
-                                </pre>
-                            </div>
-                        )}
                     </div>
                 )}
 

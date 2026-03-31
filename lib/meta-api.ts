@@ -297,12 +297,24 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             }
                         }
 
-                        // Instagram new followers from ads (onsite_conversion.follow)
-                        // page_like = Facebook page likes (different metric)
+                        // Instagram new followers from ads
+                        // Try all known action types Meta uses for followers across different campaign types
+                        const FOLLOWER_ACTION_TYPES = [
+                            'onsite_conversion.follow',
+                            'follow',
+                            'page_follow',
+                            'onsite_conversion.page_follow',
+                        ];
                         const followAction = insight.actions.find((a: any) =>
-                            a.action_type === 'onsite_conversion.follow' || a.action_type === 'follow'
+                            FOLLOWER_ACTION_TYPES.includes(a.action_type)
                         );
-                        if (followAction) pagelikesValue = parseInt(followAction.value || '0');
+                        if (followAction) {
+                            pagelikesValue = parseInt(followAction.value || '0');
+                        } else {
+                            // Debug: log available action types when followers expected but not found
+                            const types = insight.actions.map((a: any) => a.action_type).join(', ');
+                            console.log(`[MetaAPI] campaign ${campaign.name} — available actions: ${types}`);
+                        }
 
                         // Post engagements
                         const postEngagementAction = insight.actions.find((a: any) =>

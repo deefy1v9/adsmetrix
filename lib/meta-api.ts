@@ -297,24 +297,11 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             }
                         }
 
-                        // Instagram new followers from ads
-                        // Try all known action types Meta uses for followers across different campaign types
-                        const FOLLOWER_ACTION_TYPES = [
-                            'onsite_conversion.follow',
-                            'follow',
-                            'page_follow',
-                            'onsite_conversion.page_follow',
-                        ];
+                        // Instagram followers: match any action type containing 'follow'
                         const followAction = insight.actions.find((a: any) =>
-                            FOLLOWER_ACTION_TYPES.includes(a.action_type)
+                            (a.action_type as string).includes('follow')
                         );
-                        if (followAction) {
-                            pagelikesValue = parseInt(followAction.value || '0');
-                        } else {
-                            // Debug: log available action types when followers expected but not found
-                            const types = insight.actions.map((a: any) => a.action_type).join(', ');
-                            console.log(`[MetaAPI] campaign ${campaign.name} — available actions: ${types}`);
-                        }
+                        if (followAction) pagelikesValue = parseInt(followAction.value || '0');
 
                         // Post engagements
                         const postEngagementAction = insight.actions.find((a: any) =>
@@ -334,9 +321,10 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                         );
                         if (videoViewAction) videoViewsValue = parseInt(videoViewAction.value || '0');
 
-                        // Instagram profile visits
+                        // Instagram profile visits: match any action type containing 'profile_visit' or 'profile_view'
                         const profileVisitAction = insight.actions.find((a: any) =>
-                            a.action_type === 'profile_visit'
+                            (a.action_type as string).includes('profile_visit') ||
+                            (a.action_type as string).includes('profile_view')
                         );
                         if (profileVisitAction) instagramProfileVisits = parseInt(profileVisitAction.value || '0');
                     }
@@ -431,26 +419,30 @@ export async function getAccountTotals(
         let profileVisits = 0;
 
         if (insight.actions) {
-            // Log all action types to help identify correct names
-            const types = insight.actions.map((a: any) => `${a.action_type}=${a.value}`).join(', ');
-            console.log(`[MetaAPI] getAccountTotals ${accountId} — actions: ${types}`);
+            // Always log every action type+value to diagnose which names Meta uses for this account
+            const types = insight.actions.map((a: any) => `${a.action_type}=${a.value}`).join(' | ');
+            console.log(`[MetaAPI] getAccountTotals ${accountId} — all actions: ${types}`);
 
-            const FOLLOWER_TYPES = [
-                'onsite_conversion.follow',
-                'follow',
-                'page_follow',
-                'onsite_conversion.page_follow',
-            ];
-            const followAction = insight.actions.find((a: any) => FOLLOWER_TYPES.includes(a.action_type));
-            if (followAction) followers = parseInt(followAction.value || '0');
+            // Followers: match any action type containing 'follow'
+            const followAction = insight.actions.find((a: any) =>
+                (a.action_type as string).includes('follow')
+            );
+            if (followAction) {
+                followers = parseInt(followAction.value || '0');
+                console.log(`[MetaAPI] followers matched via "${followAction.action_type}" = ${followers}`);
+            }
 
-            const PROFILE_VISIT_TYPES = [
-                'profile_visit',
-                'onsite_conversion.profile_visit',
-                'instagram_profile_visit',
-            ];
-            const profileAction = insight.actions.find((a: any) => PROFILE_VISIT_TYPES.includes(a.action_type));
-            if (profileAction) profileVisits = parseInt(profileAction.value || '0');
+            // Profile visits: match any action type containing 'profile_visit' or 'profile_view'
+            const profileAction = insight.actions.find((a: any) =>
+                (a.action_type as string).includes('profile_visit') ||
+                (a.action_type as string).includes('profile_view')
+            );
+            if (profileAction) {
+                profileVisits = parseInt(profileAction.value || '0');
+                console.log(`[MetaAPI] profileVisits matched via "${profileAction.action_type}" = ${profileVisits}`);
+            }
+        } else {
+            console.log(`[MetaAPI] getAccountTotals ${accountId} — no actions in response`);
         }
 
         const reach = parseInt(insight.reach || '0');

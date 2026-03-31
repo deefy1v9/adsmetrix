@@ -919,36 +919,6 @@ export default function AutomationsPage() {
                 </div>
             )}
 
-            {/* Cron instructions */}
-            <GlassCard>
-                <div className="p-6 space-y-5">
-                    <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                        <Clock className="text-primary" /> Como Agendar o Disparo
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                        Configure um <strong className="text-foreground">cron job</strong> na sua VPS para disparar automaticamente no horário configurado em cada automação.
-                    </p>
-                    <div className="space-y-3">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                            Crontab — verificar e disparar a cada minuto
-                        </p>
-                        <div className="p-3 bg-black/30 rounded-xl border border-white/10 font-mono text-sm text-emerald-400 overflow-x-auto whitespace-pre">
-{`* * * * * curl -s "https://SEU_DOMINIO/api/cron/daily-reports?token=SEU_CRON_SECRET"`}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            O sistema verifica o horário de cada automação e envia apenas no momento correto, sem duplicação.
-                            Substitua <code className="text-primary">SEU_DOMINIO</code> e <code className="text-primary">SEU_CRON_SECRET</code> pelos valores do seu <code className="text-primary">.env</code>.
-                        </p>
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Testar manualmente</p>
-                        <div className="flex items-center gap-2 p-3 bg-black/30 rounded-xl border border-white/10 font-mono text-sm text-primary overflow-x-auto">
-                            <Terminal className="w-4 h-4 shrink-0 text-muted-foreground" />
-                            <code>GET /api/cron/daily-reports?token=SEU_CRON_SECRET</code>
-                        </div>
-                    </div>
-                </div>
-            </GlassCard>
         </div>
     );
 }

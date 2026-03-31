@@ -30,7 +30,6 @@ const menuItems: MenuItem[] = [
     { name: "Visão Geral", icon: LayoutDashboard, href: "/overview" },
     { name: "Gestor de Tráfego", icon: Target, href: "/gestor-trafego" },
     { name: "Dashboard", icon: BarChart3, href: "/" },
-    { name: "Contas", icon: Wallet, href: "/accounts" },
     { name: "Leads", icon: Users, href: "/leads" },
     { name: "Automações", icon: Zap, href: "/automations" },
     { name: "Logs", icon: ScrollText, href: "/logs" },

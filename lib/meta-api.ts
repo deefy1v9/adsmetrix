@@ -716,62 +716,45 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         const creativeIds = [...new Set(topAds.map((ad: any) => ad.creative?.id).filter(Boolean))];
         const creativeById: Record<string, any> = {};
 
+        // Two separate batch fetches:
+        // 1. Simple thumbnail fetch — same approach that works in getAdsByCPR/getAdsForAdSet
+        // 2. Metadata fetch — for video_id and preview_shareable_link
+        const thumbMap: Record<string, string> = {};
+
         if (creativeIds.length > 0) {
-            // Use /?ids= batch endpoint to fetch all needed creatives in one call
-            const batchUrl = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`;
-            const batchResp = await fetch(batchUrl);
-            const batchData = await batchResp.json();
-
-            if (batchData.error) {
-                console.warn("[MetaAPI] Batch creative fetch failed:", JSON.stringify(batchData.error));
-                // Fallback: fetch individually for each creative
-                await Promise.all(creativeIds.map(async (id) => {
-                    try {
-                        const r = await fetch(`https://graph.facebook.com/v19.0/${id}?fields=id,thumbnail_url,video_id,preview_shareable_link,object_story_spec&access_token=${token}`);
-                        const d = await r.json();
-                        if (!d.error && d.id) creativeById[d.id] = d;
-                    } catch {}
-                }));
-            } else {
-                for (const [id, creative] of Object.entries(batchData)) {
-                    creativeById[id] = creative;
+            // Fetch thumbnails with minimal fields — requesting object_story_spec alongside
+            // thumbnail_url causes Meta to return empty thumbnail_url for many creative types
+            try {
+                const thumbUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
+                const thumbResp = await fetch(thumbUrl);
+                const thumbData = await thumbResp.json();
+                if (!thumbData.error) {
+                    for (const id of creativeIds) {
+                        if (thumbData[id]?.thumbnail_url) thumbMap[id] = thumbData[id].thumbnail_url;
+                    }
                 }
-            }
-        }
+            } catch { /* thumbnails are optional */ }
 
-        console.log(`[MetaAPI] creativeIds: ${creativeIds.length}, resolved: ${Object.keys(creativeById).length}`);
+            // Fetch metadata (video_id, preview link) separately
+            try {
+                const metaUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,video_id,preview_shareable_link&access_token=${token}`;
+                const metaResp = await fetch(metaUrl);
+                const metaData = await metaResp.json();
+                if (!metaData.error) {
+                    for (const [id, creative] of Object.entries(metaData)) {
+                        creativeById[id] = creative;
+                    }
+                }
+            } catch { /* metadata is optional */ }
+        }
 
         // Build result
         return topAds.map((ad: any) => {
-            const insight = ad.insights?.data?.[0] || {};
-            const creative = creativeById[ad.creative?.id] || {};
-
-            // Media extraction with multiple fallbacks
-            const spec = creative.object_story_spec || {};
-            const videoId = creative.video_id || spec.video_data?.video_id || '';
-            // Upgrade CDN thumbnail: remove stp size restriction to get full-size image
-            const upgradeCdnUrl = (url: string) => {
-                if (!url || !url.includes('fbcdn.net')) return url;
-                try {
-                    const u = new URL(url);
-                    u.searchParams.delete('stp');
-                    return u.toString();
-                } catch { return url; }
-            };
-
-            // Use CDN thumbnail (scontent-*.fbcdn.net) — publicly accessible without auth
-            // facebook.com/ads/image/ URLs require user to be logged in to Facebook
-            const rawThumb =
-                creative.thumbnail_url ||
-                spec.video_data?.image_url ||
-                spec.link_data?.picture ||
-                spec.link_data?.image_url ||
-                spec.link_data?.child_attachments?.[0]?.picture ||
-                spec.link_data?.child_attachments?.[0]?.image_url ||
-                spec.link_data?.child_attachments?.[0]?.thumbnail_url ||
-                '';
-            const thumbnail_url = upgradeCdnUrl(rawThumb);
-            console.log(`[MetaAPI] ad ${ad.id} creativeId=${ad.creative?.id} thumb=${thumbnail_url ? thumbnail_url.substring(0, 60) : 'NONE'}`);
+            const insight   = ad.insights?.data?.[0] || {};
+            const creative  = creativeById[ad.creative?.id] || {};
+            const cid       = ad.creative?.id;
+            const thumbnail_url = cid ? (thumbMap[cid] || '') : '';
+            const videoId   = creative.video_id || '';
 
             // Metrics
             const actions: any[] = insight.actions || [];

@@ -95,7 +95,7 @@ function AutomationRow({ automation, selected, onToggle, result }: RowProps) {
             {result && (
                 result.success
                     ? <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    : <XCircle     className="h-4 w-4 text-red-400 shrink-0"     title={result.error} />
+                    : <span title={result.error}><XCircle className="h-4 w-4 text-red-400 shrink-0" /></span>
             )}
         </button>
     );

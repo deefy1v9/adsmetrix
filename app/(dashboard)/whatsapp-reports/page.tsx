@@ -341,6 +341,8 @@ function ReportSection() {
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
+import { BalanceAlertPanel } from '@/components/features/balance/BalanceAlertPanel';
+
 export default function WhatsAppReportsPage() {
     return (
         <div className="space-y-10">
@@ -365,6 +367,19 @@ export default function WhatsAppReportsPage() {
             <div className="space-y-4">
                 <h2 className="text-xl font-semibold text-foreground">Enviar Relatório</h2>
                 <ReportSection />
+            </div>
+
+            <div className="border-t border-white/5" />
+
+            {/* Section 3: Balance Alerts */}
+            <div className="space-y-4">
+                <div>
+                    <h2 className="text-xl font-semibold text-foreground">Alertas de Saldo</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Receba notificações no grupo interno quando o saldo de uma conta estiver abaixo do limite configurado.
+                    </p>
+                </div>
+                <BalanceAlertPanel />
             </div>
         </div>
     );

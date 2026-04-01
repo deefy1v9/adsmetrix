@@ -50,6 +50,9 @@ model Account {
   report_metrics_config Json?
   report_custom_message String?
   custom_webhook_id   String?    @unique
+  balance_alert_enabled    Boolean   @default(false)
+  balance_alert_threshold  Float     @default(200.0)
+  balance_alert_last_sent_at DateTime?
   campaigns            Campaign[]
   leads                Lead[]
 
@@ -86,6 +89,10 @@ model Setting {
 
   // Relatório combinado diário (multi-conta)
   combined_report_enabled Boolean @default(false)
+
+  // Alertas de saldo baixo — grupo WhatsApp interno
+  balance_alert_group_id   String?
+  balance_alert_group_name String?
 
   criado_em      DateTime  @default(now())
 }

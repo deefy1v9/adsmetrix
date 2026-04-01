@@ -77,7 +77,12 @@ export function CreativeCard({ creative }: CreativeCardProps) {
             {/* Info and Metrics */}
             <div className="p-4 space-y-3 flex-1 flex flex-col">
                 <div className="flex-1">
-                    <h3 className="font-semibold text-foreground line-clamp-2 text-sm leading-tight h-10" title={creative.name}>
+                    {creative.campaign_name && (
+                        <p className="text-[10px] text-muted-foreground truncate mb-0.5" title={creative.campaign_name}>
+                            {creative.campaign_name}
+                        </p>
+                    )}
+                    <h3 className="font-semibold text-foreground line-clamp-2 text-sm leading-tight" title={creative.name}>
                         {creative.name}
                     </h3>
                 </div>

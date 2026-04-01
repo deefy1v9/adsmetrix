@@ -57,6 +57,7 @@ export interface MetaLead {
 export interface MetaCreative {
     id: string;
     name: string;
+    campaign_name?: string;
     status: string;
     effective_status?: string;
     thumbnail_url?: string;

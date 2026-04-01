@@ -693,7 +693,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
 
         // Fetch all ads with creative ID + optional insights (no status/metric filter)
         const fields = [
-            'name', 'status', 'effective_status', 'creative',
+            'name', 'status', 'effective_status', 'creative', 'campaign{name}',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
         const adsUrl = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=200&access_token=${token}`;
@@ -798,6 +798,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             return {
                 id: ad.id,
                 name: ad.name,
+                campaign_name: ad.campaign?.name || '',
                 status: ad.status,
                 effective_status: ad.effective_status,
                 thumbnail_url,

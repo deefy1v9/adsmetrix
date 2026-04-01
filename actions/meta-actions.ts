@@ -124,20 +124,43 @@ export async function fetchAdAccountsAction(): Promise<MetaAdAccount[]> {
         console.warn("[fetchAdAccountsAction] Failed to fetch local settings:", e.message);
     }
 
-    // Return ALL accounts from Meta API — Meta token already enforces access control
-    return metaAccounts.map(account => {
-        const local = localAccounts.find((l: any) => l.account_id === account.account_id);
+    // Return accounts from Meta API, excluding hidden ones
+    return metaAccounts
+        .filter(account => {
+            const local = localAccounts.find((l: any) => l.account_id === account.account_id);
+            return !local?.is_hidden;
+        })
+        .map(account => {
+            const local = localAccounts.find((l: any) => l.account_id === account.account_id);
+            return {
+                ...account,
+                daily_report_enabled: local?.daily_report_enabled || false,
+                daily_report_time: local?.daily_report_time || "09:00",
+                daily_report_range: local?.daily_report_range || "today",
+                report_metrics_config: (local as any)?.report_metrics_config || null,
+                report_custom_message: (local as any)?.report_custom_message || null,
+                custom_webhook_id: local?.custom_webhook_id || null,
+            };
+        });
+}
 
-        return {
-            ...account,
-            daily_report_enabled: local?.daily_report_enabled || false,
-            daily_report_time: local?.daily_report_time || "09:00",
-            daily_report_range: local?.daily_report_range || "today",
-            report_metrics_config: (local as any)?.report_metrics_config || null,
-            report_custom_message: (local as any)?.report_custom_message || null,
-            custom_webhook_id: local?.custom_webhook_id || null,
-        };
-    });
+export async function toggleAccountHiddenAction(
+    accountId: string,
+    hidden: boolean
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const normalizedId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+        await prisma.account.update({
+            where: { account_id: normalizedId },
+            data: { is_hidden: hidden },
+        });
+        revalidatePath('/');
+        revalidatePath('/dashboard');
+        revalidatePath('/accounts');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
 }
 
 export async function generateCustomWebhookAction(accountId: string) {

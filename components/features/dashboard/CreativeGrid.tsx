@@ -88,7 +88,7 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {paginatedCreatives.map((creative) => (
-                        <CreativeCard key={creative.id} creative={creative} metricFilter={metricFilter} />
+                        <CreativeCard key={creative.id} creative={creative} />
                     ))}
                 </div>
             )}

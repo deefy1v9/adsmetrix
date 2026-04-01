@@ -8,30 +8,15 @@ import { Eye, MessageSquare, ExternalLink, TrendingUp, Play } from "lucide-react
 
 interface CreativeCardProps {
     creative: MetaCreative;
-    metricFilter?: 'all' | 'sales' | 'leads_form' | 'leads_gtm';
 }
 
-export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardProps) {
-    const leads = parseInt(creative.insights?.leads || "0");
-    const sales = parseInt(creative.insights?.sales || "0");
-    const leadsForm = parseInt(creative.insights?.leads_form || "0");
-    const leadsGTM = parseInt(creative.insights?.leads_gtm || "0");
-
-    const spend = parseFloat(creative.insights?.spend || "0");
-    const impressions = parseInt(creative.insights?.impressions || "0");
-    const ctr = parseFloat(creative.insights?.ctr || "0");
-
-    const activeMetricValue =
-        metricFilter === 'sales' ? sales :
-            metricFilter === 'leads_form' ? leadsForm :
-                metricFilter === 'leads_gtm' ? leadsGTM : leads;
-
-    const metricNames: Record<string, string> = {
-        'all': 'Leads',
-        'sales': 'Vendas',
-        'leads_form': 'Leads Form',
-        'leads_gtm': 'Leads GTM'
-    };
+export function CreativeCard({ creative }: CreativeCardProps) {
+    const spend        = parseFloat(creative.insights?.spend         || "0");
+    const impressions  = parseInt(creative.insights?.impressions     || "0");
+    const ctr          = parseFloat(creative.insights?.ctr           || "0");
+    const convos       = parseInt(creative.insights?.conversations   || "0");
+    const cpr          = convos > 0 ? spend / convos : null;
+    const fmt          = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
     const isVideo = !!creative.video_id;
     const [imgFailed, setImgFailed] = useState(false);
@@ -116,10 +101,10 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                            <MessageSquare className="h-3 w-3 text-emerald-400" /> {metricNames[metricFilter]}
+                            <MessageSquare className="h-3 w-3 text-emerald-400" /> Custo/Conversa
                         </div>
                         <div className="text-sm font-bold text-emerald-400">
-                            {activeMetricValue}
+                            {cpr != null ? fmt(cpr) : "—"}
                         </div>
                     </div>
                     <div className="space-y-1">
@@ -127,7 +112,7 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
                             Gasto
                         </div>
                         <div className="text-sm font-bold text-foreground">
-                            {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(spend)}
+                            {fmt(spend)}
                         </div>
                     </div>
                 </div>

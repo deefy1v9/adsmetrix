@@ -354,3 +354,64 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         return { success: false, error: err.message };
     }
 }
+
+// ── Custom Broadcast ──────────────────────────────────────────────────────────
+
+/**
+ * Sends a free-form custom message to the destinations of the given automations.
+ * Returns per-automation results so the UI can show which ones succeeded/failed.
+ */
+export async function sendCustomBroadcastAction(
+    automationIds: string[],
+    message:       string,
+): Promise<{ results: { id: string; name: string; success: boolean; error?: string }[] }> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { results: [] };
+
+    const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });
+    if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {
+        return {
+            results: automationIds.map(id => ({
+                id, name: id, success: false, error: 'UazAPI não configurado',
+            })),
+        };
+    }
+
+    const uazConfig = {
+        baseUrl:  setting.uazapi_url.replace(/\/$/, ''),
+        token:    setting.uazapi_token,
+        instance: setting.uazapi_instance,
+    };
+
+    const automations = await prisma.reportAutomation.findMany({
+        where: { id: { in: automationIds }, workspace_id: workspaceId },
+        select: {
+            id:               true,
+            name:             true,
+            destination_type: true,
+            destination_id:   true,
+        } as any,
+    });
+
+    const { sendTextMessage } = await import('@/lib/uazapi');
+    const results: { id: string; name: string; success: boolean; error?: string }[] = [];
+
+    for (const automation of automations) {
+        const destType = (automation as any).destination_type ?? 'default';
+        const destId   = (automation as any).destination_id   ?? null;
+        const destination = (destType !== 'default' && destId) ? destId : setting.whatsapp_number;
+
+        if (!destination) {
+            results.push({ id: automation.id, name: automation.name, success: false, error: 'Destino não configurado' });
+            continue;
+        }
+
+        const res = await sendTextMessage(uazConfig, destination, message);
+        results.push({ id: automation.id, name: automation.name, success: res.success, error: res.error });
+
+        // Small delay to avoid flooding UazAPI
+        await new Promise(r => setTimeout(r, 300));
+    }
+
+    return { results };
+}

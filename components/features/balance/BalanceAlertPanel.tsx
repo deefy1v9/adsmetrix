@@ -16,7 +16,7 @@ import {
 import { listGroupsAction } from '@/actions/uazapi-actions';
 import {
     Bell, BellOff, RefreshCw, Loader2, CheckCircle2,
-    XCircle, ChevronDown, AlertTriangle,
+    AlertTriangle, Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,13 +26,16 @@ interface GroupSelectorProps {
     selectedId:   string | null;
     selectedName: string | null;
     onChange:     (id: string, name: string) => void;
+    onSave:       () => void;
+    saving:       boolean;
+    saveResult:   { success: boolean; error?: string } | null;
 }
 
-function GroupSelector({ selectedId, selectedName, onChange }: GroupSelectorProps) {
-    const [groups, setGroups]       = useState<{ id: string; name: string }[]>([]);
-    const [loading, setLoading]     = useState(false);
-    const [open, setOpen]           = useState(false);
-    const [error, setError]         = useState<string | null>(null);
+function GroupSelector({ selectedId, selectedName, onChange, onSave, saving, saveResult }: GroupSelectorProps) {
+    const [groups, setGroups]   = useState<{ id: string; name: string }[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [open, setOpen]       = useState(false);
+    const [error, setError]     = useState<string | null>(null);
 
     const loadGroups = async () => {
         setLoading(true);
@@ -48,31 +51,38 @@ function GroupSelector({ selectedId, selectedName, onChange }: GroupSelectorProp
     };
 
     return (
-        <div className="space-y-2">
-            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Grupo WhatsApp para Alertas
-            </label>
+        <div className="space-y-3">
+            <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">Grupo de destino dos alertas</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+                Um único grupo para todas as contas. Certifique-se de que o WhatsApp está nesse grupo.
+            </p>
+
             <div className="flex gap-2">
-                <div className="flex-1 flex items-center h-9 px-3 rounded-lg border border-border bg-background/50 text-sm">
-                    {selectedName
-                        ? <span className="text-foreground">{selectedName}</span>
-                        : <span className="text-muted-foreground">Nenhum grupo selecionado</span>}
+                <div className={cn(
+                    'flex-1 flex items-center h-9 px-3 rounded-lg border text-sm',
+                    selectedName
+                        ? 'border-primary/30 bg-primary/5 text-foreground'
+                        : 'border-border bg-background/50 text-muted-foreground',
+                )}>
+                    {selectedName ?? 'Nenhum grupo selecionado'}
                 </div>
-                <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={loadGroups}
-                    disabled={loading}
-                    className="shrink-0"
-                >
-                    {loading
-                        ? <Loader2 className="h-4 w-4 animate-spin" />
-                        : <><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Selecionar</>}
+                <Button variant="secondary" size="sm" onClick={loadGroups} disabled={loading} className="shrink-0">
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Alterar</>}
+                </Button>
+                <Button variant="primary" size="sm" onClick={onSave} disabled={saving || !selectedId} className="shrink-0">
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
                 </Button>
             </div>
 
-            {error && (
-                <p className="text-xs text-red-400">{error}</p>
+            {error && <p className="text-xs text-red-400">{error}</p>}
+
+            {saveResult && (
+                <p className={cn('text-xs', saveResult.success ? 'text-emerald-400' : 'text-red-400')}>
+                    {saveResult.success ? '✓ Grupo salvo' : saveResult.error}
+                </p>
             )}
 
             {open && groups.length > 0 && (
@@ -91,10 +101,6 @@ function GroupSelector({ selectedId, selectedName, onChange }: GroupSelectorProp
                     ))}
                 </div>
             )}
-
-            <p className="text-[11px] text-muted-foreground">
-                Os alertas serão enviados para este grupo interno. Certifique-se de que a instância WhatsApp está no grupo.
-            </p>
         </div>
     );
 }
@@ -262,7 +268,13 @@ export function BalanceAlertPanel() {
         );
     }
 
-    const enabledCount = settings?.accounts.filter(a => a.alertEnabled).length ?? 0;
+    // Prepaid accounts first, then postpaid
+    const sortedAccounts = [...(settings?.accounts ?? [])].sort((a, b) => {
+        if (a.isPrepay === b.isPrepay) return a.accountName.localeCompare(b.accountName);
+        return a.isPrepay ? -1 : 1;
+    });
+
+    const enabledCount = sortedAccounts.filter(a => a.alertEnabled).length;
 
     return (
         <GlassCard className="space-y-6">
@@ -277,19 +289,17 @@ export function BalanceAlertPanel() {
                         </Badge>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCheckNow}
-                        disabled={checking || !groupId}
-                        title="Verificar saldos agora e enviar alertas pendentes"
-                    >
-                        {checking
-                            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Verificando…</>
-                            : <><RefreshCw className="h-4 w-4 mr-2" />Verificar Agora</>}
-                    </Button>
-                </div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleCheckNow}
+                    disabled={checking || !groupId}
+                    title="Verificar saldos agora e enviar alertas pendentes"
+                >
+                    {checking
+                        ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Verificando…</>
+                        : <><RefreshCw className="h-4 w-4 mr-2" />Verificar Agora</>}
+                </Button>
             </div>
 
             {/* Check result */}
@@ -309,29 +319,15 @@ export function BalanceAlertPanel() {
             )}
 
             {/* Group selector */}
-            <div className="space-y-3 p-4 rounded-xl bg-white/5 border border-border">
+            <div className="p-4 rounded-xl bg-white/5 border border-border">
                 <GroupSelector
                     selectedId={groupId}
                     selectedName={groupName}
                     onChange={handleGroupChange}
+                    onSave={handleSaveGroup}
+                    saving={savingGroup}
+                    saveResult={groupResult}
                 />
-                <div className="flex items-center gap-2 pt-1">
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleSaveGroup}
-                        disabled={savingGroup}
-                    >
-                        {savingGroup
-                            ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Salvando…</>
-                            : 'Salvar Grupo'}
-                    </Button>
-                    {groupResult && (
-                        <span className={cn('text-xs', groupResult.success ? 'text-emerald-400' : 'text-red-400')}>
-                            {groupResult.success ? 'Salvo!' : groupResult.error}
-                        </span>
-                    )}
-                </div>
             </div>
 
             {/* Per-account configuration */}
@@ -345,13 +341,13 @@ export function BalanceAlertPanel() {
                     </p>
                 </div>
 
-                {!settings?.accounts.length ? (
+                {!sortedAccounts.length ? (
                     <p className="text-sm text-muted-foreground text-center py-6">
                         Nenhuma conta encontrada.
                     </p>
                 ) : (
                     <div className="space-y-2">
-                        {settings.accounts.map(account => (
+                        {sortedAccounts.map(account => (
                             <AccountRow
                                 key={account.accountId}
                                 account={account}

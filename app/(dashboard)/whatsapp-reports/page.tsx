@@ -342,36 +342,32 @@ function ReportSection() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 import { BalanceAlertPanel } from '@/components/features/balance/BalanceAlertPanel';
+import { CustomBroadcastPanel } from '@/components/features/whatsapp/CustomBroadcastPanel';
 
 export default function WhatsAppReportsPage() {
     return (
         <div className="space-y-10">
             <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                    Relatórios WhatsApp
-                </h1>
+                <h1 className="text-3xl font-bold text-foreground mb-2">WhatsApp</h1>
                 <p className="text-muted-foreground">
-                    Conecte seu WhatsApp via UazAPI e envie relatórios personalizados para seus clientes.
+                    Dispare mensagens personalizadas e configure alertas de saldo.
                 </p>
             </div>
 
-            {/* Section 1: Connection */}
+            {/* Section 1: Custom Broadcast */}
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-foreground">Configuração & Conexão</h2>
-                <ConnectionPanel />
+                <div>
+                    <h2 className="text-xl font-semibold text-foreground">Disparar Mensagem</h2>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Envie uma mensagem personalizada para os grupos/números das suas automações.
+                    </p>
+                </div>
+                <CustomBroadcastPanel />
             </div>
 
             <div className="border-t border-white/5" />
 
-            {/* Section 2: Report builder with tabs */}
-            <div className="space-y-4">
-                <h2 className="text-xl font-semibold text-foreground">Enviar Relatório</h2>
-                <ReportSection />
-            </div>
-
-            <div className="border-t border-white/5" />
-
-            {/* Section 3: Balance Alerts */}
+            {/* Section 2: Balance Alerts */}
             <div className="space-y-4">
                 <div>
                     <h2 className="text-xl font-semibold text-foreground">Alertas de Saldo</h2>

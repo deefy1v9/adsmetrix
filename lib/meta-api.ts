@@ -696,7 +696,7 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             'name', 'status', 'effective_status', 'creative',
             `insights.date_preset(${metaPreset}){impressions,clicks,spend,ctr,actions}`
         ].join(',');
-        const adsUrl = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=100&access_token=${token}`;
+        const adsUrl = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=200&access_token=${token}`;
 
         const adsResp = await fetch(adsUrl);
         const adsData = await adsResp.json();
@@ -709,8 +709,30 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
         const allAds: any[] = adsData.data || [];
         if (allAds.length === 0) return [];
 
-        // Take first 12 — no filtering, no sorting requirement
-        const topAds = allAds.slice(0, 12);
+        // Sort: lowest CPR (spend/conversations) first; use CTR as tiebreaker for ads without convos
+        const scored = allAds
+            .filter((ad: any) => parseFloat(ad.insights?.data?.[0]?.spend || '0') > 0)
+            .map((ad: any) => {
+                const insight  = ad.insights?.data?.[0] || {};
+                const spend    = parseFloat(insight.spend || '0');
+                const ctr      = parseFloat(insight.ctr   || '0');
+                const actions: any[] = insight.actions || [];
+                const convos   = actions
+                    .filter((a: any) => a.action_type.includes('messaging_conversation_started'))
+                    .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+                const cpr      = convos > 0 ? spend / convos : null;
+                return { ad, cpr, ctr };
+            });
+
+        // Primary: CPR ascending (null CPR = worse); secondary: CTR descending
+        scored.sort((a, b) => {
+            if (a.cpr !== null && b.cpr !== null) return a.cpr - b.cpr;
+            if (a.cpr !== null) return -1;
+            if (b.cpr !== null) return 1;
+            return b.ctr - a.ctr;
+        });
+
+        const topAds = scored.slice(0, 12).map(s => s.ad);
 
         // Step 2: Fetch creative details for the specific IDs found in topAds
         const creativeIds = [...new Set(topAds.map((ad: any) => ad.creative?.id).filter(Boolean))];

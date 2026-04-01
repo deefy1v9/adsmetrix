@@ -874,9 +874,26 @@ export async function getAdsForAdSet(
             return [];
         }
 
-        return (data.data || []).map((ad: any) => {
+        const allAds: any[] = data.data || [];
+
+        // Batch-fetch thumbnail_url for all creatives (same approach as getAdsByCPR)
+        const creativeIds = [...new Set(allAds.map((a: any) => a.creative?.id).filter(Boolean))];
+        const thumbMap: Record<string, string> = {};
+        if (creativeIds.length > 0) {
+            try {
+                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
+                const bResp = await fetch(bUrl);
+                const bData = await bResp.json();
+                for (const id of creativeIds) {
+                    if (bData[id]?.thumbnail_url) thumbMap[id] = bData[id].thumbnail_url;
+                }
+            } catch { /* thumbnails are optional */ }
+        }
+
+        return allAds.map((ad: any) => {
             const insight = ad.insights?.data?.[0] ?? {};
             const actions: any[] = insight.actions || [];
+            const cid = ad.creative?.id;
 
             const convos = actions
                 .filter((a: any) => a.action_type.includes('messaging_conversation_started'))
@@ -887,7 +904,7 @@ export async function getAdsForAdSet(
                 name:             ad.name,
                 status:           ad.status,
                 effective_status: ad.effective_status,
-                thumbnail_url:    undefined,
+                thumbnail_url:    cid ? thumbMap[cid] : undefined,
                 insights: {
                     impressions:   insight.impressions || '0',
                     clicks:        insight.clicks      || '0',

@@ -47,6 +47,7 @@ function AdRow({ ad, accountId, metricFilter }: {
 }) {
     const [status, setStatus] = useState(ad.status);
     const [toggling, setToggling] = useState(false);
+    const [imgFailed, setImgFailed] = useState(false);
 
     const toggle = async () => {
         const next = status === "ACTIVE" ? "PAUSED" : "ACTIVE";
@@ -59,13 +60,19 @@ function AdRow({ ad, accountId, metricFilter }: {
     const convos = parseInt(ad.insights?.conversations || "0");
     const spend   = parseFloat(ad.insights?.spend       || "0");
     const cpr     = convos > 0 ? spend / convos : null;
+    const imgSrc  = ad.thumbnail_url && !imgFailed ? ad.thumbnail_url : null;
 
     return (
         <TableRow className="bg-zinc-950/60 border-zinc-800/30">
             {/* indent */}
             <TableCell className="pl-16">
                 <div className="flex items-center gap-2">
-                    <ImageIcon className="h-3 w-3 text-zinc-600 shrink-0" />
+                    <div className="w-7 h-7 rounded bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
+                        {imgSrc
+                            ? <img src={imgSrc} alt="" onError={() => setImgFailed(true)} className="w-full h-full object-cover" />
+                            : <ImageIcon className="h-3 w-3 text-zinc-600" />
+                        }
+                    </div>
                     <div>
                         <div className="text-xs font-medium text-zinc-300">{ad.name}</div>
                         <div className="text-[10px] text-zinc-600">{ad.id}</div>

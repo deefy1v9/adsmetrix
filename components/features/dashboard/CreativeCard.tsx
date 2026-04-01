@@ -36,9 +36,7 @@ export function CreativeCard({ creative, metricFilter = 'all' }: CreativeCardPro
     const isVideo = !!creative.video_id;
     const [imgFailed, setImgFailed] = useState(false);
     const rawUrl = creative.thumbnail_url;
-    // Route fbcdn.net URLs through server-side proxy to avoid CORS/auth issues
-    const proxyUrl = rawUrl ? `/api/img-proxy?url=${encodeURIComponent(rawUrl)}` : null;
-    const imgSrc = proxyUrl && !imgFailed ? proxyUrl : null;
+    const imgSrc = rawUrl && !imgFailed ? rawUrl : null;
 
     return (
         <GlassCard className="overflow-hidden flex flex-col h-full group">

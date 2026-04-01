@@ -724,8 +724,12 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
                 return { ad, cpr, ctr };
             });
 
-        // Primary: CPR ascending (null CPR = worse); secondary: CTR descending
+        // Primary: spend descending (most invested = most relevant);
+        // Secondary: CPR ascending (lower cost per conversation is better)
         scored.sort((a, b) => {
+            const spendA = parseFloat(a.ad.insights?.data?.[0]?.spend || '0');
+            const spendB = parseFloat(b.ad.insights?.data?.[0]?.spend || '0');
+            if (spendB !== spendA) return spendB - spendA;
             if (a.cpr !== null && b.cpr !== null) return a.cpr - b.cpr;
             if (a.cpr !== null) return -1;
             if (b.cpr !== null) return 1;

@@ -1,0 +1,2 @@
+ALTER TABLE "Setting"
+  ADD COLUMN IF NOT EXISTS "balance_alert_time" TEXT NOT NULL DEFAULT '09:00';

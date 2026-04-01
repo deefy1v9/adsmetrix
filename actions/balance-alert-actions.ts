@@ -23,9 +23,10 @@ export interface AccountAlertConfig {
 }
 
 export interface BalanceAlertSettings {
-    accounts:  AccountAlertConfig[];
-    groupId:   string | null;
-    groupName: string | null;
+    accounts:   AccountAlertConfig[];
+    groupId:    string | null;
+    groupName:  string | null;
+    alertTime:  string;
 }
 
 // ── Read settings ─────────────────────────────────────────────────────────────
@@ -58,6 +59,7 @@ export async function getBalanceAlertSettingsAction(): Promise<BalanceAlertSetti
             select: {
                 balance_alert_group_id:   true,
                 balance_alert_group_name: true,
+                balance_alert_time:       true,
             } as any,
         }),
     ]);
@@ -96,6 +98,7 @@ export async function getBalanceAlertSettingsAction(): Promise<BalanceAlertSetti
         accounts,
         groupId:   (setting as any)?.balance_alert_group_id   ?? null,
         groupName: (setting as any)?.balance_alert_group_name ?? null,
+        alertTime: (setting as any)?.balance_alert_time       ?? '09:00',
     };
 }
 
@@ -129,6 +132,7 @@ export async function saveAccountAlertAction(
 export async function saveBalanceAlertGroupAction(
     groupId:   string | null,
     groupName: string | null,
+    alertTime: string,
 ) {
     const workspaceId = await getWorkspaceId();
     if (!workspaceId) return { success: false, error: 'Não autenticado' };
@@ -139,11 +143,13 @@ export async function saveBalanceAlertGroupAction(
             update: {
                 balance_alert_group_id:   groupId,
                 balance_alert_group_name: groupName,
+                balance_alert_time:       alertTime,
             } as any,
             create: {
                 workspace_id:             workspaceId,
                 balance_alert_group_id:   groupId,
                 balance_alert_group_name: groupName,
+                balance_alert_time:       alertTime,
             } as any,
         });
         return { success: true };

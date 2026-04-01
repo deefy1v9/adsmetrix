@@ -25,13 +25,15 @@ import { cn } from '@/lib/utils';
 interface GroupSelectorProps {
     selectedId:   string | null;
     selectedName: string | null;
+    alertTime:    string;
     onChange:     (id: string, name: string) => void;
+    onTimeChange: (t: string) => void;
     onSave:       () => void;
     saving:       boolean;
     saveResult:   { success: boolean; error?: string } | null;
 }
 
-function GroupSelector({ selectedId, selectedName, onChange, onSave, saving, saveResult }: GroupSelectorProps) {
+function GroupSelector({ selectedId, selectedName, alertTime, onChange, onTimeChange, onSave, saving, saveResult }: GroupSelectorProps) {
     const [groups, setGroups]   = useState<{ id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen]       = useState(false);
@@ -72,7 +74,25 @@ function GroupSelector({ selectedId, selectedName, onChange, onSave, saving, sav
                 <Button variant="secondary" size="sm" onClick={loadGroups} disabled={loading} className="shrink-0">
                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Alterar</>}
                 </Button>
-                <Button variant="primary" size="sm" onClick={onSave} disabled={saving || !selectedId} className="shrink-0">
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+                <div className="flex items-center gap-2">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                        Horário do alerta
+                    </label>
+                    <input
+                        type="time"
+                        value={alertTime}
+                        onChange={e => onTimeChange(e.target.value)}
+                        className={cn(
+                            'h-8 px-2 rounded-lg border border-border bg-background/50 text-sm text-foreground',
+                            'focus:outline-none focus:ring-1 focus:ring-primary/50',
+                        )}
+                    />
+                    <span className="text-[11px] text-muted-foreground">BRT</span>
+                </div>
+                <Button variant="primary" size="sm" onClick={onSave} disabled={saving || !selectedId} className="ml-auto shrink-0">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
                 </Button>
             </div>
@@ -208,6 +228,7 @@ export function BalanceAlertPanel() {
     const [loading,  setLoading]  = useState(true);
     const [groupId,   setGroupId]   = useState<string | null>(null);
     const [groupName, setGroupName] = useState<string | null>(null);
+    const [alertTime, setAlertTime] = useState('09:00');
     const [savingGroup, setSavingGroup] = useState(false);
     const [groupResult, setGroupResult] = useState<{ success: boolean; error?: string } | null>(null);
     const [checking,    setChecking]    = useState(false);
@@ -220,6 +241,7 @@ export function BalanceAlertPanel() {
         if (data) {
             setGroupId(data.groupId);
             setGroupName(data.groupName);
+            setAlertTime(data.alertTime ?? '09:00');
         }
         setLoading(false);
     }, []);
@@ -234,7 +256,7 @@ export function BalanceAlertPanel() {
     const handleSaveGroup = async () => {
         setSavingGroup(true);
         setGroupResult(null);
-        const res = await saveBalanceAlertGroupAction(groupId, groupName);
+        const res = await saveBalanceAlertGroupAction(groupId, groupName, alertTime);
         setGroupResult(res);
         setSavingGroup(false);
     };
@@ -323,7 +345,9 @@ export function BalanceAlertPanel() {
                 <GroupSelector
                     selectedId={groupId}
                     selectedName={groupName}
+                    alertTime={alertTime}
                     onChange={handleGroupChange}
+                    onTimeChange={setAlertTime}
                     onSave={handleSaveGroup}
                     saving={savingGroup}
                     saveResult={groupResult}

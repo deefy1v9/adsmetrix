@@ -93,6 +93,7 @@ model Setting {
   // Alertas de saldo baixo — grupo WhatsApp interno
   balance_alert_group_id   String?
   balance_alert_group_name String?
+  balance_alert_time       String?  @default("09:00")  // horário BRT para disparo (ex: "09:00")
 
   criado_em      DateTime  @default(now())
 }

@@ -821,6 +821,170 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
 
 
 
+// ── Status updates (pause / activate) ────────────────────────────────────────
+
+/**
+ * Pauses or activates a campaign, ad set, or ad by ID.
+ * Uses the Meta Graph API POST /{id} { status: 'PAUSED' | 'ACTIVE' }.
+ */
+export async function updateObjectStatus(
+    objectId: string,
+    status: 'ACTIVE' | 'PAUSED',
+    accountId: string,
+    workspaceId?: string,
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const token = await getAccessToken(accountId, workspaceId);
+        const res = await fetch(`https://graph.facebook.com/v19.0/${objectId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ status, access_token: token }).toString(),
+        });
+        const data = await res.json();
+        if (data.error) return { success: false, error: data.error.message };
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Fetches all ads for a specific ad set with per-ad spend + conversations insights.
+ * Used for the campaign drill-down view.
+ */
+export async function getAdsForAdSet(
+    adSetId: string,
+    datePreset: string = 'last_30d',
+    accountId: string,
+    workspaceId?: string,
+): Promise<MetaCreative[]> {
+    try {
+        const token    = await getAccessToken(accountId, workspaceId);
+        const preset   = NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'last_30d';
+        const fields   = [
+            'name', 'status', 'effective_status', 'creative',
+            `insights.date_preset(${preset}){impressions,clicks,spend,ctr,actions}`,
+        ].join(',');
+        const url  = `https://graph.facebook.com/v19.0/${adSetId}/ads?fields=${fields}&limit=100&access_token=${token}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (data.error) {
+            console.error(`[MetaAPI] getAdsForAdSet error for ${adSetId}:`, data.error.message);
+            return [];
+        }
+
+        return (data.data || []).map((ad: any) => {
+            const insight = ad.insights?.data?.[0] ?? {};
+            const actions: any[] = insight.actions || [];
+
+            const convos = actions
+                .filter((a: any) => a.action_type.includes('messaging_conversation_started'))
+                .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+
+            return {
+                id:               ad.id,
+                name:             ad.name,
+                status:           ad.status,
+                effective_status: ad.effective_status,
+                thumbnail_url:    undefined,
+                insights: {
+                    impressions:   insight.impressions || '0',
+                    clicks:        insight.clicks      || '0',
+                    spend:         insight.spend       || '0',
+                    ctr:           insight.ctr         || '0',
+                    leads:         '0',
+                    conversations: convos.toString(),
+                },
+            } satisfies MetaCreative;
+        });
+    } catch (err: any) {
+        console.error(`[MetaAPI] getAdsForAdSet error for ${adSetId}:`, err.message);
+        return [];
+    }
+}
+
+// ── Performance: all ads sorted by CPR ───────────────────────────────────────
+
+/**
+ * Returns all ads for an account sorted by cost-per-result (conversations) descending.
+ * Reuses getTopCreatives but removes the 12-item cap and sorts by CPR.
+ */
+export async function getAdsByCPR(
+    accountId: string,
+    datePreset: string = 'last_30d',
+    workspaceId?: string,
+): Promise<MetaCreative[]> {
+    try {
+        const token  = await getAccessToken(accountId, workspaceId);
+        const preset = NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'last_30d';
+        const fields = [
+            'name', 'status', 'effective_status', 'creative',
+            `insights.date_preset(${preset}){impressions,clicks,spend,ctr,actions}`,
+        ].join(',');
+        const url  = `https://graph.facebook.com/v19.0/${accountId}/ads?fields=${fields}&limit=200&access_token=${token}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (data.error) { console.error('[MetaAPI] getAdsByCPR:', data.error.message); return []; }
+
+        // Fetch thumbnails in batch for creatives
+        const allAds: any[]  = data.data || [];
+        const creativeIds    = [...new Set(allAds.map((a: any) => a.creative?.id).filter(Boolean))];
+        const thumbMap: Record<string, string> = {};
+        if (creativeIds.length > 0) {
+            try {
+                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
+                const bResp = await fetch(bUrl);
+                const bData = await bResp.json();
+                for (const id of creativeIds) {
+                    if (bData[id]?.thumbnail_url) thumbMap[id] = bData[id].thumbnail_url;
+                }
+            } catch { /* thumbnails are optional */ }
+        }
+
+        const ads: MetaCreative[] = allAds.map((ad: any) => {
+            const insight  = ad.insights?.data?.[0] ?? {};
+            const actions: any[] = insight.actions || [];
+            const convos   = actions
+                .filter((a: any) => a.action_type.includes('messaging_conversation_started'))
+                .reduce((s: number, a: any) => s + parseInt(a.value || '0'), 0);
+            const cid = ad.creative?.id;
+            return {
+                id:               ad.id,
+                name:             ad.name,
+                status:           ad.status,
+                effective_status: ad.effective_status,
+                thumbnail_url:    cid ? thumbMap[cid] : undefined,
+                insights: {
+                    impressions:   insight.impressions || '0',
+                    clicks:        insight.clicks      || '0',
+                    spend:         insight.spend       || '0',
+                    ctr:           insight.ctr         || '0',
+                    leads:         '0',
+                    conversations: convos.toString(),
+                },
+            } satisfies MetaCreative;
+        });
+
+        // Sort: highest CPR first (worst performers), ads with 0 convos treated as ∞ CPR
+        return ads.sort((a, b) => {
+            const cprOf = (ad: MetaCreative) => {
+                const s = parseFloat(ad.insights?.spend        || '0');
+                const c = parseInt(ad.insights?.conversations  || '0');
+                return c > 0 ? s / c : (s > 0 ? Infinity : -1);
+            };
+            const ca = cprOf(a), cb = cprOf(b);
+            if (ca === -1 && cb === -1) return 0;
+            if (ca === -1) return 1;
+            if (cb === -1) return -1;
+            return cb - ca; // highest CPR first
+        });
+    } catch (err: any) {
+        console.error(`[MetaAPI] getAdsByCPR error for ${accountId}:`, err.message);
+        return [];
+    }
+}
+
 // ... (existing interfaces and types)
 
 // 4. PERSIST leads to database

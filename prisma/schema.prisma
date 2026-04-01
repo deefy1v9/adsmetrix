@@ -53,6 +53,7 @@ model Account {
   balance_alert_enabled    Boolean   @default(false)
   balance_alert_threshold  Float     @default(200.0)
   balance_alert_last_sent_at DateTime?
+  max_cpr                  Float?    // custo máximo por resultado (conversa) configurável
   campaigns            Campaign[]
   leads                Lead[]
 

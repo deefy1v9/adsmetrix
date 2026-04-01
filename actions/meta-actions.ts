@@ -1,6 +1,6 @@
 "use server";
 
-import { getAdAccounts, getCampaigns, getAdSets, getAllLeads, getTopCreatives, getWeeklyBreakdown, MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
+import { getAdAccounts, getCampaigns, getAdSets, getAllLeads, getTopCreatives, getWeeklyBreakdown, updateObjectStatus, getAdsForAdSet, getAdsByCPR, MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -553,3 +553,127 @@ export async function fetchAdSetsForCampaignAction(
     return getAdSets(accountId, campaignId, datePreset, workspaceId);
 }
 
+// ── Status Update Actions ──────────────────────────────────────────────────────
+
+export async function updateCampaignStatusAction(
+    accountId: string,
+    campaignId: string,
+    status: 'ACTIVE' | 'PAUSED'
+): Promise<{ success: boolean; error?: string }> {
+    const workspaceId = await getWorkspaceId();
+    const result = await updateObjectStatus(campaignId, status, accountId, workspaceId);
+    if (result.success) revalidatePath('/dashboard');
+    return result;
+}
+
+export async function updateAdSetStatusAction(
+    accountId: string,
+    adSetId: string,
+    status: 'ACTIVE' | 'PAUSED'
+): Promise<{ success: boolean; error?: string }> {
+    const workspaceId = await getWorkspaceId();
+    const result = await updateObjectStatus(adSetId, status, accountId, workspaceId);
+    if (result.success) revalidatePath('/dashboard');
+    return result;
+}
+
+export async function updateAdStatusAction(
+    accountId: string,
+    adId: string,
+    status: 'ACTIVE' | 'PAUSED'
+): Promise<{ success: boolean; error?: string }> {
+    const workspaceId = await getWorkspaceId();
+    const result = await updateObjectStatus(adId, status, accountId, workspaceId);
+    if (result.success) revalidatePath('/performance');
+    return result;
+}
+
+// ── Performance Page Actions ───────────────────────────────────────────────────
+
+export async function saveMaxCprAction(
+    accountId: string,
+    maxCpr: number | null
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const normalizedId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+        await (prisma.account as any).update({
+            where: { account_id: normalizedId },
+            data: { max_cpr: maxCpr },
+        });
+        revalidatePath('/performance');
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function fetchAdsForAdSetAction(
+    accountId: string,
+    adSetId: string,
+    datePreset: string = 'last_30d'
+): Promise<MetaCreative[]> {
+    const workspaceId = await getWorkspaceId();
+    return getAdsForAdSet(adSetId, datePreset, accountId, workspaceId);
+}
+
+export async function fetchAdsByCPRAction(
+    accountId: string,
+    datePreset: string = 'last_30d'
+): Promise<MetaCreative[]> {
+    const workspaceId = await getWorkspaceId();
+    return getAdsByCPR(accountId, datePreset, workspaceId);
+}
+
+export interface AccountPerformance {
+    accountId: string;
+    accountName: string;
+    maxCpr: number | null;
+    totalSpend: number;
+    totalConversations: number;
+    avgCpr: number | null;
+}
+
+export async function fetchAllAccountsPerformanceAction(
+    datePreset: string = 'last_30d'
+): Promise<AccountPerformance[]> {
+    const workspaceId = await getWorkspaceId();
+
+    const accounts = await prisma.account.findMany({
+        where: workspaceId ? { workspace_id: workspaceId, is_hidden: false } : { is_hidden: false },
+        select: { account_id: true, account_name: true, max_cpr: true },
+    });
+
+    const results = await Promise.all(
+        accounts.map(async (acc) => {
+            try {
+                const campaigns = await getCampaigns(acc.account_id, datePreset, workspaceId);
+                let totalSpend = 0;
+                let totalConversations = 0;
+                for (const c of campaigns) {
+                    totalSpend         += parseFloat(c.insights?.spend         || '0');
+                    totalConversations += parseInt(c.insights?.conversations    || '0');
+                }
+                const avgCpr = totalConversations > 0 ? totalSpend / totalConversations : null;
+                return {
+                    accountId:          acc.account_id,
+                    accountName:        acc.account_name,
+                    maxCpr:             (acc as any).max_cpr ?? null,
+                    totalSpend,
+                    totalConversations,
+                    avgCpr,
+                } satisfies AccountPerformance;
+            } catch {
+                return {
+                    accountId:          acc.account_id,
+                    accountName:        acc.account_name,
+                    maxCpr:             (acc as any).max_cpr ?? null,
+                    totalSpend:         0,
+                    totalConversations: 0,
+                    avgCpr:             null,
+                } satisfies AccountPerformance;
+            }
+        })
+    );
+
+    return results;
+}

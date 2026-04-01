@@ -14,6 +14,7 @@ import {
     Zap,
     Target,
     ScrollText,
+    TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/ui/Logo";
@@ -31,6 +32,7 @@ const menuItems: MenuItem[] = [
     { name: "Gestor de Tráfego", icon: Target, href: "/gestor-trafego" },
     { name: "Dashboard", icon: BarChart3, href: "/" },
     { name: "Leads", icon: Users, href: "/leads" },
+    { name: "Performance", icon: TrendingUp, href: "/performance" },
     { name: "Automações", icon: Zap, href: "/automations" },
     { name: "WhatsApp", icon: MessageSquare, href: "/whatsapp-reports" },
     { name: "Logs", icon: ScrollText, href: "/logs" },

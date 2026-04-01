@@ -96,6 +96,7 @@ export interface MetaAdAccount {
     daily_report_range?: string;
     report_metrics_config?: Record<string, boolean> | null;
     report_custom_message?: string | null;
+    max_cpr?: number | null;
 }
 
 export function calculateAvailableBalance(account: Partial<MetaAdAccount>): number {

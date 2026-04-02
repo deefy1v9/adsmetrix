@@ -224,7 +224,7 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
         const token = await getAccessToken(accountId, workspaceId);
         initSdk(token);
         const account = new AdAccount(accountId);
-        const fields = ['name', 'status', 'objective'];
+        const fields = ['name', 'status', 'objective', 'stop_time'];
         let campaignsCollection = await account.getCampaigns(fields, { limit: 100 });
         let campaigns = [...(campaignsCollection || [])];
 
@@ -356,6 +356,7 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                         name: campaign.name,
                         status: campaign.status,
                         objective: campaign.objective,
+                        end_time: campaign.stop_time || undefined,
                         insights: {
                             impressions: insight.impressions || '0',
                             clicks: insight.clicks || '0',
@@ -384,7 +385,8 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                         id: campaign.id,
                         name: campaign.name,
                         status: campaign.status,
-                        objective: campaign.objective
+                        objective: campaign.objective,
+                        end_time: campaign.stop_time || undefined,
                     };
                 }
             })

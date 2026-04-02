@@ -21,6 +21,7 @@ export interface MetaCampaign {
     name: string;
     status: string;
     objective: string;
+    end_time?: string;   // ISO date string — campaign scheduled end date (stop_time from Meta API)
     insights?: {
         impressions: string;
         clicks: string;

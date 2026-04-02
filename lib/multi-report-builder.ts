@@ -16,6 +16,7 @@ export interface MultiReportMetrics {
     cost_per_follower?: boolean;
     ctr?: boolean;
     cpc?: boolean;
+    campaign_end_date?: boolean;
 }
 
 export const DEFAULT_AUTOMATION_METRICS: MultiReportMetrics = {
@@ -34,6 +35,7 @@ export const DEFAULT_AUTOMATION_METRICS: MultiReportMetrics = {
     cost_per_follower: false,
     ctr: false,
     cpc: false,
+    campaign_end_date: false,
 };
 
 export const METRIC_LABELS: Record<keyof MultiReportMetrics, string> = {
@@ -52,6 +54,7 @@ export const METRIC_LABELS: Record<keyof MultiReportMetrics, string> = {
     cost_per_follower: 'Custo por Seguidor',
     ctr: 'CTR',
     cpc: 'CPC',
+    campaign_end_date: 'Data de Término',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -143,6 +146,10 @@ export function buildMultiAccountReport(
 
             if (!totalsOnly) {
                 lines.push(`▸ ${campaign.name}`);
+                if (cm.campaign_end_date && campaign.end_time) {
+                    const endDate = new Date(campaign.end_time).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric' });
+                    lines.push(`   ⏰ Término: ${endDate}`);
+                }
                 // Always show spend (every active campaign has it)
                 if (cm.spend)   lines.push(`   💸 Investimento: ${fmt(ins?.spend, 'currency')}`);
                 if (cm.reach)   lines.push(`   📊 Alcance: ${fmt(ins?.reach, 'number')}`);

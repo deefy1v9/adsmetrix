@@ -40,9 +40,6 @@ export async function getUazAPIQRCodeAction(): Promise<{ qrcode: string | null }
     const config = await getConfig();
     if (!config) return { qrcode: null };
 
-    // Trigger connect first (idempotent — server ignores if already connected)
-    await connectInstance(config);
-
     const qrcode = await getQRCode(config);
     return { qrcode };
 }

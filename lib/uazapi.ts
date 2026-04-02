@@ -155,33 +155,41 @@ export async function getInstanceStatus(config: UazAPIConfig): Promise<InstanceS
  * POST /instance/connect returns the QR code when the instance is not yet connected.
  * Returns null if already connected or if the request fails.
  */
-export async function getQRCode(config: UazAPIConfig): Promise<string | null> {
+export async function getQRCode(config: UazAPIConfig): Promise<{ qrcode: string | null; error?: string }> {
     const baseUrl = normalizeBaseUrl(config.baseUrl);
-    const { token } = config;
+    const { token, instance } = config;
 
     try {
         const resp = await fetch(`${baseUrl}${PATHS.connect}`, {
             method:  'POST',
             headers: buildHeaders(token),
-            body:    JSON.stringify({}),
+            body:    JSON.stringify({ instance }),
         });
 
         const envelope = await resp.json().catch(() => ({}));
+        console.log('[UazAPI] getQRCode raw response:', JSON.stringify(envelope).slice(0, 300));
 
-        if (!resp.ok) return null;
+        if (!resp.ok) {
+            const msg = envelope?.message || envelope?.error || `HTTP ${resp.status}`;
+            return { qrcode: null, error: msg };
+        }
 
         // UazAPI wraps response: { code, message, data: { qrcode: "base64..." } }
         const d = envelope?.data || envelope;
-        return (
+        const qrcode =
             d?.qrcode?.base64 ||
             d?.qrcode ||
             d?.base64 ||
-            d?.code ||
             envelope?.qrcode ||
-            null
-        );
-    } catch {
-        return null;
+            null;
+
+        if (!qrcode) {
+            return { qrcode: null, error: `Resposta inesperada do servidor: ${JSON.stringify(envelope).slice(0, 120)}` };
+        }
+
+        return { qrcode };
+    } catch (err: any) {
+        return { qrcode: null, error: err.message };
     }
 }
 

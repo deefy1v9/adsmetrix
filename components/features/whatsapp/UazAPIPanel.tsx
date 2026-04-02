@@ -25,6 +25,7 @@ export function UazAPIPanel() {
     const [qrcode,       setQrcode]       = useState<string | null>(null);
     const [loadingStatus, setLoadingStatus] = useState(false);
     const [loadingQR,    setLoadingQR]    = useState(false);
+    const [qrError,      setQrError]      = useState<string | null>(null);
     const [savingConfig, setSavingConfig] = useState(false);
     const [sendingTest,  setSendingTest]  = useState(false);
     const [saveResult,   setSaveResult]   = useState<{ success: boolean; error?: string } | null>(null);
@@ -61,8 +62,10 @@ export function UazAPIPanel() {
     const handleGetQR = async () => {
         setLoadingQR(true);
         setQrcode(null);
-        const { qrcode } = await getUazAPIQRCodeAction();
+        setQrError(null);
+        const { qrcode, error } = await getUazAPIQRCodeAction();
         setQrcode(qrcode);
+        if (!qrcode) setQrError(error || 'QR code não retornado pelo servidor');
         setLoadingQR(false);
         let attempts = 0;
         const poll = setInterval(async () => {
@@ -276,6 +279,11 @@ export function UazAPIPanel() {
                                 ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Gerando QR…</>
                                 : <><QrCode className="h-4 w-4 mr-2" /> Gerar QR Code</>}
                         </Button>
+                        {qrError && (
+                            <div className="max-w-xs text-center text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                                {qrError}
+                            </div>
+                        )}
                     </div>
                 )}
             </GlassCard>

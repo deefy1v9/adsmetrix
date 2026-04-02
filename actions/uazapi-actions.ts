@@ -36,12 +36,11 @@ export async function getUazAPIStatusAction() {
     return { configured: true, ...status };
 }
 
-export async function getUazAPIQRCodeAction(): Promise<{ qrcode: string | null }> {
+export async function getUazAPIQRCodeAction(): Promise<{ qrcode: string | null; error?: string }> {
     const config = await getConfig();
-    if (!config) return { qrcode: null };
+    if (!config) return { qrcode: null, error: 'UazAPI não configurado' };
 
-    const qrcode = await getQRCode(config);
-    return { qrcode };
+    return getQRCode(config);
 }
 
 // ── Config Save ───────────────────────────────────────────────────────────────

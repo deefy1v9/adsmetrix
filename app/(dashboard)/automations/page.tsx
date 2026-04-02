@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/Badge";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
     Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
-    Phone, Users, Eye, EyeOff,
+    Phone, Users, Eye, EyeOff, Send,
 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import {
@@ -329,7 +329,7 @@ function WhatsAppText({ text }: { text: string }) {
 // ── Automation Card ───────────────────────────────────────────────────────────
 
 function AutomationCard({
-    automation, accounts, onToggle, onEdit, onDelete, onRunNow,
+    automation, accounts, onToggle, onEdit, onDelete, onRunNow, globalDisabled,
 }: {
     automation: AutomationRecord;
     accounts: MetaAdAccount[];
@@ -337,6 +337,7 @@ function AutomationCard({
     onEdit: () => void;
     onDelete: () => void;
     onRunNow: () => void;
+    globalDisabled?: boolean;
 }) {
     const [running,   setRunning]   = useState(false);
     const [runResult, setRunResult] = useState<{ success: boolean; error?: string } | null>(null);
@@ -425,7 +426,7 @@ function AutomationCard({
             <div className="flex items-center gap-2 pt-1 border-t border-border">
                 <Button
                     onClick={handleRunNow}
-                    disabled={running}
+                    disabled={running || globalDisabled}
                     variant="secondary"
                     className="flex-1 h-8 text-xs gap-1.5"
                 >
@@ -829,6 +830,13 @@ function AutomationForm({
 
 type View = { type: "list" } | { type: "form"; editing: AutomationRecord | null };
 
+type SendAllStatus = {
+    running: boolean;
+    current: number;
+    total: number;
+    results: { name: string; success: boolean }[];
+};
+
 export default function AutomationsPage() {
     const [automations, setAutomations] = useState<AutomationRecord[]>([]);
     const [accounts, setAccounts]       = useState<MetaAdAccount[]>([]);
@@ -837,6 +845,7 @@ export default function AutomationsPage() {
     const [waConnected, setWaConnected]   = useState(false);
     const [view, setView] = useState<View>({ type: "list" });
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [sendAll, setSendAll] = useState<SendAllStatus | null>(null);
 
     useEffect(() => {
         Promise.all([loadData(), checkWA()]);
@@ -872,6 +881,28 @@ export default function AutomationsPage() {
         setDeletingId(null);
     }
 
+    async function handleSendAll() {
+        const enabled = automations.filter(a => a.enabled);
+        if (enabled.length === 0) return;
+        setSendAll({ running: true, current: 0, total: enabled.length, results: [] });
+        for (let i = 0; i < enabled.length; i++) {
+            const auto = enabled[i];
+            setSendAll(prev => prev ? { ...prev, current: i + 1 } : prev);
+            const res = await runAutomationNowAction(auto.id);
+            setSendAll(prev => prev ? {
+                ...prev,
+                results: [...prev.results, { name: auto.name, success: res.success }],
+            } : prev);
+            // After every 2 sends, wait 30s before the next batch (unless it's the last)
+            const isLastInBatch = (i + 1) % 2 === 0;
+            if (isLastInBatch && i < enabled.length - 1) {
+                await new Promise(r => setTimeout(r, 30_000));
+            }
+        }
+        setSendAll(prev => prev ? { ...prev, running: false } : prev);
+        await loadData();
+    }
+
     async function handleSaved() {
         setView({ type: "list" });
         await loadData();
@@ -903,17 +934,70 @@ export default function AutomationsPage() {
                         Configure relatórios automáticos multi-conta enviados via WhatsApp.
                     </p>
                 </div>
-                <Button
-                    onClick={() => setView({ type: "form", editing: null })}
-                    variant="primary"
-                    className="flex items-center gap-2 shrink-0"
-                >
-                    <Plus className="w-4 h-4" /> Nova Automação
-                </Button>
+                <div className="flex items-center gap-2 shrink-0">
+                    {automations.filter(a => a.enabled).length > 0 && (
+                        <Button
+                            onClick={handleSendAll}
+                            disabled={!!sendAll?.running || loading}
+                            variant="secondary"
+                            className="flex items-center gap-2"
+                        >
+                            {sendAll?.running
+                                ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
+                                : <><Send className="w-4 h-4" /> Enviar Todos</>}
+                        </Button>
+                    )}
+                    <Button
+                        onClick={() => setView({ type: "form", editing: null })}
+                        variant="primary"
+                        className="flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" /> Nova Automação
+                    </Button>
+                </div>
             </div>
 
             {/* UazAPI config panel */}
             <UazAPIPanel />
+
+            {/* Send All progress */}
+            {sendAll && (
+                <GlassCard className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-foreground">
+                            {sendAll.running
+                                ? `Enviando ${sendAll.current} de ${sendAll.total}…`
+                                : `Envio concluído — ${sendAll.results.filter(r => r.success).length}/${sendAll.total} enviados`}
+                        </p>
+                        {!sendAll.running && (
+                            <button
+                                onClick={() => setSendAll(null)}
+                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                                Fechar
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {sendAll.results.map((r, i) => (
+                            <span key={i} className={cn(
+                                "text-xs px-2 py-1 rounded-md flex items-center gap-1",
+                                r.success
+                                    ? "bg-emerald-500/10 text-emerald-400"
+                                    : "bg-red-500/10 text-red-400"
+                            )}>
+                                {r.success ? "✓" : "✗"} {r.name}
+                            </span>
+                        ))}
+                        {sendAll.running && sendAll.current <= sendAll.total && (
+                            <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground flex items-center gap-1">
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                {automations.filter(a => a.enabled)[sendAll.current - 1]?.name ?? "…"}
+                            </span>
+                        )}
+                    </div>
+                </GlassCard>
+            )}
 
             {/* Automation list */}
             {loading ? (
@@ -948,6 +1032,7 @@ export default function AutomationsPage() {
                             onEdit={() => setView({ type: "form", editing: automation })}
                             onDelete={() => handleDelete(automation.id)}
                             onRunNow={loadData}
+                            globalDisabled={!!sendAll?.running}
                         />
                     ))}
                 </div>

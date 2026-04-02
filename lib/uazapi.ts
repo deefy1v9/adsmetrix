@@ -161,29 +161,19 @@ export async function getQRCode(config: UazAPIConfig): Promise<{ qrcode: string 
     const { token, instance } = config;
 
     try {
-        // Step 1: POST /instance/connect — initiates connection (status → "connecting")
-        await fetch(`${baseUrl}${PATHS.connect}`, {
+        // POST /instance/connect — some UazAPI versions return the QR directly here
+        const connectResp = await fetch(`${baseUrl}${PATHS.connect}`, {
             method:  'POST',
             headers: buildHeaders(token),
             body:    JSON.stringify({ instance }),
         });
 
-        // Step 2: GET /instance/qrcode — fetch the actual QR code
-        await new Promise(r => setTimeout(r, 800)); // brief wait for server to generate QR
-        const qrResp = await fetch(`${baseUrl}${PATHS.qrcode}`, {
-            headers: buildHeaders(token),
-        });
+        const envelope = await connectResp.json().catch(() => ({}));
+        console.log('[UazAPI] connect response:', JSON.stringify(envelope).slice(0, 500));
 
-        const envelope = await qrResp.json().catch(() => ({}));
-        console.log('[UazAPI] getQRCode raw response:', JSON.stringify(envelope).slice(0, 300));
-
-        if (!qrResp.ok) {
-            const msg = envelope?.message || envelope?.error || `HTTP ${qrResp.status}`;
-            return { qrcode: null, error: msg };
-        }
-
+        // Try to extract QR from connect response first
         const d = envelope?.data || envelope;
-        const qrcode =
+        const fromConnect =
             d?.qrcode?.base64 ||
             d?.qrcode ||
             d?.base64 ||
@@ -191,11 +181,34 @@ export async function getQRCode(config: UazAPIConfig): Promise<{ qrcode: string 
             envelope?.qrcode ||
             null;
 
-        if (!qrcode) {
-            return { qrcode: null, error: `Resposta inesperada: ${JSON.stringify(envelope).slice(0, 150)}` };
+        if (fromConnect && typeof fromConnect === 'string' && fromConnect.length > 20) {
+            return { qrcode: fromConnect };
         }
 
-        return { qrcode };
+        // If connect didn't return QR, wait and try GET /instance/qrcode
+        await new Promise(r => setTimeout(r, 1200));
+        const qrResp = await fetch(`${baseUrl}${PATHS.qrcode}`, {
+            headers: buildHeaders(token),
+        });
+
+        if (qrResp.ok) {
+            const qrEnv = await qrResp.json().catch(() => ({}));
+            console.log('[UazAPI] qrcode endpoint response:', JSON.stringify(qrEnv).slice(0, 500));
+            const d2 = qrEnv?.data || qrEnv;
+            const fromQr =
+                d2?.qrcode?.base64 ||
+                d2?.qrcode ||
+                d2?.base64 ||
+                d2?.code ||
+                qrEnv?.qrcode ||
+                null;
+            if (fromQr && typeof fromQr === 'string' && fromQr.length > 20) {
+                return { qrcode: fromQr };
+            }
+        }
+
+        // Return full connect response as error for diagnosis
+        return { qrcode: null, error: `Resposta completa: ${JSON.stringify(envelope)}` };
     } catch (err: any) {
         return { qrcode: null, error: err.message };
     }

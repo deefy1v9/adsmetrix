@@ -11,7 +11,8 @@
 const PATHS = {
     sendText: '/send/text',         // POST — body: { number, text }
     status:   '/instance/status',   // GET  — connection state
-    connect:  '/instance/connect',  // POST — initiate connection / returns QR code
+    connect:  '/instance/connect',  // POST — initiate connection
+    qrcode:   '/instance/qrcode',   // GET  — fetch QR code after connect is initiated
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -160,31 +161,38 @@ export async function getQRCode(config: UazAPIConfig): Promise<{ qrcode: string 
     const { token, instance } = config;
 
     try {
-        const resp = await fetch(`${baseUrl}${PATHS.connect}`, {
+        // Step 1: POST /instance/connect — initiates connection (status → "connecting")
+        await fetch(`${baseUrl}${PATHS.connect}`, {
             method:  'POST',
             headers: buildHeaders(token),
             body:    JSON.stringify({ instance }),
         });
 
-        const envelope = await resp.json().catch(() => ({}));
+        // Step 2: GET /instance/qrcode — fetch the actual QR code
+        await new Promise(r => setTimeout(r, 800)); // brief wait for server to generate QR
+        const qrResp = await fetch(`${baseUrl}${PATHS.qrcode}`, {
+            headers: buildHeaders(token),
+        });
+
+        const envelope = await qrResp.json().catch(() => ({}));
         console.log('[UazAPI] getQRCode raw response:', JSON.stringify(envelope).slice(0, 300));
 
-        if (!resp.ok) {
-            const msg = envelope?.message || envelope?.error || `HTTP ${resp.status}`;
+        if (!qrResp.ok) {
+            const msg = envelope?.message || envelope?.error || `HTTP ${qrResp.status}`;
             return { qrcode: null, error: msg };
         }
 
-        // UazAPI wraps response: { code, message, data: { qrcode: "base64..." } }
         const d = envelope?.data || envelope;
         const qrcode =
             d?.qrcode?.base64 ||
             d?.qrcode ||
             d?.base64 ||
+            d?.code ||
             envelope?.qrcode ||
             null;
 
         if (!qrcode) {
-            return { qrcode: null, error: `Resposta inesperada do servidor: ${JSON.stringify(envelope).slice(0, 120)}` };
+            return { qrcode: null, error: `Resposta inesperada: ${JSON.stringify(envelope).slice(0, 150)}` };
         }
 
         return { qrcode };

@@ -87,9 +87,14 @@ export function getDateLabel(preset: string): string {
     if (preset === 'last_3d_completed') return `${fmt(shift(-3))} a ${fmt(shift(-1))}`;
     if (preset === 'last_7d')    return `${fmt(shift(-7))} a ${fmt(shift(-1))}`;
     if (preset === 'last_30d')   return `${fmt(shift(-30))} a ${fmt(shift(-1))}`;
-    if (preset === 'this_month') return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(now);
+    if (preset === 'this_month') {
+        const d = new Date(now.getFullYear(), now.getMonth(), 15);
+        return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(d);
+    }
     if (preset === 'last_month') {
-        const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        // Use day 15 to stay safely in the middle of the month, avoiding
+        // the UTC→BRT (–3h) shift turning 1st 00:00 UTC into the previous month.
+        const d = new Date(now.getFullYear(), now.getMonth() - 1, 15);
         return new Intl.DateTimeFormat('pt-BR', { timeZone: tz, month: 'long', year: 'numeric' }).format(d);
     }
     if (preset === 'maximum') return 'Todo o período';

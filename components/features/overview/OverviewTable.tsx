@@ -196,7 +196,7 @@ export function OverviewTable({ data, loading }: OverviewTableProps) {
                             <TableCell colSpan={3} className="hidden sm:table-cell py-6 text-right font-black text-foreground uppercase tracking-widest text-xs">Total Consolidado</TableCell>
                             <TableCell colSpan={3} className="sm:hidden py-6 text-right font-black text-foreground uppercase tracking-widest text-xs">Total Consolidado</TableCell>
                             <TableCell className="py-6 text-center">
-                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-black font-black text-lg shadow-lg shadow-primary/20">
+                                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-black text-lg shadow-lg shadow-primary/20">
                                     {totals.leadsMonth}
                                 </div>
                             </TableCell>

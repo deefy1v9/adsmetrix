@@ -80,38 +80,38 @@
   }
 
   .dark {
-    --background: 222 47% 7%;
+    --background: 0 0% 4%;
     --foreground: 0 0% 90%;
 
-    --card: 222 40% 10%;
+    --card: 0 0% 8%;
     --card-foreground: 0 0% 90%;
-    --card-muted: 222 40% 8%;
+    --card-muted: 0 0% 6%;
 
-    --popover: 222 47% 7%;
+    --popover: 0 0% 6%;
     --popover-foreground: 0 0% 90%;
 
     --primary: 0 0% 92%;
     --primary-foreground: 0 0% 8%;
 
-    --secondary: 222 30% 15%;
+    --secondary: 0 0% 14%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 222 30% 15%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 58%;
 
-    --accent: 222 30% 15%;
+    --accent: 0 0% 14%;
     --accent-foreground: 0 0% 90%;
-    --accent-muted: 222 47% 5%;
+    --accent-muted: 0 0% 5%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 222 30% 17%;
-    --input: 222 30% 17%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
     --ring: 0 0% 92%;
 
-    --glass-bg: 222 40% 10% / 0.72;
-    --glass-border: 222 30% 22% / 0.6;
+    --glass-bg: 0 0% 10% / 0.72;
+    --glass-border: 0 0% 22% / 0.6;
     --dot-color: rgba(255, 255, 255, 0.06);
   }
 }
@@ -124,8 +124,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-image: radial-gradient(circle, var(--dot-color) 1.2px, transparent 1.2px);
-    background-size: 22px 22px;
   }
 
   h1,
@@ -198,7 +196,7 @@
 }
 
 .dark {
-  --chart-background: hsl(222 40% 10%);
+  --chart-background: hsl(0 0% 8%);
   --chart-foreground: hsl(0 0% 90%);
   --chart-foreground-muted: hsl(0 0% 55%);
   --chart-label: hsl(0 0% 50%);
@@ -208,8 +206,8 @@
   --chart-grid: rgba(255, 255, 255, 0.06);
   --chart-indicator-color: #1e3a8a;
   --chart-indicator-secondary-color: #1e40af;
-  --chart-marker-background: hsl(222 40% 13%);
-  --chart-marker-border: hsl(222 30% 20%);
+  --chart-marker-background: hsl(0 0% 12%);
+  --chart-marker-border: hsl(0 0% 20%);
   --chart-marker-foreground: hsl(0 0% 90%);
   --chart-marker-badge-background: #1e3a8a;
   --chart-marker-badge-foreground: #ffffff;

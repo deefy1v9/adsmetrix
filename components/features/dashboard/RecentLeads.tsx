@@ -83,7 +83,7 @@ export function RecentLeads() {
                         return (
                             <div key={lead.id} className="flex items-center justify-between group">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-primary text-black flex items-center justify-center font-bold text-sm shadow-sm">
+                                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm">
                                         {initials}
                                     </div>
                                     <div className="min-w-0">

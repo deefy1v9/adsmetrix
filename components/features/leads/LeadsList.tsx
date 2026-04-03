@@ -152,7 +152,7 @@ export function LeadsList() {
                                     {/* Left: Contact Info */}
                                     <div className="shrink-0 lg:w-3/12 space-y-5">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-primary text-black flex items-center justify-center font-bold text-lg shadow-sm">
+                                            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shadow-sm">
                                                 {initials}
                                             </div>
                                             <div className="min-w-0">

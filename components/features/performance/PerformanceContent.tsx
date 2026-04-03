@@ -289,7 +289,7 @@ export function PerformanceContent() {
                             onClick={() => setDatePreset(opt.value)}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                                 datePreset === opt.value
-                                    ? "bg-primary text-black"
+                                    ? "bg-primary text-primary-foreground"
                                     : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200"
                             }`}
                         >

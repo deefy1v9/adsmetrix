@@ -390,7 +390,7 @@ export function MultiAccountReportBuilder() {
                 {/* Step 1: Select accounts */}
                 <GlassCard>
                     <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-primary text-black text-xs flex items-center justify-center font-black">1</span>
+                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-black">1</span>
                         Selecionar Contas
                     </h3>
                     <div className="space-y-1">
@@ -422,7 +422,7 @@ export function MultiAccountReportBuilder() {
                 {campaignsData.length > 0 && (
                     <GlassCard>
                         <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-primary text-black text-xs flex items-center justify-center font-black">2</span>
+                            <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-black">2</span>
                             Campanhas &amp; Conjuntos
                             <span className="text-xs font-normal text-muted-foreground ml-1">
                                 (clique ▶ para ver conjuntos)
@@ -463,7 +463,7 @@ export function MultiAccountReportBuilder() {
                 {/* Step 3: Metric toggles */}
                 <GlassCard>
                     <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-primary text-black text-xs flex items-center justify-center font-black">3</span>
+                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-black">3</span>
                         Métricas a Incluir
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
@@ -528,7 +528,7 @@ export function MultiAccountReportBuilder() {
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 'w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-black',
-                                sendResult.success ? 'bg-primary text-black' : 'bg-red-500 text-white'
+                                sendResult.success ? 'bg-primary text-primary-foreground' : 'bg-red-500 text-white'
                             )}>
                                 {sendResult.success ? '✓' : '✗'}
                             </div>

@@ -112,7 +112,7 @@ export function MetricsConfigurator({ metrics, onChange }: MetricsConfiguratorPr
                         <div className="flex items-center gap-2">
                             <div className={cn(
                                 "w-4 h-4 rounded-md flex items-center justify-center transition-all",
-                                metric.enabled ? "bg-primary text-black" : "bg-muted text-muted-foreground"
+                                metric.enabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                             )}>
                                 {metric.enabled ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
                             </div>

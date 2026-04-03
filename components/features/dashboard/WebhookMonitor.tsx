@@ -63,7 +63,7 @@ export function WebhookMonitor() {
                         <div key={log.id} className="flex items-start justify-between p-3 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/50 transition-colors">
                             <div className="flex items-start gap-3">
                                 {isVerification ? (
-                                    <CheckCircle2 className="h-4 w-4 text-blue-400 mt-0.5" />
+                                    <CheckCircle2 className="h-4 w-4 text-foreground/60 mt-0.5" />
                                 ) : isLead ? (
                                     <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5" />
                                 ) : (

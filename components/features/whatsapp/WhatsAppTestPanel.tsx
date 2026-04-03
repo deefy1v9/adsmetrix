@@ -261,7 +261,7 @@ export function WhatsAppReportBuilder() {
                                 <div className="flex items-center gap-3">
                                     <div className={cn(
                                         "w-5 h-5 rounded-full flex items-center justify-center transition-all",
-                                        metric.enabled ? "bg-primary text-black" : "bg-muted text-muted-foreground"
+                                        metric.enabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                                     )}>
                                         {metric.enabled ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                                     </div>
@@ -341,7 +341,7 @@ export function WhatsAppReportBuilder() {
                         <div className="flex items-start gap-4">
                             <div className={cn(
                                 "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                                result.success ? "bg-primary text-black" : "bg-red-500 text-white"
+                                result.success ? "bg-primary text-primary-foreground" : "bg-red-500 text-white"
                             )}>
                                 {result.success ? '✓' : '✗'}
                             </div>

@@ -855,7 +855,7 @@ export function TrafficManagerUI() {
                                                                 <span className="text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 rounded px-1.5 py-0.5 font-medium">Imagem definida</span>
                                                             )}
                                                             {adSet.ad_destination_url && (
-                                                                <span className="text-[10px] bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded px-1.5 py-0.5 font-medium">URL definida</span>
+                                                                <span className="text-[10px] bg-foreground/10 text-foreground/70 rounded px-1.5 py-0.5 font-medium">URL definida</span>
                                                             )}
                                                         </div>
                                                         <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", creativeExpanded && "rotate-180")} />

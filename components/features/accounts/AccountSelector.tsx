@@ -72,7 +72,7 @@ export function AccountSelector() {
                                             className={cn(
                                                 "flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-left transition-all duration-200",
                                                 isSelected
-                                                    ? "bg-primary text-black shadow-sm font-bold"
+                                                    ? "bg-primary text-primary-foreground shadow-sm font-bold"
                                                     : "hover:bg-accent text-muted-foreground hover:text-foreground"
                                             )}
                                         >

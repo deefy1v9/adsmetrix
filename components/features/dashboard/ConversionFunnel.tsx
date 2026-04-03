@@ -312,7 +312,7 @@ export function ConversionFunnel(props: ConversionFunnelProps) {
                             className={cn(
                                 'px-2 py-1 rounded-md text-[10px] font-semibold transition-all',
                                 mode === m
-                                    ? 'bg-primary text-black'
+                                    ? 'bg-primary text-primary-foreground'
                                     : 'bg-white/5 text-muted-foreground hover:bg-white/10',
                             )}
                         >

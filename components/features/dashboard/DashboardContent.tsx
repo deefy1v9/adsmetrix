@@ -112,6 +112,9 @@ export function DashboardContent() {
                 viewContent={stats.view_content}
                 initiateCheckout={stats.initiate_checkout}
                 purchases={stats.purchases}
+                conversations={stats.conversations}
+                leads={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_form || '0'), 0)}
+                leadsGtm={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_gtm || '0'), 0)}
             />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">

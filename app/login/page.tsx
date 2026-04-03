@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { loginAction } from "@/actions/auth-actions";
-import { Logo } from "@/components/ui/Logo";
 import { Loader2, LogIn } from "lucide-react";
 
 export default function LoginPage() {
@@ -42,11 +41,13 @@ export default function LoginPage() {
             </div>
 
             <div className="relative z-10 w-full max-w-sm mx-auto px-6">
-                {/* Logo */}
+                {/* Header */}
                 <div className="flex flex-col items-center mb-12">
-                    <Logo className="scale-150 mb-6" />
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-6">
+                        <span className="text-xl font-black text-primary">A</span>
+                    </div>
                     <h1 className="text-2xl font-black text-white tracking-tight">
-                        Ads Dashboard
+                        Ads Manager
                     </h1>
                     <p className="text-sm text-white/40 mt-1 font-medium">
                         Faça login para continuar
@@ -92,7 +93,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-12 rounded-xl bg-primary text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
+                        className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
                     >
                         {loading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -107,7 +108,7 @@ export default function LoginPage() {
 
                 {/* Footer */}
                 <p className="text-center text-[10px] text-white/20 mt-10 font-medium uppercase tracking-widest">
-                    Grupo DPG &mdash; Ads Manager
+                    Ads Manager
                 </p>
             </div>
         </div>

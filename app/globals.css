@@ -52,8 +52,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    --primary: 77 82% 59%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 20% 96%;
     --secondary-foreground: 0 0% 10%;
@@ -70,7 +70,7 @@
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 77 82% 59%;
+    --ring: 217 91% 60%;
     --radius: 1rem;
     /* 16px approx */
 
@@ -79,38 +79,38 @@
   }
 
   .dark {
-    --background: 0 0% 10%;
+    --background: 222 47% 7%;
     --foreground: 0 0% 90%;
 
-    --card: 0 0% 12%;
+    --card: 222 40% 10%;
     --card-foreground: 0 0% 90%;
-    --card-muted: 0 0% 8%;
+    --card-muted: 222 40% 8%;
 
-    --popover: 0 0% 10%;
+    --popover: 222 47% 7%;
     --popover-foreground: 0 0% 90%;
 
-    --primary: 77 82% 59%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
+    --secondary: 222 30% 15%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 0 0% 15%;
+    --muted: 222 30% 15%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 0 0% 15%;
+    --accent: 222 30% 15%;
     --accent-foreground: 0 0% 90%;
-    --accent-muted: 0 0% 5%;
+    --accent-muted: 222 47% 5%;
 
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 77 82% 59%;
+    --border: 222 30% 17%;
+    --input: 222 30% 17%;
+    --ring: 217 91% 60%;
 
-    --glass-bg: 0 0% 10% / 0.8;
-    --glass-border: 0 0% 18% / 0.5;
+    --glass-bg: 222 40% 10% / 0.75;
+    --glass-border: 222 30% 20% / 0.5;
   }
 }
 
@@ -173,39 +173,53 @@
   --chart-foreground: hsl(0 0% 10%);
   --chart-foreground-muted: hsl(0 0% 45%);
   --chart-label: hsl(0 0% 45%);
-  --chart-line-primary: #b4f13d;
-  --chart-line-secondary: #5a9bff;
-  --chart-crosshair: rgba(180, 241, 61, 0.6);
+  --chart-line-primary: #3B82F6;
+  --chart-line-secondary: #6366F1;
+  --chart-crosshair: rgba(59, 130, 246, 0.5);
   --chart-grid: rgba(0, 0, 0, 0.07);
-  --chart-indicator-color: #b4f13d;
-  --chart-indicator-secondary-color: #5a9bff;
+  --chart-indicator-color: #3B82F6;
+  --chart-indicator-secondary-color: #6366F1;
   --chart-marker-background: hsl(0 0% 100%);
   --chart-marker-border: hsl(0 0% 88%);
   --chart-marker-foreground: hsl(0 0% 10%);
-  --chart-marker-badge-background: #b4f13d;
-  --chart-marker-badge-foreground: #071627;
-  --chart-segment-background: rgba(180, 241, 61, 0.1);
-  --chart-segment-line: rgba(180, 241, 61, 0.5);
+  --chart-marker-badge-background: #3B82F6;
+  --chart-marker-badge-foreground: #ffffff;
+  --chart-segment-background: rgba(59, 130, 246, 0.1);
+  --chart-segment-line: rgba(59, 130, 246, 0.5);
 }
 
 .dark {
-  --chart-background: hsl(0 0% 12%);
+  --chart-background: hsl(222 40% 10%);
   --chart-foreground: hsl(0 0% 90%);
   --chart-foreground-muted: hsl(0 0% 55%);
   --chart-label: hsl(0 0% 50%);
-  --chart-line-primary: #b4f13d;
-  --chart-line-secondary: #5a9bff;
-  --chart-crosshair: rgba(180, 241, 61, 0.5);
+  --chart-line-primary: #3B82F6;
+  --chart-line-secondary: #6366F1;
+  --chart-crosshair: rgba(59, 130, 246, 0.5);
   --chart-grid: rgba(255, 255, 255, 0.06);
-  --chart-indicator-color: #b4f13d;
-  --chart-indicator-secondary-color: #5a9bff;
-  --chart-marker-background: hsl(0 0% 14%);
-  --chart-marker-border: hsl(0 0% 20%);
+  --chart-indicator-color: #3B82F6;
+  --chart-indicator-secondary-color: #6366F1;
+  --chart-marker-background: hsl(222 40% 13%);
+  --chart-marker-border: hsl(222 30% 20%);
   --chart-marker-foreground: hsl(0 0% 90%);
-  --chart-marker-badge-background: #b4f13d;
-  --chart-marker-badge-foreground: #071627;
-  --chart-segment-background: rgba(180, 241, 61, 0.08);
-  --chart-segment-line: rgba(180, 241, 61, 0.4);
+  --chart-marker-badge-background: #3B82F6;
+  --chart-marker-badge-foreground: #ffffff;
+  --chart-segment-background: rgba(59, 130, 246, 0.08);
+  --chart-segment-line: rgba(59, 130, 246, 0.4);
 }
 
-/* End of custom styles */
+/* ─── Card Entrance Animations ────────────────────────────────────────────── */
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.glass-card {
+  animation: cardEntrance 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.glass-card:nth-child(2) { animation-delay: 0.05s; }
+.glass-card:nth-child(3) { animation-delay: 0.10s; }
+.glass-card:nth-child(4) { animation-delay: 0.15s; }
+.glass-card:nth-child(5) { animation-delay: 0.20s; }
+.glass-card:nth-child(6) { animation-delay: 0.25s; }

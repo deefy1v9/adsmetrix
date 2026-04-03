@@ -4,7 +4,6 @@ import { useAccount } from "@/components/providers/AccountContext";
 import { useDate } from "@/components/providers/DateContext";
 import { KPICards, computeStats } from "./KPICards";
 import { OverviewChart } from "./OverviewChart";
-import { RecentLeads } from "./RecentLeads";
 import { useEffect, useState } from "react";
 import { fetchCampaignsAction, fetchWeeklyBreakdownAction, getDashboardMetricsConfigAction } from "@/actions/meta-actions";
 import { MetaCampaign } from "@/lib/balance-utils";
@@ -12,11 +11,9 @@ import { WeeklyDay } from "@/lib/meta-api";
 import { CampaignsContent } from "@/components/features/campaigns/CampaignsContent";
 import { CreativeGrid } from "./CreativeGrid";
 import { SkeletonKPICard } from "@/components/ui/Skeleton";
-import { RecentLeads } from "./RecentLeads"; // kept for possible re-use
 import { MetricsConfigPanel } from "./MetricsConfigPanel";
 import { ConversionFunnel } from "./ConversionFunnel";
 import { Settings2 } from "lucide-react";
-// RecentLeads removed — replaced by ConversionFunnel in the grid
 import type { DashboardMetricKey } from "@/lib/dashboard-metrics-config";
 import { DEFAULT_DASHBOARD_METRICS } from "@/lib/dashboard-metrics-config";
 

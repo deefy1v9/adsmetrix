@@ -174,11 +174,6 @@ export function generateEmailHtml({
   <tr><td align="center">
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background-color:#ffffff;border-radius:32px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,0.06);border:1px solid #e1e8e8;">
 
-      <!-- Logo -->
-      <tr><td align="center" style="padding:40px 30px 20px;">
-        <img src="https://grupodpg.com.br/wp-content/uploads/2026/03/Logo-DPG-Png-Marketing-Contabil.png" alt="DPG Digital" style="max-width:200px;height:auto;display:block;margin:0 auto;">
-      </td></tr>
-
       <!-- Header -->
       <tr><td align="center" style="padding:0 40px 30px;">
         <h2 style="margin:0;font-size:24px;font-weight:800;color:#2d3436;letter-spacing:-0.5px;">📊 Relatório Diário</h2>
@@ -210,11 +205,9 @@ export function generateEmailHtml({
 
       <!-- Footer -->
       <tr><td align="center" style="padding:30px 40px 40px;border-top:1px solid #f1f3f5;margin-top:20px;">
-        <strong style="color:#2d3436;font-size:14px;display:block;margin-bottom:4px;">Grupo DPG Digital</strong>
-        <a href="https://www.dpgdigital.com" style="color:#FF5A1F;text-decoration:none;font-size:12px;font-weight:700;">www.dpgdigital.com</a>
+        <strong style="color:#2d3436;font-size:14px;display:block;margin-bottom:4px;">Ads Manager</strong>
         <p style="font-size:10px;color:#b2bec3;margin:14px 0 0;line-height:1.6;">
-            Relatório automático de performance • © ${new Date().getFullYear()}<br>
-            Direcionado ao cliente do Grupo DPG.
+            Relatório automático de performance • © ${new Date().getFullYear()}
         </p>
       </td></tr>
 

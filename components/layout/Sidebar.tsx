@@ -17,7 +17,6 @@ import {
     TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Logo } from "@/components/ui/Logo";
 import { logoutAction } from "@/actions/auth-actions";
 import Image from "next/image";
 import { useEffect } from "react";
@@ -73,9 +72,15 @@ export function Sidebar() {
                 )}
             >
                 <div className="flex h-full flex-col px-3 py-8">
-                    {/* Logo */}
-                    <div className={cn("flex items-center justify-center mb-10 transition-all", isCollapsed ? "md:px-0 px-4" : "px-4")}>
-                        <Logo className={cn("transition-all", isCollapsed ? "md:scale-75 scale-100" : "scale-100")} />
+                    {/* Brand */}
+                    <div className={cn("flex items-center mb-10 transition-all", isCollapsed ? "md:justify-center px-2" : "px-4")}>
+                        {isCollapsed ? (
+                            <LayoutDashboard className="w-5 h-5 text-primary" />
+                        ) : (
+                            <span className="text-lg font-black text-foreground tracking-tight">
+                                Ads<span className="text-primary">.</span>
+                            </span>
+                        )}
                     </div>
 
                     {/* Navigation */}
@@ -91,7 +96,7 @@ export function Sidebar() {
                                         "flex items-center rounded-full transition-all duration-200",
                                         isCollapsed ? "md:justify-center md:p-2.5 md:mx-auto md:w-12 md:h-12 gap-3 px-4 py-2.5" : "gap-3 px-4 py-2.5",
                                         isActive
-                                            ? "bg-primary text-black shadow-sm"
+                                            ? "bg-primary text-primary-foreground shadow-sm"
                                             : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                     )}
                                 >
@@ -104,7 +109,7 @@ export function Sidebar() {
                                             className="h-5 w-5 shrink-0 rounded-md"
                                         />
                                     ) : item.icon ? (
-                                        (() => { const Icon = item.icon; return <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-black" : "text-muted-foreground")} />; })()
+                                        (() => { const Icon = item.icon; return <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />; })()
                                     ) : null}
                                     <span className={cn("text-sm font-bold truncate", isCollapsed ? "md:hidden" : "")}>{item.name}</span>
                                 </Link>

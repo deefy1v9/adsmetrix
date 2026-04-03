@@ -13,6 +13,7 @@ import { CampaignsContent } from "@/components/features/campaigns/CampaignsConte
 import { CreativeGrid } from "./CreativeGrid";
 import { SkeletonKPICard } from "@/components/ui/Skeleton";
 import { MetricsConfigPanel } from "./MetricsConfigPanel";
+import { ConversionFunnel } from "./ConversionFunnel";
 import { Settings2 } from "lucide-react";
 import type { DashboardMetricKey } from "@/lib/dashboard-metrics-config";
 import { DEFAULT_DASHBOARD_METRICS } from "@/lib/dashboard-metrics-config";
@@ -104,6 +105,14 @@ export function DashboardContent() {
                     preset={preset}
                 />
             )}
+
+            <ConversionFunnel
+                impressions={campaigns.reduce((a, c) => a + parseInt(c.insights?.impressions || '0'), 0)}
+                clicks={stats.clicks}
+                viewContent={stats.view_content}
+                initiateCheckout={stats.initiate_checkout}
+                purchases={stats.purchases}
+            />
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
                 <OverviewChart data={weeklyData} />

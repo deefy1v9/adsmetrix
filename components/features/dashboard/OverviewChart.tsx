@@ -43,7 +43,7 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
     const hasLeads = chartData.some(d => d.leads > 0);
 
     return (
-        <GlassCard className="col-span-4 lg:col-span-4">
+        <GlassCard className="col-span-full lg:col-span-4">
             <div className="mb-4">
                 <h3 className="text-lg font-semibold text-foreground">Performance Semanal</h3>
                 <p className="text-sm text-muted-foreground">
@@ -51,11 +51,11 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                 </p>
             </div>
 
-            <div className="h-[300px] w-full">
+            <div className="h-[240px] sm:h-[300px] w-full">
                 <AreaChart
                     data={chartData}
                     xKey="date"
-                    margin={{ top: 12, right: 16, bottom: 36, left: 44 }}
+                    margin={{ top: 12, right: 8, bottom: 36, left: 36 }}
                     animationDuration={900}
                 >
                     <Grid
@@ -68,9 +68,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {hasConversations && (
                         <Area
                             dataKey="conversations"
-                            fill="#b4f13d"
-                            fillOpacity={0.25}
-                            stroke="#b4f13d"
+                            fill="#1e3a8a"
+                            fillOpacity={0.3}
+                            stroke="#1e3a8a"
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -83,9 +83,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {!hasConversations && hasLeads && (
                         <Area
                             dataKey="leads"
-                            fill="#b4f13d"
-                            fillOpacity={0.25}
-                            stroke="#b4f13d"
+                            fill="#1e3a8a"
+                            fillOpacity={0.3}
+                            stroke="#1e3a8a"
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -98,9 +98,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {!hasConversations && !hasLeads && (
                         <Area
                             dataKey="spend"
-                            fill="#5a9bff"
-                            fillOpacity={0.25}
-                            stroke="#5a9bff"
+                            fill="#1e40af"
+                            fillOpacity={0.3}
+                            stroke="#1e40af"
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -125,17 +125,17 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                         showDots
                         rows={(point) => [
                             ...(hasConversations ? [{
-                                color: "#b4f13d",
+                                color: "#1e3a8a",
                                 label: "Conversas",
                                 value: typeof point.conversations === "number" ? point.conversations : 0,
                             }] : []),
                             ...(!hasConversations && hasLeads ? [{
-                                color: "#b4f13d",
+                                color: "#1e3a8a",
                                 label: "Leads",
                                 value: typeof point.leads === "number" ? point.leads : 0,
                             }] : []),
                             {
-                                color: "#5a9bff",
+                                color: "#1e40af",
                                 label: "Gasto",
                                 value:
                                     typeof point.spend === "number"

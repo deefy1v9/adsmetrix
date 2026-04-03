@@ -912,7 +912,7 @@ export default function AutomationsPage() {
         return (
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">Automações</h1>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Automações</h1>
                 </div>
                 <AutomationForm
                     initial={view.editing}
@@ -927,10 +927,10 @@ export default function AutomationsPage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">Automações</h1>
-                    <p className="text-muted-foreground">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Automações</h1>
+                    <p className="text-sm text-muted-foreground">
                         Configure relatórios automáticos multi-conta enviados via WhatsApp.
                     </p>
                 </div>
@@ -940,7 +940,7 @@ export default function AutomationsPage() {
                             onClick={handleSendAll}
                             disabled={!!sendAll?.running || loading}
                             variant="secondary"
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 text-sm"
                         >
                             {sendAll?.running
                                 ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
@@ -950,9 +950,9 @@ export default function AutomationsPage() {
                     <Button
                         onClick={() => setView({ type: "form", editing: null })}
                         variant="primary"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 text-sm"
                     >
-                        <Plus className="w-4 h-4" /> Nova Automação
+                        <Plus className="w-4 h-4" /> Nova
                     </Button>
                 </div>
             </div>

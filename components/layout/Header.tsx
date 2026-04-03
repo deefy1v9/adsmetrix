@@ -21,54 +21,60 @@ export function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-30 mb-8 flex items-center justify-between border-b border-border bg-background/95 px-4 sm:px-8 py-4 backdrop-blur-md">
-            <div className="flex items-center gap-3 sm:gap-6">
-                <div className="flex items-center gap-2 sm:gap-4">
+        <header className="sticky top-0 z-30 mb-6 border-b border-border bg-background/95 px-4 sm:px-8 pt-3 pb-3 backdrop-blur-md">
+            {/* Main row */}
+            <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                     <button
                         onClick={handleToggle}
-                        className="p-2 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+                        className="p-2 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground shrink-0"
                         title={isCollapsed ? "Expandir menu" : "Recolher menu"}
                     >
                         {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
                     </button>
+
+                    {/* Account Selector */}
+                    <AccountSelector />
+
+                    {/* Date Picker — hidden on mobile, shown in second row below */}
+                    <div className="hidden sm:block">
+                        <DateSelector />
+                    </div>
                 </div>
 
-                {/* Account Selector */}
-                <AccountSelector />
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                    {/* Search — desktop only */}
+                    <div className="relative hidden w-56 lg:block">
+                        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                            type="text"
+                            placeholder="Buscar campanha..."
+                            className="w-full rounded-full border border-border bg-card py-2 pl-11 pr-4 text-sm font-medium text-foreground focus:border-primary/50 focus:outline-none transition-all shadow-sm"
+                        />
+                    </div>
 
-                {/* Date Picker */}
-                <div className="hidden sm:block">
-                    <DateSelector />
+                    {/* Theme Toggle */}
+                    <ThemeToggle />
+
+                    {/* Notifications */}
+                    <button className="relative rounded-full border border-border bg-card p-2 sm:p-2.5 text-foreground transition-all hover:border-primary/50 shadow-sm">
+                        <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary shadow-sm" />
+                    </button>
+
+                    <div className="flex items-center gap-3 border-l border-border pl-2 sm:pl-4">
+                        <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-black text-xs sm:text-sm shadow-sm ring-2 ring-primary/20">
+                            {user?.name
+                                ? user.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
+                                : user?.email?.substring(0, 2).toUpperCase() || "?"}
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-5">
-                {/* Search */}
-                <div className="relative hidden w-64 md:block">
-                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        placeholder="Buscar campanha..."
-                        className="w-full rounded-full border border-border bg-card py-2.5 pl-11 pr-4 text-sm font-medium text-foreground focus:border-primary/50 focus:outline-none transition-all shadow-sm"
-                    />
-                </div>
-
-                {/* Theme Toggle */}
-                <ThemeToggle />
-
-                {/* Notifications */}
-                <button className="relative rounded-full border border-border bg-card p-2.5 text-foreground transition-all hover:border-primary/50 shadow-sm">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary shadow-sm" />
-                </button>
-
-                <div className="flex items-center gap-4 border-l border-border pl-3 sm:pl-6 ml-1 sm:ml-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-black font-black text-sm shadow-sm ring-2 ring-primary/20">
-                        {user?.name
-                            ? user.name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase()
-                            : user?.email?.substring(0, 2).toUpperCase() || "?"}
-                    </div>
-                </div>
+            {/* Mobile DateSelector row */}
+            <div className="flex sm:hidden mt-2.5">
+                <DateSelector />
             </div>
         </header>
     );

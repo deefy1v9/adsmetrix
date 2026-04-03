@@ -360,17 +360,17 @@ export function CampaignsContent({ metricFilter = "all" }: { metricFilter?: "all
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Performance das Campanhas</h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         {loading
                             ? "Carregando campanhas..."
-                            : `Conta: ${selectedAccount.name} — clique em uma campanha para expandir conjuntos e anúncios`}
+                            : <><span className="hidden sm:inline">Conta: {selectedAccount.name} — </span>Clique para expandir conjuntos e anúncios</>}
                     </p>
                 </div>
             </div>
 
-            <GlassCard>
+            <GlassCard className="p-0 sm:p-6">
                 <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="min-w-[700px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Campanha / Conjunto / Anúncio</TableHead>

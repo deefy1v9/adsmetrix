@@ -160,9 +160,9 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
         >
             <defs>
                 <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#3B82F6" />
-                    <stop offset="60%"  stopColor="#6366F1" />
-                    <stop offset="100%" stopColor="#8B5CF6" />
+                    <stop offset="0%"   stopColor="#1e3a8a" />
+                    <stop offset="60%"  stopColor="#1e40af" />
+                    <stop offset="100%" stopColor="#2563eb" />
                 </linearGradient>
                 <filter id="waveBlur">
                     <feGaussianBlur stdDeviation="1.5" />
@@ -280,7 +280,7 @@ export function ConversionFunnel(props: ConversionFunnelProps) {
     const overallRate = first.value > 0 ? ((last.value / first.value) * 100) : null;
 
     return (
-        <GlassCard className="col-span-3 flex flex-col gap-0 overflow-hidden p-0">
+        <GlassCard className="col-span-full lg:col-span-3 flex flex-col gap-0 overflow-hidden p-0">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
                 <div>

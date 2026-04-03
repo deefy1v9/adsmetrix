@@ -52,8 +52,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 10%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 8%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 210 20% 96%;
     --secondary-foreground: 0 0% 10%;
@@ -68,14 +68,15 @@
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 217 91% 60%;
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 0 0% 8%;
     --radius: 1rem;
     /* 16px approx */
 
-    --glass-bg: 0 0% 100% / 0.8;
-    --glass-border: 0 0% 90% / 0.5;
+    --glass-bg: 0 0% 100% / 0.72;
+    --glass-border: 0 0% 80% / 0.55;
+    --dot-color: rgba(0, 0, 0, 0.12);
   }
 
   .dark {
@@ -89,8 +90,8 @@
     --popover: 222 47% 7%;
     --popover-foreground: 0 0% 90%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 92%;
+    --primary-foreground: 0 0% 8%;
 
     --secondary: 222 30% 15%;
     --secondary-foreground: 0 0% 90%;
@@ -107,10 +108,11 @@
 
     --border: 222 30% 17%;
     --input: 222 30% 17%;
-    --ring: 217 91% 60%;
+    --ring: 0 0% 92%;
 
-    --glass-bg: 222 40% 10% / 0.75;
-    --glass-border: 222 30% 20% / 0.5;
+    --glass-bg: 222 40% 10% / 0.72;
+    --glass-border: 222 30% 22% / 0.6;
+    --dot-color: rgba(255, 255, 255, 0.06);
   }
 }
 
@@ -122,6 +124,8 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-image: radial-gradient(circle, var(--dot-color) 1.2px, transparent 1.2px);
+    background-size: 22px 22px;
   }
 
   h1,
@@ -145,9 +149,14 @@
 }
 
 .glass-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  @apply shadow-glass-card transition-all duration-300;
+  background: hsla(var(--glass-bg));
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid hsla(var(--glass-border));
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  @apply transition-all duration-300;
 }
 
 .glass-button {
@@ -173,19 +182,19 @@
   --chart-foreground: hsl(0 0% 10%);
   --chart-foreground-muted: hsl(0 0% 45%);
   --chart-label: hsl(0 0% 45%);
-  --chart-line-primary: #3B82F6;
-  --chart-line-secondary: #6366F1;
-  --chart-crosshair: rgba(59, 130, 246, 0.5);
+  --chart-line-primary: #1e3a8a;
+  --chart-line-secondary: #1e40af;
+  --chart-crosshair: rgba(30, 58, 138, 0.45);
   --chart-grid: rgba(0, 0, 0, 0.07);
-  --chart-indicator-color: #3B82F6;
-  --chart-indicator-secondary-color: #6366F1;
+  --chart-indicator-color: #1e3a8a;
+  --chart-indicator-secondary-color: #1e40af;
   --chart-marker-background: hsl(0 0% 100%);
   --chart-marker-border: hsl(0 0% 88%);
   --chart-marker-foreground: hsl(0 0% 10%);
-  --chart-marker-badge-background: #3B82F6;
+  --chart-marker-badge-background: #1e3a8a;
   --chart-marker-badge-foreground: #ffffff;
-  --chart-segment-background: rgba(59, 130, 246, 0.1);
-  --chart-segment-line: rgba(59, 130, 246, 0.5);
+  --chart-segment-background: rgba(30, 58, 138, 0.1);
+  --chart-segment-line: rgba(30, 58, 138, 0.45);
 }
 
 .dark {
@@ -193,19 +202,19 @@
   --chart-foreground: hsl(0 0% 90%);
   --chart-foreground-muted: hsl(0 0% 55%);
   --chart-label: hsl(0 0% 50%);
-  --chart-line-primary: #3B82F6;
-  --chart-line-secondary: #6366F1;
-  --chart-crosshair: rgba(59, 130, 246, 0.5);
+  --chart-line-primary: #1e3a8a;
+  --chart-line-secondary: #1e40af;
+  --chart-crosshair: rgba(30, 58, 138, 0.45);
   --chart-grid: rgba(255, 255, 255, 0.06);
-  --chart-indicator-color: #3B82F6;
-  --chart-indicator-secondary-color: #6366F1;
+  --chart-indicator-color: #1e3a8a;
+  --chart-indicator-secondary-color: #1e40af;
   --chart-marker-background: hsl(222 40% 13%);
   --chart-marker-border: hsl(222 30% 20%);
   --chart-marker-foreground: hsl(0 0% 90%);
-  --chart-marker-badge-background: #3B82F6;
+  --chart-marker-badge-background: #1e3a8a;
   --chart-marker-badge-foreground: #ffffff;
-  --chart-segment-background: rgba(59, 130, 246, 0.08);
-  --chart-segment-line: rgba(59, 130, 246, 0.4);
+  --chart-segment-background: rgba(30, 58, 138, 0.1);
+  --chart-segment-line: rgba(30, 58, 138, 0.4);
 }
 
 /* ─── Card Entrance Animations ────────────────────────────────────────────── */

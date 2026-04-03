@@ -53,22 +53,22 @@ export function DashboardContent() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard</h2>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col xs:flex-row items-start xs:items-center gap-3">
+                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground whitespace-nowrap">Dashboard</h2>
                     <select
                         value={metricFilter}
                         onChange={(e) => setMetricFilter(e.target.value as any)}
-                        className="bg-card border border-border rounded-md px-3 py-1.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary h-8"
+                        className="w-full xs:w-auto bg-card border border-border rounded-md px-3 py-1.5 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary h-8"
                     >
-                        <option value="all">Métrica: Todas as Conversões</option>
-                        <option value="sales">Métrica: Vendas GTM (Purchase)</option>
-                        <option value="leads_form">Métrica: Leads (Nativo Meta)</option>
-                        <option value="leads_gtm">Métrica: Leads GTM (Site/Pixel)</option>
+                        <option value="all">Todas as Conversões</option>
+                        <option value="sales">Vendas GTM (Purchase)</option>
+                        <option value="leads_form">Leads (Nativo Meta)</option>
+                        <option value="leads_gtm">Leads GTM (Site/Pixel)</option>
                     </select>
                 </div>
                 <div className="flex items-center gap-3">
-                    {loading && <span className="text-sm text-muted-foreground whitespace-nowrap animate-pulse">Atualizando dados...</span>}
+                    {loading && <span className="text-xs text-muted-foreground whitespace-nowrap animate-pulse">Atualizando...</span>}
                     <button
                         onClick={() => setShowConfig(v => !v)}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors text-xs font-medium"

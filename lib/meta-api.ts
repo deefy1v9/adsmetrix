@@ -263,6 +263,11 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                     let postEngagementsValue = 0;
                     let commentsValue = 0;
                     let videoViewsValue = 0;
+                    let initiateCheckoutValue = 0;
+                    let addToCartValue = 0;
+                    let viewContentValue = 0;
+                    let completeRegistrationValue = 0;
+                    let addPaymentInfoValue = 0;
 
                     if (insight.actions) {
                         // Total Generic Leads
@@ -333,6 +338,18 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             (a.action_type as string).includes('profile_view')
                         );
                         if (profileVisitAction) instagramProfileVisits = parseInt(profileVisitAction.value || '0');
+
+                        // Pixel events — prefer omni_ variants (match Meta Ads Manager)
+                        const pickPixel = (omniType: string, pixelType: string) => {
+                            const omni = insight.actions.find((a: any) => a.action_type === omniType);
+                            const pixel = insight.actions.find((a: any) => a.action_type === pixelType);
+                            return parseInt((omni ?? pixel)?.value || '0');
+                        };
+                        initiateCheckoutValue    = pickPixel('omni_initiated_checkout',      'offsite_conversion.fb_pixel_initiate_checkout');
+                        addToCartValue           = pickPixel('omni_add_to_cart',             'offsite_conversion.fb_pixel_add_to_cart');
+                        viewContentValue         = pickPixel('omni_view_content',            'offsite_conversion.fb_pixel_view_content');
+                        completeRegistrationValue = pickPixel('omni_complete_registration',  'offsite_conversion.fb_pixel_complete_registration');
+                        addPaymentInfoValue      = pickPixel('omni_add_payment_info',        'offsite_conversion.fb_pixel_add_payment_info');
                     }
 
                     // Purchase value (from action_values)
@@ -377,6 +394,11 @@ export async function getCampaigns(accountId: string, datePreset: string = 'maxi
                             post_engagements: postEngagementsValue.toString(),
                             comments: commentsValue.toString(),
                             video_views: videoViewsValue.toString(),
+                            initiate_checkout: initiateCheckoutValue.toString(),
+                            add_to_cart: addToCartValue.toString(),
+                            view_content: viewContentValue.toString(),
+                            complete_registration: completeRegistrationValue.toString(),
+                            add_payment_info: addPaymentInfoValue.toString(),
                         }
                     };
                 } catch (e: any) {

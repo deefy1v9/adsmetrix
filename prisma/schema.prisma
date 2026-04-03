@@ -96,6 +96,9 @@ model Setting {
   balance_alert_group_name String?
   balance_alert_time       String?  @default("09:00")  // horário BRT para disparo (ex: "09:00")
 
+  // Dashboard — métricas visíveis nos KPI cards (configurável por workspace)
+  dashboard_metrics_config Json?
+
   criado_em      DateTime  @default(now())
 }
 

@@ -700,3 +700,40 @@ export async function fetchAllAccountsPerformanceAction(
 
     return results;
 }
+
+// ── Dashboard Metrics Config ──────────────────────────────────────────────────
+
+import type { DashboardMetricKey } from '@/lib/dashboard-metrics-config';
+import { DEFAULT_DASHBOARD_METRICS } from '@/lib/dashboard-metrics-config';
+
+export async function getDashboardMetricsConfigAction(): Promise<Record<DashboardMetricKey, boolean>> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { ...DEFAULT_DASHBOARD_METRICS };
+
+    const setting = await prisma.setting.findUnique({
+        where:  { workspace_id: workspaceId },
+        select: { dashboard_metrics_config: true },
+    });
+
+    const saved = setting?.dashboard_metrics_config as Record<string, boolean> | null;
+    if (!saved) return { ...DEFAULT_DASHBOARD_METRICS };
+
+    // Merge with defaults so new keys are always present
+    return { ...DEFAULT_DASHBOARD_METRICS, ...saved } as Record<DashboardMetricKey, boolean>;
+}
+
+export async function saveDashboardMetricsConfigAction(config: Record<DashboardMetricKey, boolean>) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+
+    try {
+        await prisma.setting.upsert({
+            where:  { workspace_id: workspaceId },
+            update: { dashboard_metrics_config: config },
+            create: { workspace_id: workspaceId, dashboard_metrics_config: config },
+        });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}

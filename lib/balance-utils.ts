@@ -42,6 +42,12 @@ export interface MetaCampaign {
         post_engagements?: string;
         comments?: string;
         video_views?: string;
+        // Pixel events
+        initiate_checkout?: string;
+        add_to_cart?: string;
+        view_content?: string;
+        complete_registration?: string;
+        add_payment_info?: string;
     };
 }
 

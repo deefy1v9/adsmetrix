@@ -12,9 +12,11 @@ import { WeeklyDay } from "@/lib/meta-api";
 import { CampaignsContent } from "@/components/features/campaigns/CampaignsContent";
 import { CreativeGrid } from "./CreativeGrid";
 import { SkeletonKPICard } from "@/components/ui/Skeleton";
+import { RecentLeads } from "./RecentLeads"; // kept for possible re-use
 import { MetricsConfigPanel } from "./MetricsConfigPanel";
 import { ConversionFunnel } from "./ConversionFunnel";
 import { Settings2 } from "lucide-react";
+// RecentLeads removed — replaced by ConversionFunnel in the grid
 import type { DashboardMetricKey } from "@/lib/dashboard-metrics-config";
 import { DEFAULT_DASHBOARD_METRICS } from "@/lib/dashboard-metrics-config";
 
@@ -106,20 +108,18 @@ export function DashboardContent() {
                 />
             )}
 
-            <ConversionFunnel
-                impressions={campaigns.reduce((a, c) => a + parseInt(c.insights?.impressions || '0'), 0)}
-                clicks={stats.clicks}
-                viewContent={stats.view_content}
-                initiateCheckout={stats.initiate_checkout}
-                purchases={stats.purchases}
-                conversations={stats.conversations}
-                leads={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_form || '0'), 0)}
-                leadsGtm={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_gtm || '0'), 0)}
-            />
-
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-7">
                 <OverviewChart data={weeklyData} />
-                <RecentLeads />
+                <ConversionFunnel
+                    impressions={campaigns.reduce((a, c) => a + parseInt(c.insights?.impressions || '0'), 0)}
+                    clicks={stats.clicks}
+                    viewContent={stats.view_content}
+                    initiateCheckout={stats.initiate_checkout}
+                    purchases={stats.purchases}
+                    conversations={stats.conversations}
+                    leads={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_form || '0'), 0)}
+                    leadsGtm={campaigns.reduce((a, c) => a + parseInt(c.insights?.leads_gtm || '0'), 0)}
+                />
             </div>
 
             <CreativeGrid metricFilter={metricFilter} />

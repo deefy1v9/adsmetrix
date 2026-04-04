@@ -20,19 +20,21 @@ export function CreativeCard({ creative }: CreativeCardProps) {
 
     const isVideo = !!creative.video_id;
     const [imgFailed, setImgFailed] = useState(false);
-    const rawUrl = creative.thumbnail_url;
+    const rawUrl = creative.image_url || creative.thumbnail_url;
     const imgSrc = rawUrl && !imgFailed ? rawUrl : null;
 
     return (
         <GlassCard className="overflow-hidden flex flex-col h-full group">
             {/* Ad Preview / Thumbnail */}
-            <div className="relative aspect-square w-full bg-zinc-900 overflow-hidden">
+            <div className="relative aspect-[4/3] w-full bg-zinc-900 overflow-hidden">
                 {imgSrc ? (
                     <img
                         src={imgSrc}
                         alt={creative.name}
                         onError={() => setImgFailed(true)}
-                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover object-top w-full h-full transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        decoding="async"
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-zinc-700 p-2">
@@ -87,7 +89,7 @@ export function CreativeCard({ creative }: CreativeCardProps) {
                     </h3>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                             <Eye className="h-3 w-3" /> Impressões

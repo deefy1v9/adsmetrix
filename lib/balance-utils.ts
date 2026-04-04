@@ -68,6 +68,7 @@ export interface MetaCreative {
     status: string;
     effective_status?: string;
     thumbnail_url?: string;
+    image_url?: string;
     preview_url?: string;
     video_id?: string;
     insights?: {

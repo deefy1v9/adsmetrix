@@ -20,7 +20,7 @@ export function CreativeCard({ creative }: CreativeCardProps) {
 
     const isVideo = !!creative.video_id;
     const [imgFailed, setImgFailed] = useState(false);
-    const rawUrl = creative.image_url || creative.thumbnail_url;
+    const rawUrl = creative.thumbnail_url;
     const imgSrc = rawUrl && !imgFailed ? rawUrl : null;
 
     return (

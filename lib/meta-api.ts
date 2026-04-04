@@ -775,13 +775,12 @@ export async function getTopCreatives(accountId: string, datePreset: string = 'l
             // Fetch thumbnails with minimal fields — requesting object_story_spec alongside
             // thumbnail_url causes Meta to return empty thumbnail_url for many creative types
             try {
-                const thumbUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,image_url,picture,thumbnail_url&access_token=${token}`;
+                const thumbUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
                 const thumbResp = await fetch(thumbUrl);
                 const thumbData = await thumbResp.json();
                 if (!thumbData.error) {
                     for (const id of creativeIds) {
-                        const best = thumbData[id]?.image_url || thumbData[id]?.picture || thumbData[id]?.thumbnail_url;
-                        if (best) thumbMap[id] = best;
+                        if (thumbData[id]?.thumbnail_url) thumbMap[id] = thumbData[id].thumbnail_url;
                     }
                 }
             } catch { /* thumbnails are optional */ }
@@ -916,12 +915,11 @@ export async function getAdsForAdSet(
         const thumbMap: Record<string, string> = {};
         if (creativeIds.length > 0) {
             try {
-                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,image_url,picture,thumbnail_url&access_token=${token}`;
+                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
                 const bResp = await fetch(bUrl);
                 const bData = await bResp.json();
                 for (const id of creativeIds) {
-                    const best = bData[id]?.image_url || bData[id]?.picture || bData[id]?.thumbnail_url;
-                    if (best) thumbMap[id] = best;
+                    if (bData[id]?.thumbnail_url) thumbMap[id] = bData[id].thumbnail_url;
                 }
             } catch { /* thumbnails are optional */ }
         }
@@ -986,12 +984,11 @@ export async function getAdsByCPR(
         const thumbMap: Record<string, string> = {};
         if (creativeIds.length > 0) {
             try {
-                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,image_url,picture,thumbnail_url&access_token=${token}`;
+                const bUrl  = `https://graph.facebook.com/v19.0/?ids=${creativeIds.join(',')}&fields=id,thumbnail_url&access_token=${token}`;
                 const bResp = await fetch(bUrl);
                 const bData = await bResp.json();
                 for (const id of creativeIds) {
-                    const best = bData[id]?.image_url || bData[id]?.picture || bData[id]?.thumbnail_url;
-                    if (best) thumbMap[id] = best;
+                    if (bData[id]?.thumbnail_url) thumbMap[id] = bData[id].thumbnail_url;
                 }
             } catch { /* thumbnails are optional */ }
         }

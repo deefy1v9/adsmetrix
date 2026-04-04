@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
-import { listGroupsAction } from "@/actions/uazapi-actions";
+import { getUazAPIStatusAction, listGroupsAction } from "@/actions/uazapi-actions";
 import type { WhatsAppGroup } from "@/lib/uazapi";
 import {
     listAutomationsAction,

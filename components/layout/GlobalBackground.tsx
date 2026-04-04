@@ -20,6 +20,7 @@ export function GlobalBackground() {
         <div className="fixed inset-0 -z-10 pointer-events-none">
             <NeuralBackground
                 color={isDark ? "#ffffff" : "#000000"}
+                trailColor={isDark ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.12)"}
                 trailOpacity={isDark ? 0.12 : 0.08}
                 particleCount={500}
                 speed={0.8}

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 interface NeuralBackgroundProps {
   className?: string;
   color?: string;
+  trailColor?: string;
   trailOpacity?: number;
   particleCount?: number;
   speed?: number;
@@ -14,6 +15,7 @@ interface NeuralBackgroundProps {
 export default function NeuralBackground({
   className,
   color = "#000000",
+  trailColor,
   trailOpacity = 0.15,
   particleCount = 600,
   speed = 1,
@@ -112,8 +114,10 @@ export default function NeuralBackground({
       }
     };
 
+    const resolvedTrailColor = trailColor ?? `rgba(0, 0, 0, ${trailOpacity})`;
+
     const animate = () => {
-      ctx.fillStyle = `rgba(0, 0, 0, ${trailOpacity})`;
+      ctx.fillStyle = resolvedTrailColor;
       ctx.fillRect(0, 0, width, height);
       particles.forEach((p) => {
         p.update();
@@ -152,7 +156,7 @@ export default function NeuralBackground({
       container.removeEventListener("mouseleave", handleMouseLeave);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [color, trailOpacity, particleCount, speed]);
+  }, [color, trailColor, trailOpacity, particleCount, speed]);
 
   return (
     <div ref={containerRef} className={cn("relative w-full h-full overflow-hidden", className)}>

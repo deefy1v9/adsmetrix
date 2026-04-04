@@ -4,6 +4,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
 
 export default function SettingsPage() {
     return (
@@ -53,13 +54,13 @@ export default function SettingsPage() {
                             </Button>
                         </div>
 
-                        <div className="p-3 rounded-lg bg-blue-500/5 border border-blue-500/20 space-y-2">
+                        <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
                             <div className="flex items-center justify-between">
-                                <p className="text-xs font-medium text-blue-600 dark:text-blue-400">Diagnóstico de Webhook</p>
+                                <p className="text-xs font-medium text-foreground">Diagnóstico de Webhook</p>
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-6 text-[10px] uppercase hover:bg-blue-500/10"
+                                    className="h-6 text-[10px] uppercase hover:bg-muted"
                                     onClick={async () => {
                                         const { retrySubscribeAction } = await import('@/actions/meta-actions');
                                         const res = await retrySubscribeAction();
@@ -76,17 +77,12 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border opacity-70">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white">W</div>
-                            <div>
-                                <p className="text-sm font-medium text-foreground">WhatsApp Business</p>
-                                <p className="text-xs text-muted-foreground">Desconectado</p>
-                            </div>
-                        </div>
-                        <Button variant="outline" size="sm">Conectar</Button>
-                    </div>
                 </GlassCard>
+
+                {/* WhatsApp / UazAPI */}
+                <div className="md:col-span-2">
+                    <UazAPIPanel />
+                </div>
 
                 {/* System Preferences */}
                 <GlassCard className="space-y-4 md:col-span-2">

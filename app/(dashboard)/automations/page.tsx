@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
-import { getUazAPIStatusAction, listGroupsAction } from "@/actions/uazapi-actions";
-import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
+import { listGroupsAction } from "@/actions/uazapi-actions";
 import type { WhatsAppGroup } from "@/lib/uazapi";
 import {
     listAutomationsAction,
@@ -956,9 +955,6 @@ export default function AutomationsPage() {
                     </Button>
                 </div>
             </div>
-
-            {/* UazAPI config panel */}
-            <UazAPIPanel />
 
             {/* Send All progress */}
             {sendAll && (

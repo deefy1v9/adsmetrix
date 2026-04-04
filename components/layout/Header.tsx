@@ -21,7 +21,7 @@ export function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-30 mb-6 border-b border-border bg-background/95 px-4 sm:px-8 pt-3 pb-3 backdrop-blur-md">
+        <header className="sticky top-0 z-30 mb-6 border-b border-border bg-card/95 px-4 sm:px-8 pt-3 pb-3 backdrop-blur-md shadow-sm shadow-black/[0.04]">
             {/* Main row */}
             <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">

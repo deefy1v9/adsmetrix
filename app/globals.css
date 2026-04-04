@@ -42,40 +42,39 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 0 0% 10%;
+    --background: 220 18% 93%;
+    --foreground: 0 0% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
-    --card-muted: 210 20% 96%;
+    --card-foreground: 0 0% 8%;
+    --card-muted: 220 14% 96%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 0 0% 8%;
 
     --primary: 0 0% 8%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 210 20% 96%;
+    --secondary: 220 14% 96%;
     --secondary-foreground: 0 0% 10%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 210 20% 96%;
-    --accent-foreground: 0 0% 10%;
-    --accent-muted: 210 20% 98%;
+    --accent: 220 14% 94%;
+    --accent-foreground: 0 0% 8%;
+    --accent-muted: 220 14% 97%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 0 0% 88%;
-    --input: 0 0% 88%;
+    --border: 220 13% 82%;
+    --input: 220 13% 82%;
     --ring: 0 0% 8%;
     --radius: 1rem;
-    /* 16px approx */
 
-    --glass-bg: 0 0% 100% / 0.72;
-    --glass-border: 0 0% 80% / 0.55;
+    --glass-bg: 0 0% 100% / 1;
+    --glass-border: 220 13% 82% / 1;
     --dot-color: rgba(0, 0, 0, 0.12);
   }
 
@@ -146,15 +145,26 @@
   border: 1px solid hsla(var(--glass-border));
 }
 
+/* Light mode: solid white cards with clear shadow and border */
 .glass-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 16px -4px rgba(0, 0, 0, 0.10),
+    0 12px 40px -8px rgba(0, 0, 0, 0.08);
+  @apply transition-all duration-300;
+}
+
+/* Dark mode: restore glassmorphism */
+.dark .glass-card {
   background: hsla(var(--glass-bg));
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border: 1px solid hsla(var(--glass-border));
   box-shadow:
-    0 4px 24px -4px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  @apply transition-all duration-300;
+    0 4px 24px -4px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
 .glass-button {

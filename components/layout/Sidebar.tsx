@@ -61,7 +61,7 @@ export function Sidebar() {
             <aside
                 data-open={mobileOpen}
                 className={cn(
-                    "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card transition-all duration-300 ease-in-out overflow-hidden",
+                    "fixed left-0 top-0 z-40 h-screen border-r border-border bg-card dark:bg-card shadow-[1px_0_0_0_hsl(var(--border))] transition-all duration-300 ease-in-out overflow-hidden",
                     // Base: always hidden on mobile, revealed via data-open
                     "-translate-x-full data-[open=true]:translate-x-0",
                     // Desktop: always visible

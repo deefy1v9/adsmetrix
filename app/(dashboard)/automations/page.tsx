@@ -845,6 +845,7 @@ export default function AutomationsPage() {
     const [view, setView] = useState<View>({ type: "list" });
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [sendAll, setSendAll] = useState<SendAllStatus | null>(null);
+    const [overridePreset, setOverridePreset] = useState<string>("");
 
     useEffect(() => {
         Promise.all([loadData(), checkWA()]);
@@ -887,7 +888,7 @@ export default function AutomationsPage() {
         for (let i = 0; i < enabled.length; i++) {
             const auto = enabled[i];
             setSendAll(prev => prev ? { ...prev, current: i + 1 } : prev);
-            const res = await runAutomationNowAction(auto.id);
+            const res = await runAutomationNowAction(auto.id, overridePreset || undefined);
             setSendAll(prev => prev ? {
                 ...prev,
                 results: [...prev.results, { name: auto.name, success: res.success }],
@@ -933,18 +934,32 @@ export default function AutomationsPage() {
                         Configure relatórios automáticos multi-conta enviados via WhatsApp.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                     {automations.filter(a => a.enabled).length > 0 && (
-                        <Button
-                            onClick={handleSendAll}
-                            disabled={!!sendAll?.running || loading}
-                            variant="secondary"
-                            className="flex items-center gap-2 text-sm"
-                        >
-                            {sendAll?.running
-                                ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
-                                : <><Send className="w-4 h-4" /> Enviar Todos</>}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={overridePreset}
+                                onChange={e => setOverridePreset(e.target.value)}
+                                disabled={!!sendAll?.running}
+                                title="Período de envio (sobrescreve o período individual de cada automação)"
+                                className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                            >
+                                <option value="">Período original</option>
+                                {DATE_PRESETS.map(p => (
+                                    <option key={p.value} value={p.value}>{p.label}</option>
+                                ))}
+                            </select>
+                            <Button
+                                onClick={handleSendAll}
+                                disabled={!!sendAll?.running || loading}
+                                variant="secondary"
+                                className="flex items-center gap-2 text-sm"
+                            >
+                                {sendAll?.running
+                                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
+                                    : <><Send className="w-4 h-4" /> Enviar Todos</>}
+                            </Button>
+                        </div>
                     )}
                     <Button
                         onClick={() => setView({ type: "form", editing: null })}

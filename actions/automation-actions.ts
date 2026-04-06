@@ -239,16 +239,16 @@ export async function fetchCampaignListAction(accountIds: string[]): Promise<Cam
 
 // ── Send ──────────────────────────────────────────────────────────────────────
 
-export async function runAutomationNowAction(id: string) {
+export async function runAutomationNowAction(id: string, overridePreset?: string) {
     const workspaceId = await getWorkspaceId();
     if (!workspaceId) return { success: false, error: 'Não autenticado' };
-    return sendAutomationReport(id, workspaceId);
+    return sendAutomationReport(id, workspaceId, false, overridePreset);
 }
 
 /**
  * Core send logic — used both by runAutomationNowAction and the cron job.
  */
-export async function sendAutomationReport(automationId: string, workspaceId: string, isScheduled = false) {
+export async function sendAutomationReport(automationId: string, workspaceId: string, isScheduled = false, overridePreset?: string) {
     try {
         const automation = await prisma.reportAutomation.findFirst({
             where: { id: automationId, workspace_id: workspaceId },
@@ -276,9 +276,11 @@ export async function sendAutomationReport(automationId: string, workspaceId: st
         // pull Fri–Sun (last 3 complete days) so the weekend data is included.
         // After sending, nothing changes in the DB — Tuesday+ the preset goes back to 'yesterday' naturally.
         const isMonday = isScheduled && skipWeekends && dayBR === 1;
-        const effectivePreset = isMonday && automation.date_preset === 'yesterday'
-            ? 'last_3d_completed'
-            : automation.date_preset;
+        const effectivePreset = overridePreset
+            ? overridePreset
+            : isMonday && automation.date_preset === 'yesterday'
+                ? 'last_3d_completed'
+                : automation.date_preset;
 
         const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });
         if (!setting?.uazapi_url || !setting?.uazapi_token || !setting?.uazapi_instance) {

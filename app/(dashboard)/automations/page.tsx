@@ -845,7 +845,15 @@ export default function AutomationsPage() {
     const [view, setView] = useState<View>({ type: "list" });
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [sendAll, setSendAll] = useState<SendAllStatus | null>(null);
-    const [overridePreset, setOverridePreset] = useState<string>("");
+    const [overridePreset, setOverridePreset] = useState<string>(() => {
+        if (typeof window === "undefined") return "";
+        return localStorage.getItem("automations_override_preset") ?? "";
+    });
+
+    function handleOverridePresetChange(value: string) {
+        setOverridePreset(value);
+        localStorage.setItem("automations_override_preset", value);
+    }
 
     useEffect(() => {
         Promise.all([loadData(), checkWA()]);
@@ -939,7 +947,7 @@ export default function AutomationsPage() {
                         <div className="flex items-center gap-2">
                             <select
                                 value={overridePreset}
-                                onChange={e => setOverridePreset(e.target.value)}
+                                onChange={e => handleOverridePresetChange(e.target.value)}
                                 disabled={!!sendAll?.running}
                                 title="Período de envio (sobrescreve o período individual de cada automação)"
                                 className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"

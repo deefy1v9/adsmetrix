@@ -138,7 +138,7 @@ export async function fetchMonthlyCalendarAction(year: number, month: number) {
         }
 
         // Fetch daily insights (form leads + conversations) from Meta API per account
-        const accountsMap: Record<string, { name: string, days: Record<number, number> }> = {};
+        const accountsMap: Record<string, { name: string, days: Record<number, { leads: number; spend: number }> }> = {};
 
         await Promise.all(metaAccounts.map(async (acc) => {
             const relevantLocals = localAccounts.filter(l => l.account_id === acc.id || l.account_id === acc.account_id);
@@ -151,7 +151,7 @@ export async function fetchMonthlyCalendarAction(year: number, month: number) {
 
         // Convert map to array and sort by total leads
         const sortedAccounts = Object.entries(accountsMap).map(([id, data]) => {
-            const totalLeads = Object.values(data.days).reduce((sum, count) => sum + count, 0);
+            const totalLeads = Object.values(data.days).reduce((sum, d) => sum + d.leads, 0);
             return {
                 id,
                 name: data.name,

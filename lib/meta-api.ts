@@ -567,7 +567,7 @@ export interface WeeklyDay {
 }
 
 const accountSummaryCache = new Map<string, { data: { leads24h: number; leadsMonth: number }; ts: number }>();
-const accountDailyCache = new Map<string, { data: Record<number, number>; ts: number }>();
+const accountDailyCache = new Map<string, { data: Record<number, { leads: number; spend: number }>; ts: number }>();
 
 /**
  * Count all meaningful results from a Meta actions array.
@@ -599,9 +599,9 @@ export async function getAccountDailyInsights(
     year: number,
     month: number,
     workspaceId?: string
-): Promise<Record<number, number>> {
+): Promise<Record<number, { leads: number; spend: number }>> {
     const cleanId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-    const cacheKey = `${cleanId}_daily_${year}_${month}_${workspaceId}`;
+    const cacheKey = `${cleanId}_daily3_${year}_${month}_${workspaceId}`;
     const cached = accountDailyCache.get(cacheKey);
     if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.data;
 
@@ -611,7 +611,7 @@ export async function getAccountDailyInsights(
         const lastDay = new Date(year, month + 1, 0).getDate();
         const until = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-        const url = `https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions,date_start&time_range={"since":"${since}","until":"${until}"}&time_increment=1&limit=31&access_token=${token}`;
+        const url = `https://graph.facebook.com/v24.0/${cleanId}/insights?fields=actions,spend,date_start&time_range={"since":"${since}","until":"${until}"}&time_increment=1&limit=31&access_token=${token}`;
         const res = await fetch(url);
         const data = await res.json();
 
@@ -620,12 +620,18 @@ export async function getAccountDailyInsights(
             return {};
         }
 
-        const days: Record<number, number> = {};
+        const days: Record<number, { leads: number; spend: number }> = {};
 
         for (const row of data.data || []) {
             const day = new Date(row.date_start + 'T12:00:00').getDate();
             const count = countResults(row.actions || []);
-            if (count > 0) days[day] = (days[day] || 0) + count;
+            const spend = parseFloat(row.spend || '0');
+            if (count > 0 || spend > 0) {
+                days[day] = {
+                    leads: (days[day]?.leads || 0) + count,
+                    spend: (days[day]?.spend || 0) + spend,
+                };
+            }
         }
 
         accountDailyCache.set(cacheKey, { data: days, ts: Date.now() });

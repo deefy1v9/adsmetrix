@@ -52,6 +52,22 @@ export default function OverviewPage() {
         }
     };
 
+    const handleRefresh = async () => {
+        setMonthLoading(true);
+        try {
+            const [overview, monthly] = await Promise.all([
+                fetchGeneralOverviewAction(),
+                fetchMonthlyCalendarAction(currentYear, currentMonth)
+            ]);
+            setOverviewData(overview);
+            setMonthlyData(monthly);
+        } catch (error) {
+            console.error("Failed to refresh data:", error);
+        } finally {
+            setMonthLoading(false);
+        }
+    };
+
     const totalLeads24h = overviewData.reduce((acc, item) => acc + item.leads24h, 0);
 
     return (
@@ -115,6 +131,7 @@ export default function OverviewPage() {
                 <MonthlyCalendar
                     data={monthlyData}
                     onMonthChange={handleMonthChange}
+                    onRefresh={handleRefresh}
                     loading={monthLoading || loading}
                 />
             </div>

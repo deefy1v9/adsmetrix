@@ -36,10 +36,10 @@ const months = [
 const STORAGE_KEY = "cpl_thresholds";
 const DEFAULT_THRESHOLD = 10;
 
-function formatCPL(spend: number, leads: number): string | null {
+function formatCPL(spend: number, leads: number, decimals = 0): string | null {
     if (leads === 0 || spend === 0) return null;
     const cpl = spend / leads;
-    return cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    return cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
 function loadThresholds(): Record<string, number> {
@@ -149,6 +149,9 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                     <tbody>
                         {data.accounts.map((acc) => {
                             const accountTotal = Object.values(acc.days).reduce((sum, d) => sum + d.leads, 0);
+                            const accountTotalSpend = Object.values(acc.days).reduce((sum, d) => sum + d.spend, 0);
+                            const avgCPL = formatCPL(accountTotalSpend, accountTotal, 2);
+                            const avgCPLValue = accountTotal > 0 ? accountTotalSpend / accountTotal : null;
                             const threshold = thresholds[acc.id] ?? DEFAULT_THRESHOLD;
                             const isEditing = editingId === acc.id;
 
@@ -197,7 +200,7 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                     {days.map(day => {
                                         const d = acc.days[day];
                                         const leads = d?.leads || 0;
-                                        const cpl = d ? formatCPL(d.spend, d.leads) : null;
+                                        const cpl = d ? formatCPL(d.spend, d.leads, 2) : null;
                                         const cplValue = d && d.leads > 0 ? d.spend / d.leads : null;
                                         return (
                                             <td key={day} className="border-b border-r border-border p-1 text-center transition-all">
@@ -222,7 +225,17 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                         );
                                     })}
                                     <td className="border-b border-border p-3 text-center bg-muted transition-colors">
-                                        <span className="text-xs font-black text-foreground">{accountTotal}</span>
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <span className="text-xs font-black text-foreground">{accountTotal}</span>
+                                            {avgCPL && avgCPLValue !== null && (
+                                                <span className={cn(
+                                                    "text-[9px] font-bold leading-none",
+                                                    avgCPLValue <= threshold ? "text-emerald-500" : "text-red-500"
+                                                )}>
+                                                    {avgCPL}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             );

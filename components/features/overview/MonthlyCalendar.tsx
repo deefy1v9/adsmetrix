@@ -2,7 +2,8 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, Pencil, Check, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface DayData {
     leads: number;
@@ -32,13 +33,58 @@ const months = [
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
+const STORAGE_KEY = "cpl_thresholds";
+const DEFAULT_THRESHOLD = 10;
+
 function formatCPL(spend: number, leads: number): string | null {
     if (leads === 0 || spend === 0) return null;
     const cpl = spend / leads;
     return cpl.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
+function loadThresholds(): Record<string, number> {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    } catch {
+        return {};
+    }
+}
+
 export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: MonthlyCalendarProps) {
+    const [thresholds, setThresholds] = useState<Record<string, number>>({});
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editValue, setEditValue] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setThresholds(loadThresholds());
+    }, []);
+
+    useEffect(() => {
+        if (editingId && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [editingId]);
+
+    const startEdit = (accId: string) => {
+        const current = thresholds[accId] ?? DEFAULT_THRESHOLD;
+        setEditValue(String(current));
+        setEditingId(accId);
+    };
+
+    const confirmEdit = (accId: string) => {
+        const num = parseFloat(editValue.replace(",", "."));
+        if (!isNaN(num) && num > 0) {
+            const next = { ...thresholds, [accId]: num };
+            setThresholds(next);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        }
+        setEditingId(null);
+    };
+
+    const cancelEdit = () => setEditingId(null);
+
     const handlePrevMonth = () => {
         const newMonth = data.month === 0 ? 11 : data.month - 1;
         const newYear = data.month === 0 ? data.year - 1 : data.year;
@@ -87,7 +133,7 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                 <table className="w-full border-collapse">
                     <thead>
                         <tr>
-                            <th className="sticky left-0 z-10 bg-muted border-b border-r border-border p-3 text-left min-w-[120px] sm:min-w-[200px] text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                            <th className="sticky left-0 z-10 bg-muted border-b border-r border-border p-3 text-left min-w-[160px] sm:min-w-[220px] text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                                 Conta de Anúncios
                             </th>
                             {days.map(day => (
@@ -103,10 +149,50 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                     <tbody>
                         {data.accounts.map((acc) => {
                             const accountTotal = Object.values(acc.days).reduce((sum, d) => sum + d.leads, 0);
+                            const threshold = thresholds[acc.id] ?? DEFAULT_THRESHOLD;
+                            const isEditing = editingId === acc.id;
+
                             return (
                                 <tr key={acc.id} className="hover:bg-muted transition-colors group">
-                                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted border-b border-r border-border p-3 font-bold text-foreground text-xs truncate max-w-[120px] sm:max-w-[200px] transition-colors">
-                                        {acc.name}
+                                    <td className="sticky left-0 z-10 bg-card group-hover:bg-muted border-b border-r border-border p-3 transition-colors max-w-[160px] sm:max-w-[220px]">
+                                        {isEditing ? (
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-[10px] text-muted-foreground shrink-0">C/Lead ≤</span>
+                                                <input
+                                                    ref={inputRef}
+                                                    value={editValue}
+                                                    onChange={e => setEditValue(e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === "Enter") confirmEdit(acc.id);
+                                                        if (e.key === "Escape") cancelEdit();
+                                                    }}
+                                                    className="w-14 px-1.5 py-0.5 text-xs rounded border border-primary bg-background text-foreground focus:outline-none"
+                                                    placeholder="10"
+                                                />
+                                                <button onClick={() => confirmEdit(acc.id)} className="text-emerald-500 hover:text-emerald-400">
+                                                    <Check className="w-3.5 h-3.5" />
+                                                </button>
+                                                <button onClick={cancelEdit} className="text-muted-foreground hover:text-foreground">
+                                                    <X className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                <span className="font-bold text-foreground text-xs truncate">{acc.name}</span>
+                                                <button
+                                                    onClick={() => startEdit(acc.id)}
+                                                    title={`Meta: R$${threshold} (clique para editar)`}
+                                                    className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <Pencil className="w-3 h-3" />
+                                                </button>
+                                                {thresholds[acc.id] !== undefined && (
+                                                    <span className="shrink-0 text-[9px] text-muted-foreground/50 font-medium">
+                                                        ≤R${threshold}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                     </td>
                                     {days.map(day => {
                                         const d = acc.days[day];
@@ -123,7 +209,7 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                                         {cpl && cplValue !== null && (
                                                             <span className={cn(
                                                                 "text-[8px] font-bold leading-none",
-                                                                cplValue < 10 ? "text-emerald-500" : "text-red-500"
+                                                                cplValue <= threshold ? "text-emerald-500" : "text-red-500"
                                                             )}>
                                                                 {cpl}
                                                             </span>

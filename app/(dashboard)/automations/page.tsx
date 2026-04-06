@@ -13,6 +13,7 @@ import {
     runAutomationNowAction,
     fetchCampaignListAction,
     previewAutomationAction,
+    bulkUpdateDatePresetAction,
     AutomationRecord,
     AutomationFormData,
     type CampaignSummary,
@@ -850,10 +851,19 @@ export default function AutomationsPage() {
         if (typeof window === "undefined") return "";
         return localStorage.getItem("automations_override_preset") ?? "";
     });
+    const [savingPreset, setSavingPreset] = useState(false);
 
     function handleOverridePresetChange(value: string) {
         setOverridePreset(value);
         localStorage.setItem("automations_override_preset", value);
+    }
+
+    async function handleSavePresetForAll() {
+        if (!overridePreset) return;
+        setSavingPreset(true);
+        await bulkUpdateDatePresetAction(overridePreset);
+        await loadData();
+        setSavingPreset(false);
     }
 
     useEffect(() => {
@@ -949,8 +959,8 @@ export default function AutomationsPage() {
                             <select
                                 value={overridePreset}
                                 onChange={e => handleOverridePresetChange(e.target.value)}
-                                disabled={!!sendAll?.running}
-                                title="Período de envio (sobrescreve o período individual de cada automação)"
+                                disabled={!!sendAll?.running || savingPreset}
+                                title="Período de envio"
                                 className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                             >
                                 <option value="">Período original</option>
@@ -958,6 +968,18 @@ export default function AutomationsPage() {
                                     <option key={p.value} value={p.value}>{p.label}</option>
                                 ))}
                             </select>
+                            {overridePreset && (
+                                <Button
+                                    onClick={handleSavePresetForAll}
+                                    disabled={savingPreset || !!sendAll?.running}
+                                    variant="outline"
+                                    className="flex items-center gap-2 text-xs h-9"
+                                >
+                                    {savingPreset
+                                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                                        : "Salvar em Todas"}
+                                </Button>
+                            )}
                             <Button
                                 onClick={handleSendAll}
                                 disabled={!!sendAll?.running || loading}

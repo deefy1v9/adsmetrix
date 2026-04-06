@@ -237,6 +237,18 @@ export async function fetchCampaignListAction(accountIds: string[]): Promise<Cam
     return results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 }
 
+// ── Bulk update ───────────────────────────────────────────────────────────────
+
+export async function bulkUpdateDatePresetAction(preset: string) {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+    await prisma.reportAutomation.updateMany({
+        where: { workspace_id: workspaceId },
+        data:  { date_preset: preset },
+    });
+    return { success: true };
+}
+
 // ── Send ──────────────────────────────────────────────────────────────────────
 
 export async function runAutomationNowAction(id: string, overridePreset?: string) {

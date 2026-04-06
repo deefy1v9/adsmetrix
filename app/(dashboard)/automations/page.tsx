@@ -328,7 +328,7 @@ function WhatsAppText({ text }: { text: string }) {
 // ── Automation Card ───────────────────────────────────────────────────────────
 
 function AutomationCard({
-    automation, accounts, onToggle, onEdit, onDelete, onRunNow, globalDisabled,
+    automation, accounts, onToggle, onEdit, onDelete, onRunNow, globalDisabled, overridePreset,
 }: {
     automation: AutomationRecord;
     accounts: MetaAdAccount[];
@@ -337,6 +337,7 @@ function AutomationCard({
     onDelete: () => void;
     onRunNow: () => void;
     globalDisabled?: boolean;
+    overridePreset?: string;
 }) {
     const [running,   setRunning]   = useState(false);
     const [runResult, setRunResult] = useState<{ success: boolean; error?: string } | null>(null);
@@ -353,7 +354,7 @@ function AutomationCard({
     const handleRunNow = async () => {
         setRunning(true);
         setRunResult(null);
-        const res = await runAutomationNowAction(automation.id);
+        const res = await runAutomationNowAction(automation.id, overridePreset || undefined);
         setRunResult(res);
         setRunning(false);
         if (res.success) onRunNow();
@@ -1052,6 +1053,7 @@ export default function AutomationsPage() {
                             onDelete={() => handleDelete(automation.id)}
                             onRunNow={loadData}
                             globalDisabled={!!sendAll?.running}
+                            overridePreset={overridePreset || undefined}
                         />
                     ))}
                 </div>

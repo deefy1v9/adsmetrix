@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import { fetchAdAccountsAction } from "@/actions/meta-actions";
+import { useUser } from "@/components/providers/UserContext";
 
 interface AccountContextType {
     accounts: MetaAdAccount[];
@@ -14,23 +15,28 @@ interface AccountContextType {
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
-    const [accounts, setAccounts] = useState<MetaAdAccount[]>([]);
+    const user = useUser();
+    const [accounts, setAccounts]               = useState<MetaAdAccount[]>([]);
     const [selectedAccount, setSelectedAccount] = useState<MetaAdAccount | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading]             = useState(true);
 
     useEffect(() => {
         async function loadAccounts() {
             try {
                 const data = await fetchAdAccountsAction();
-                setAccounts(data);
 
-                // Try to restore from localStorage or default to first
+                // Filter accounts if user has a restricted list
+                const allowed = user?.allowed_account_ids;
+                const filtered = allowed
+                    ? data.filter(a => allowed.includes(a.id) || allowed.includes(a.account_id ?? ""))
+                    : data;
+
+                setAccounts(filtered);
+
+                // Restore from localStorage or default to first visible account
                 const storedId = localStorage.getItem("selectedAccountId");
-                const found = data.find(a => a.id === storedId) || data[0];
-
-                if (found) {
-                    setSelectedAccount(found);
-                }
+                const found = filtered.find(a => a.id === storedId) || filtered[0];
+                if (found) setSelectedAccount(found);
             } catch (error) {
                 console.error("Failed to load accounts", error);
             } finally {
@@ -38,7 +44,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
             }
         }
         loadAccounts();
-    }, []);
+    // Re-run if user permissions change
+    }, [user?.allowed_account_ids?.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSetSelectedAccount = (account: MetaAdAccount) => {
         setSelectedAccount(account);
@@ -50,7 +57,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
             accounts,
             selectedAccount,
             setSelectedAccount: handleSetSelectedAccount,
-            isLoading
+            isLoading,
         }}>
             {children}
         </AccountContext.Provider>

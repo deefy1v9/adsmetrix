@@ -15,7 +15,11 @@ model User {
   role            String     @default("Admin")
   
   is_super_admin  Boolean    @default(false)
-  
+
+  // Admin-controlled permissions (null = unrestricted)
+  allowed_tabs          String?  // JSON: string[] of allowed tab hrefs
+  allowed_account_ids   String?  // JSON: string[] of allowed Meta account IDs
+
   workspace_id    String?
   workspace       Workspace? @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
 

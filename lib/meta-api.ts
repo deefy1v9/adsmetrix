@@ -61,12 +61,18 @@ function getInsightsParams(datePreset: string): Record<string, any> {
         action_attribution_windows: DEFAULT_ATTRIBUTION_WINDOWS,
     };
     if (datePreset === 'last_3d_completed') {
-        // Compute in BR timezone: since = 3 days ago, until = yesterday
         const nowBR  = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
         const fmt    = (d: Date) => d.toISOString().slice(0, 10);
         const yesterday = new Date(nowBR); yesterday.setDate(nowBR.getDate() - 1);
         const threeDaysAgo = new Date(nowBR); threeDaysAgo.setDate(nowBR.getDate() - 3);
         return { ...base, time_range: { since: fmt(threeDaysAgo), until: fmt(yesterday) } };
+    }
+    // Custom date range encoded as "custom:YYYY-MM-DD:YYYY-MM-DD"
+    if (datePreset.startsWith('custom:')) {
+        const parts = datePreset.split(':');
+        const since = parts[1];
+        const until = parts[2];
+        if (since && until) return { ...base, time_range: { since, until } };
     }
     return { ...base, date_preset: NATIVE_META_PRESETS.includes(datePreset) ? datePreset : 'maximum' };
 }

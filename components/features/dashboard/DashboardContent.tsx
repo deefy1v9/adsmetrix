@@ -19,13 +19,16 @@ import { DEFAULT_DASHBOARD_METRICS } from "@/lib/dashboard-metrics-config";
 
 export function DashboardContent() {
     const { selectedAccount } = useAccount();
-    const { preset } = useDate();
+    const { preset, startDate, endDate } = useDate();
     const [campaigns, setCampaigns] = useState<MetaCampaign[]>([]);
     const [weeklyData, setWeeklyData] = useState<WeeklyDay[]>([]);
     const [loading, setLoading] = useState(false);
     const [metricFilter, setMetricFilter] = useState<'all' | 'sales' | 'leads_form' | 'leads_gtm'>('all');
     const [showConfig, setShowConfig] = useState(false);
     const [metricsConfig, setMetricsConfig] = useState<Record<DashboardMetricKey, boolean>>({ ...DEFAULT_DASHBOARD_METRICS });
+
+    // Encode custom date range as "custom:YYYY-MM-DD:YYYY-MM-DD" so the API can use time_range
+    const effectivePreset = preset === "custom" ? `custom:${startDate}:${endDate}` : preset;
 
     useEffect(() => {
         getDashboardMetricsConfigAction().then(setMetricsConfig);
@@ -34,7 +37,7 @@ export function DashboardContent() {
     useEffect(() => {
         if (selectedAccount) {
             setLoading(true);
-            fetchCampaignsAction(selectedAccount.id, preset)
+            fetchCampaignsAction(selectedAccount.id, effectivePreset)
                 .then(setCampaigns)
                 .catch(console.error)
                 .finally(() => setLoading(false));
@@ -43,7 +46,7 @@ export function DashboardContent() {
                 .then(setWeeklyData)
                 .catch(console.error);
         }
-    }, [selectedAccount, preset]);
+    }, [selectedAccount, effectivePreset]);
 
     const stats = computeStats(campaigns);
 

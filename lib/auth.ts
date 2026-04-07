@@ -50,6 +50,8 @@ export interface UserSession {
     role: string;
     workspace_id: string | null;
     is_super_admin: boolean;
+    allowed_tabs: string[] | null;
+    allowed_account_ids: string[] | null;
 }
 
 export async function getSession(): Promise<UserSession | null> {
@@ -65,10 +67,16 @@ export async function getSession(): Promise<UserSession | null> {
 
         const user = await prisma.user.findUnique({
             where: { id: payload.userId as string },
-            select: { id: true, email: true, name: true, role: true, workspace_id: true, is_super_admin: true }
+            select: { id: true, email: true, name: true, role: true, workspace_id: true, is_super_admin: true, allowed_tabs: true, allowed_account_ids: true }
         });
 
-        return user as UserSession | null;
+        if (!user) return null;
+
+        return {
+            ...user,
+            allowed_tabs: user.allowed_tabs ? JSON.parse(user.allowed_tabs) : null,
+            allowed_account_ids: user.allowed_account_ids ? JSON.parse(user.allowed_account_ids) : null,
+        };
     } catch {
         return null;
     }

@@ -2,11 +2,12 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-export type DateRangePreset = "today" | "yesterday" | "last_7d" | "last_30d" | "this_month" | "last_month" | "maximum";
+export type DateRangePreset = "today" | "yesterday" | "last_7d" | "last_30d" | "this_month" | "last_month" | "maximum" | "custom";
 
 interface DateContextType {
     preset: DateRangePreset;
     setPreset: (preset: DateRangePreset) => void;
+    setCustomRange: (start: string, end: string) => void;
     startDate: string; // YYYY-MM-DD
     endDate: string;   // YYYY-MM-DD
 }
@@ -17,12 +18,8 @@ function getDateRange(preset: DateRangePreset): { start: string, end: string } {
     const end = new Date();
     const start = new Date();
 
-    // Reset time to end of day for end date, start of day for start date conceptually
-    // Meta API expects 'YYYY-MM-DD'
-
     switch (preset) {
         case "today":
-            // start is today
             break;
         case "yesterday":
             start.setDate(end.getDate() - 1);
@@ -40,10 +37,13 @@ function getDateRange(preset: DateRangePreset): { start: string, end: string } {
         case "last_month":
             start.setMonth(start.getMonth() - 1);
             start.setDate(1);
-            end.setDate(0); // Last day of previous month
+            end.setDate(0);
             break;
         case "maximum":
-            return { start: '2020-01-01', end: end.toISOString().split('T')[0] }; // Arbitrary old date
+            return { start: '2020-01-01', end: end.toISOString().split('T')[0] };
+        case "custom":
+            // handled separately via customStart/customEnd
+            break;
     }
 
     return {
@@ -54,15 +54,24 @@ function getDateRange(preset: DateRangePreset): { start: string, end: string } {
 
 export function DateProvider({ children }: { children: ReactNode }) {
     const [preset, setPreset] = useState<DateRangePreset>("last_30d");
+    const [customStart, setCustomStart] = useState<string>("");
+    const [customEnd, setCustomEnd] = useState<string>("");
 
     const { start, end } = getDateRange(preset);
+
+    const setCustomRange = (s: string, e: string) => {
+        setCustomStart(s);
+        setCustomEnd(e);
+        setPreset("custom");
+    };
 
     return (
         <DateContext.Provider value={{
             preset,
             setPreset,
-            startDate: start,
-            endDate: end
+            setCustomRange,
+            startDate: preset === "custom" ? customStart : start,
+            endDate:   preset === "custom" ? customEnd   : end,
         }}>
             {children}
         </DateContext.Provider>

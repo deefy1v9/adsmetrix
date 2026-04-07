@@ -15,12 +15,14 @@ import {
     Target,
     ScrollText,
     TrendingUp,
+    Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth-actions";
 import Image from "next/image";
 import { useEffect } from "react";
 import { useSidebar } from "@/components/providers/SidebarContext";
+import { useUser } from "@/components/providers/UserContext";
 
 type MenuItem =
     | { name: string; href: string; icon: React.ElementType; imgSrc?: never }
@@ -42,6 +44,14 @@ const menuItems: MenuItem[] = [
 export function Sidebar() {
     const pathname = usePathname();
     const { isCollapsed, mobileOpen, closeMobile } = useSidebar();
+    const user = useUser();
+
+    const isAdmin = user?.email === "deefy07@gmail.com";
+
+    // Filter tabs: if allowed_tabs is set, only show permitted hrefs
+    const visibleItems = menuItems.filter(item =>
+        !user?.allowed_tabs || user.allowed_tabs.includes(item.href)
+    );
 
     // Close mobile sidebar on route change
     useEffect(() => {
@@ -85,8 +95,25 @@ export function Sidebar() {
 
                     {/* Navigation */}
                     <nav className="flex-1 space-y-1.5 overflow-y-auto no-scrollbar">
-                        {menuItems.map((item) => {
+                        {isAdmin && (
+                            <Link
+                                href="/admin"
+                                title={isCollapsed ? "Admin" : ""}
+                                className={cn(
+                                    "flex items-center rounded-full transition-all duration-200",
+                                    isCollapsed ? "md:justify-center md:p-2.5 md:mx-auto md:w-12 md:h-12 gap-3 px-4 py-2.5" : "gap-3 px-4 py-2.5",
+                                    pathname === "/admin"
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                )}
+                            >
+                                <Shield className={cn("h-5 w-5 shrink-0", pathname === "/admin" ? "text-primary-foreground" : "text-muted-foreground")} />
+                                <span className={cn("text-sm font-bold truncate", isCollapsed ? "md:hidden" : "")}>Admin</span>
+                            </Link>
+                        )}
+                        {visibleItems.map((item) => {
                             const isActive = pathname === item.href;
+                            const Icon = item.icon;
                             return (
                                 <Link
                                     key={item.href}
@@ -108,8 +135,8 @@ export function Sidebar() {
                                             height={20}
                                             className="h-5 w-5 shrink-0 rounded-md"
                                         />
-                                    ) : item.icon ? (
-                                        (() => { const Icon = item.icon; return <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />; })()
+                                    ) : Icon ? (
+                                        <Icon className={cn("h-5 w-5 shrink-0", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
                                     ) : null}
                                     <span className={cn("text-sm font-bold truncate", isCollapsed ? "md:hidden" : "")}>{item.name}</span>
                                 </Link>

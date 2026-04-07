@@ -2,13 +2,15 @@
 
 import { createContext, useContext } from "react";
 
-interface UserData {
+export interface UserData {
     id: string;
     email: string;
     name: string | null;
     role: string;
     workspace_id: string | null;
     is_super_admin: boolean;
+    allowed_tabs: string[] | null;         // null = all tabs allowed
+    allowed_account_ids: string[] | null;  // null = all accounts allowed
 }
 
 const UserContext = createContext<UserData | null>(null);

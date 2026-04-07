@@ -409,13 +409,14 @@ function AutomationCard({
                     </span>
                 )}
                 {automation.destination_type === "number" && automation.destination_id && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                        <Phone className="w-3 h-3" /> {automation.destination_id}
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md max-w-full">
+                        <Phone className="w-3 h-3 shrink-0" />
+                        <span className="truncate max-w-[160px]">{automation.destination_id}</span>
                     </span>
                 )}
                 {automation.last_sent_at && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                        Último envio: {new Date(automation.last_sent_at).toLocaleString("pt-BR", {
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md whitespace-nowrap">
+                        {new Date(automation.last_sent_at).toLocaleString("pt-BR", {
                             timeZone: "America/Sao_Paulo",
                             day: "2-digit", month: "2-digit",
                             hour: "2-digit", minute: "2-digit",
@@ -953,9 +954,9 @@ export default function AutomationsPage() {
                         Configure relatórios automáticos multi-conta enviados via WhatsApp.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
                     {automations.filter(a => a.enabled).length > 0 && (
-                        <div className="flex items-center gap-2">
+                        <>
                             <select
                                 value={overridePreset}
                                 onChange={e => handleOverridePresetChange(e.target.value)}
@@ -990,7 +991,7 @@ export default function AutomationsPage() {
                                     ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
                                     : <><Send className="w-4 h-4" /> Enviar Todos</>}
                             </Button>
-                        </div>
+                        </>
                     )}
                     <Button
                         onClick={() => setView({ type: "form", editing: null })}

@@ -26,20 +26,20 @@ export function AccountSelector() {
     }, []);
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative min-w-0" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 disabled={isLoading}
                 className={cn(
-                    "flex items-center gap-3 rounded-full border border-border bg-card px-5 py-2.5 transition-all hover:border-primary hover:shadow-md shadow-sm active:scale-[0.98]",
+                    "flex items-center gap-2 rounded-full border border-border bg-card px-3 sm:px-5 py-2 sm:py-2.5 transition-all hover:border-primary hover:shadow-md shadow-sm active:scale-[0.98]",
                     isOpen && "border-primary ring-4 ring-primary/10 shadow-md"
                 )}
             >
-                <Layers className={cn("h-4 w-4 transition-colors", isOpen ? "text-primary" : "text-foreground")} />
-                <span className="text-sm font-bold text-foreground max-w-[200px] truncate">
-                    {isLoading ? "Carregando..." : selectedAccount?.name || "Selecionar Conta"}
+                <Layers className={cn("h-4 w-4 shrink-0 transition-colors", isOpen ? "text-primary" : "text-foreground")} />
+                <span className="text-xs sm:text-sm font-bold text-foreground max-w-[90px] sm:max-w-[200px] truncate">
+                    {isLoading ? "..." : selectedAccount?.name || "Conta"}
                 </span>
-                <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
+                <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
             </button>
 
             {isOpen && (

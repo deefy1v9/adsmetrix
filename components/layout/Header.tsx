@@ -24,7 +24,7 @@ export function Header() {
         <header className="sticky top-0 z-30 mb-6 border-b border-border bg-card/95 px-4 sm:px-8 pt-3 pb-3 backdrop-blur-md shadow-sm shadow-black/[0.04]">
             {/* Main row */}
             <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
                     <button
                         onClick={handleToggle}
                         className="p-2 rounded-full hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground shrink-0"
@@ -73,8 +73,8 @@ export function Header() {
             </div>
 
             {/* Mobile DateSelector row */}
-            <div className="flex sm:hidden mt-2.5">
-                <DateSelector />
+            <div className="flex sm:hidden mt-2.5 w-full">
+                <DateSelector className="w-full" />
             </div>
         </header>
     );

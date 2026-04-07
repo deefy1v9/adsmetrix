@@ -8,9 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Ads Dashboard",
   description: "Gerenciador de campanhas e leads Meta Ads",
-  icons: {
-    icon: "/favicon.svg",
-  },
+  icons: [],
 };
 
 export default function RootLayout({

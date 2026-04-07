@@ -15,7 +15,7 @@ const datePresets: { label: string; value: DateRangePreset }[] = [
     { label: "Total", value: "maximum" },
 ];
 
-export function DateSelector() {
+export function DateSelector({ className }: { className?: string }) {
     const { preset, setPreset } = useDate();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,11 +33,12 @@ export function DateSelector() {
     }, []);
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        <div className={cn("relative", className)} ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "flex items-center gap-3 rounded-full border border-border bg-card px-5 py-2.5 transition-all hover:border-primary hover:shadow-md shadow-sm active:scale-[0.98]",
+                    "flex items-center gap-2 sm:gap-3 rounded-full border border-border bg-card px-4 sm:px-5 py-2 sm:py-2.5 transition-all hover:border-primary hover:shadow-md shadow-sm active:scale-[0.98]",
+                    className && "w-full justify-between",
                     isOpen && "border-primary ring-4 ring-primary/10 shadow-md"
                 )}
             >

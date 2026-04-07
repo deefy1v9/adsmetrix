@@ -5,9 +5,9 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-    const email = "admin@grupodpg.com.br";
+    const email = "deefy07@gmail.com";
     const password = "Admin@123";
-    const name = "Admin DPG";
+    const name = "Admin";
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -17,7 +17,7 @@ async function main() {
         update: {},
         create: {
             id: 'default-workspace-id',
-            nome_empresa: "DPG Digital",
+            nome_empresa: "Ads Manager",
             status: "ACTIVE"
         }
     });

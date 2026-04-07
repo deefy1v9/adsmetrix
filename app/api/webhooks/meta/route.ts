@@ -92,6 +92,36 @@ export async function POST(request: Request) {
                     }
                 }
 
+                // Priority 3: Fetch campaign from Meta API to find the ad account
+                if (!account && effectiveCampaignId) {
+                    try {
+                        let token = process.env.META_ACCESS_TOKEN;
+                        if (!token) {
+                            const gc = await prisma.globalConfig.findUnique({ where: { id: 'singleton' }, select: { meta_access_token: true } });
+                            token = gc?.meta_access_token || undefined;
+                        }
+                        if (token) {
+                            const campRes = await fetch(`https://graph.facebook.com/v20.0/${effectiveCampaignId}?fields=id,name,account_id&access_token=${token}`);
+                            const campData = await campRes.json();
+                            if (!campData.error && campData.account_id) {
+                                const normalizedAccId = campData.account_id.startsWith('act_') ? campData.account_id : `act_${campData.account_id}`;
+                                account = await prisma.account.findUnique({ where: { account_id: normalizedAccId } });
+                                if (account) {
+                                    // Cache the campaign so future leads link instantly
+                                    await prisma.campaign.upsert({
+                                        where: { campaign_id: effectiveCampaignId },
+                                        update: { campaign_name: campData.name },
+                                        create: { campaign_id: effectiveCampaignId, account_id: account.id, campaign_name: campData.name, date: new Date() },
+                                    });
+                                    console.log(`[Webhook] Account linked via Meta API campaign lookup for lead ${leadgen_id}`);
+                                }
+                            }
+                        }
+                    } catch (e: any) {
+                        console.warn(`[Webhook] Meta campaign lookup failed:`, e.message);
+                    }
+                }
+
                 if (!account) {
                     console.warn(`[Webhook] No account found for lead ${leadgen_id} (Campaign ID: ${effectiveCampaignId}, Form ID: ${effectiveFormId}). Saving without account link.`);
                 }

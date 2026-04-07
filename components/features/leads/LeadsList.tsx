@@ -108,10 +108,16 @@ export function LeadsList() {
             </div>
 
             <div className="flex justify-center mb-6">
-                <Badge variant={isSyncing ? "warning" : "neon"} className="gap-2">
-                    <RefreshCw className={`h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
-                    {isSyncing ? "Sincronizando novos leads..." : "Todos os leads sincronizados e salvos"}
-                </Badge>
+                <button
+                    onClick={() => loadLeads(true)}
+                    disabled={isSyncing}
+                    className="flex items-center gap-2"
+                >
+                    <Badge variant={isSyncing ? "warning" : "neon"} className="gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                        <RefreshCw className={`h-3 w-3 ${isSyncing ? "animate-spin" : ""}`} />
+                        {isSyncing ? "Sincronizando leads..." : "Sincronizar leads"}
+                    </Badge>
+                </button>
             </div>
 
             {loading ? (

@@ -1299,6 +1299,52 @@ export async function syncLeadsFromMeta(accountId: string) {
             }
         }
 
+        // Step 4: Sync campaigns for this account so webhook linkage works going forward
+        try {
+            let nextCampaignsUrl: string | null = `https://graph.facebook.com/v20.0/${accountId}/campaigns?fields=id,name,status&limit=100&access_token=${token}`;
+            while (nextCampaignsUrl) {
+                const campRes: any = await fetch(nextCampaignsUrl);
+                const campData: any = await campRes.json();
+                if (campData.error) break;
+                for (const camp of campData.data || []) {
+                    await prisma.campaign.upsert({
+                        where: { campaign_id: camp.id },
+                        update: { campaign_name: camp.name },
+                        create: {
+                            campaign_id: camp.id,
+                            account_id: dbAccount.id,
+                            campaign_name: camp.name,
+                            date: new Date(),
+                        },
+                    });
+                }
+                nextCampaignsUrl = campData.paging?.next || null;
+            }
+        } catch (e: any) {
+            console.warn(`[MetaAPI] Campaign sync failed for ${accountId}:`, e.message);
+        }
+
+        // Step 5: Rescue orphaned leads (account_id=null) that match this account's campaigns
+        try {
+            const accountCampaigns = await prisma.campaign.findMany({
+                where: { account_id: dbAccount.id },
+                select: { campaign_id: true },
+            });
+            const campaignIds = accountCampaigns.map(c => c.campaign_id);
+            if (campaignIds.length > 0) {
+                const rescued = await prisma.lead.updateMany({
+                    where: { account_id: null, campaign_id: { in: campaignIds } },
+                    data: { account_id: dbAccount.id },
+                });
+                if (rescued.count > 0) {
+                    console.log(`[MetaAPI] Rescued ${rescued.count} orphaned leads for ${accountId}`);
+                    totalUpserted += rescued.count;
+                }
+            }
+        } catch (e: any) {
+            console.warn(`[MetaAPI] Orphan rescue failed for ${accountId}:`, e.message);
+        }
+
         console.log(`[MetaAPI] Sync finished for ${accountId}. Total leads upserted: ${totalUpserted}`);
         return { success: true, count: totalUpserted };
 

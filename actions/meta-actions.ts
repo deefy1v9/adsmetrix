@@ -16,6 +16,18 @@ async function isSuperAdmin(): Promise<boolean> {
     return h.get("x-super-admin") === "true";
 }
 
+async function getAllowedAccountIds(): Promise<string[] | null> {
+    const h = await headers();
+    const userId = h.get("x-user-id");
+    if (!userId) return null;
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { allowed_account_ids: true },
+    });
+    if (!user?.allowed_account_ids) return null;
+    try { return JSON.parse(user.allowed_account_ids) as string[]; } catch { return null; }
+}
+
 export async function fetchAdAccountsAction(): Promise<MetaAdAccount[]> {
     const workspaceId = await getWorkspaceId();
 
@@ -52,18 +64,46 @@ export async function fetchAdAccountsAction(): Promise<MetaAdAccount[]> {
                 }
                 // Proceed with GlobalConfig token — workspaceId still scopes the upserts
             } else {
-                // Regular user with no token — return only accounts already linked to this workspace
+                // Regular user with no token — check if admin granted specific account access
+                const allowedIds = await getAllowedAccountIds();
+                if (allowedIds && allowedIds.length > 0) {
+                    // Use GlobalConfig token to fetch accounts on behalf of this user
+                    const globalConfig = await prisma.globalConfig.findUnique({
+                        where: { id: 'singleton' },
+                        select: { meta_access_token: true },
+                    });
+                    if (globalConfig?.meta_access_token) {
+                        try {
+                            // Fetch from Meta API using admin token (null workspaceId = use GlobalConfig)
+                            const allAccounts = await getAdAccounts(undefined);
+                            return allAccounts.filter(a =>
+                                allowedIds.includes(a.id) || allowedIds.includes(a.account_id ?? "")
+                            );
+                        } catch { /* fall through to DB fallback */ }
+                    }
+                    // Fallback: return from DB filtered by allowed IDs
+                    try {
+                        const linked = await prisma.account.findMany({
+                            where: { account_id: { in: allowedIds } },
+                        });
+                        return linked.map((a: any) => ({
+                            id: a.account_id, account_id: a.account_id,
+                            name: a.account_name, currency: a.currency,
+                            account_status: a.account_status, balance: a.balance,
+                            amount_spent: a.amount_spent, is_prepay_account: a.is_prepay,
+                            ...a,
+                        }));
+                    } catch { return []; }
+                }
+
+                // No token and no allowed accounts — return accounts linked to this workspace (may be empty)
                 try {
                     const linked = await prisma.account.findMany({ where: { workspace_id: workspaceId } });
                     return linked.map((a: any) => ({
-                        id: a.account_id,
-                        account_id: a.account_id,
-                        name: a.account_name,
-                        currency: a.currency,
-                        account_status: a.account_status,
-                        balance: a.balance,
-                        amount_spent: a.amount_spent,
-                        is_prepay_account: a.is_prepay,
+                        id: a.account_id, account_id: a.account_id,
+                        name: a.account_name, currency: a.currency,
+                        account_status: a.account_status, balance: a.balance,
+                        amount_spent: a.amount_spent, is_prepay_account: a.is_prepay,
                         ...a,
                     }));
                 } catch { return []; }

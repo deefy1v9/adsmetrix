@@ -362,14 +362,14 @@ function AutomationCard({
     };
 
     return (
-        <GlassCard className="space-y-4">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
+        <GlassCard className="space-y-4 w-full min-w-0 overflow-hidden">
+            <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className={cn(
                         "w-2.5 h-2.5 rounded-full shrink-0 mt-1",
                         automation.enabled ? "bg-emerald-400" : "bg-muted-foreground/30"
                     )} />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <h3 className="font-bold text-foreground truncate">{automation.name}</h3>
                         <p className="text-xs text-muted-foreground mt-0.5 truncate">
                             {accountNames}{extraAccounts > 0 && ` +${extraAccounts}`}
@@ -382,36 +382,36 @@ function AutomationCard({
                 />
             </div>
 
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                    <Clock className="w-3 h-3" /> {automation.schedule_time} todo dia
+            <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground w-full min-w-0">
+                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md whitespace-nowrap">
+                    <Clock className="w-3 h-3 shrink-0" /> {automation.schedule_time}
                 </span>
-                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                    <Zap className="w-3 h-3" /> {getDateLabel(automation.date_preset)}
+                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md whitespace-nowrap">
+                    <Zap className="w-3 h-3 shrink-0" /> {getDateLabel(automation.date_preset)}
                 </span>
-                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                    {activeMetrics} métricas
+                <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md whitespace-nowrap">
+                    {activeMetrics} mét.
                 </span>
                 {automation.skip_weekends && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-amber-400">
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-amber-400 whitespace-nowrap">
                         Seg–Sex
                     </span>
                 )}
                 {automation.totals_only && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-primary">
-                        Só totais
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-primary whitespace-nowrap">
+                        Totais
                     </span>
                 )}
                 {automation.destination_type === "group" && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md">
-                        <Users className="w-3 h-3" />
-                        {automation.destination_name || "Grupo"}
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md min-w-0 max-w-[140px]">
+                        <Users className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{automation.destination_name || "Grupo"}</span>
                     </span>
                 )}
                 {automation.destination_type === "number" && automation.destination_id && (
-                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md max-w-full">
+                    <span className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md min-w-0 max-w-[130px]">
                         <Phone className="w-3 h-3 shrink-0" />
-                        <span className="truncate max-w-[160px]">{automation.destination_id}</span>
+                        <span className="truncate">{automation.destination_id}</span>
                     </span>
                 )}
                 {automation.last_sent_at && (

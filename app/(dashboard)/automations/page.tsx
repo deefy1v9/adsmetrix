@@ -18,6 +18,16 @@ import {
     AutomationFormData,
     type CampaignSummary,
 } from "@/actions/automation-actions";
+import {
+    listWaBlastAutomationsAction,
+    createWaBlastAutomationAction,
+    updateWaBlastAutomationAction,
+    deleteWaBlastAutomationAction,
+    toggleWaBlastAutomationAction,
+    runWaBlastNowAction,
+    type WaBlastRecord,
+    type WaBlastFormData,
+} from "@/actions/wa-blast-actions";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
@@ -25,7 +35,7 @@ import { Badge } from "@/components/ui/Badge";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
     Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
-    Phone, Users, Eye, EyeOff, Send,
+    Phone, Users, Eye, EyeOff, Send, MessageCircle, Calendar, X,
 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import {
@@ -828,6 +838,416 @@ function AutomationForm({
     );
 }
 
+// ── WaBlast Components ────────────────────────────────────────────────────────
+
+const DAYS_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+const EMPTY_WA_BLAST: WaBlastFormData = {
+    name: "",
+    enabled: true,
+    schedule_days: [1, 2, 3, 4, 5], // Seg-Sex by default
+    schedule_time: "09:00",
+    messages: [""],
+    destination_type: "number",
+    destination_id: "",
+    destination_name: "",
+};
+
+function WaBlastCard({
+    blast,
+    onToggle,
+    onEdit,
+    onDelete,
+    onRunNow,
+}: {
+    blast: WaBlastRecord;
+    onToggle: (enabled: boolean) => void;
+    onEdit: () => void;
+    onDelete: () => void;
+    onRunNow: () => void;
+}) {
+    const [running, setRunning] = useState(false);
+    const [result, setResult] = useState<{ success: boolean; sent: number } | null>(null);
+
+    async function handleRun() {
+        setRunning(true);
+        setResult(null);
+        const r = await runWaBlastNowAction(blast.id);
+        setResult(r);
+        setRunning(false);
+        onRunNow();
+    }
+
+    const daysLabel = blast.schedule_days.sort().map(d => DAYS_LABELS[d]).join(", ");
+
+    return (
+        <GlassCard className="space-y-4 w-full min-w-0 overflow-hidden">
+            <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-foreground truncate">{blast.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                        {blast.messages.length} mensagem{blast.messages.length !== 1 ? "s" : ""}
+                    </p>
+                </div>
+                <Switch checked={blast.enabled} onCheckedChange={onToggle} />
+            </div>
+
+            <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground w-full min-w-0">
+                <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                    <Clock className="w-3 h-3" /> {blast.schedule_time}
+                </span>
+                <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                    <Calendar className="w-3 h-3" /> {daysLabel}
+                </span>
+                {blast.destination_type === "group" ? (
+                    <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md max-w-[160px] truncate">
+                        <Users className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{blast.destination_name || blast.destination_id || "Grupo"}</span>
+                    </span>
+                ) : (
+                    <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md max-w-[160px] truncate">
+                        <Phone className="w-3 h-3 shrink-0" />
+                        <span className="truncate">{blast.destination_id || "Número"}</span>
+                    </span>
+                )}
+            </div>
+
+            {blast.last_sent_at && (
+                <p className="text-xs text-muted-foreground">
+                    Último envio: {new Date(blast.last_sent_at).toLocaleString("pt-BR")}
+                </p>
+            )}
+
+            {result && (
+                <p className={cn("text-xs", result.success ? "text-emerald-400" : "text-red-400")}>
+                    {result.success ? `✓ ${result.sent} mensagem(s) enviada(s)` : "Falha no envio"}
+                </p>
+            )}
+
+            <div className="flex items-center gap-2 pt-1 border-t border-border/50">
+                <button onClick={onEdit} className="text-muted-foreground hover:text-foreground transition-colors p-1" title="Editar">
+                    <Pencil className="w-4 h-4" />
+                </button>
+                <button onClick={onDelete} className="text-muted-foreground hover:text-red-400 transition-colors p-1" title="Excluir">
+                    <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="flex-1" />
+                <Button
+                    onClick={handleRun}
+                    disabled={running}
+                    variant="secondary"
+                    className="flex items-center gap-1.5 text-xs h-8 px-3"
+                >
+                    {running ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                    Enviar agora
+                </Button>
+            </div>
+        </GlassCard>
+    );
+}
+
+function WaBlastForm({
+    initial,
+    waConfigured,
+    onSave,
+    onCancel,
+}: {
+    initial: WaBlastRecord | null;
+    waConfigured: boolean;
+    onSave: () => void;
+    onCancel: () => void;
+}) {
+    const [form, setForm] = useState<WaBlastFormData>(
+        initial
+            ? {
+                name: initial.name,
+                enabled: initial.enabled,
+                schedule_days: initial.schedule_days,
+                schedule_time: initial.schedule_time,
+                messages: initial.messages.length > 0 ? initial.messages : [""],
+                destination_type: initial.destination_type,
+                destination_id: initial.destination_id ?? "",
+                destination_name: initial.destination_name ?? "",
+            }
+            : { ...EMPTY_WA_BLAST }
+    );
+    const [saving, setSaving] = useState(false);
+    const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
+    const [loadingGroups, setLoadingGroups] = useState(false);
+
+    async function loadGroups() {
+        setLoadingGroups(true);
+        const res = await listGroupsAction();
+        setGroups(res.groups ?? []);
+        setLoadingGroups(false);
+    }
+
+    function toggleDay(day: number) {
+        setForm(prev => ({
+            ...prev,
+            schedule_days: prev.schedule_days.includes(day)
+                ? prev.schedule_days.filter(d => d !== day)
+                : [...prev.schedule_days, day].sort(),
+        }));
+    }
+
+    function setMessage(index: number, value: string) {
+        setForm(prev => {
+            const msgs = [...prev.messages];
+            msgs[index] = value;
+            return { ...prev, messages: msgs };
+        });
+    }
+
+    function addMessage() {
+        setForm(prev => ({ ...prev, messages: [...prev.messages, ""] }));
+    }
+
+    function removeMessage(index: number) {
+        setForm(prev => ({ ...prev, messages: prev.messages.filter((_, i) => i !== index) }));
+    }
+
+    async function handleSave() {
+        if (!form.name.trim()) return;
+        if (form.schedule_days.length === 0) return;
+        if (!form.destination_id.trim()) return;
+        setSaving(true);
+        if (initial) {
+            await updateWaBlastAutomationAction(initial.id, form);
+        } else {
+            await createWaBlastAutomationAction(form);
+        }
+        setSaving(false);
+        onSave();
+    }
+
+    return (
+        <GlassCard className="space-y-6">
+            <div className="flex items-center gap-3">
+                <button onClick={onCancel} className="text-muted-foreground hover:text-foreground transition-colors">
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
+                <h2 className="font-bold text-foreground">{initial ? "Editar" : "Nova"} Automação de Mensagens</h2>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">Nome</label>
+                <input
+                    value={form.name}
+                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Ex: Boas-vindas semanais"
+                    className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+            </div>
+
+            {/* Schedule */}
+            <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Agendamento</label>
+                <div className="flex flex-wrap gap-2">
+                    {DAYS_LABELS.map((label, i) => (
+                        <button
+                            key={i}
+                            onClick={() => toggleDay(i)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+                                form.schedule_days.includes(i)
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                            )}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                <input
+                    type="time"
+                    value={form.schedule_time}
+                    onChange={e => setForm(p => ({ ...p, schedule_time: e.target.value }))}
+                    className="w-40 px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+            </div>
+
+            {/* Destination */}
+            <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Destino</label>
+                <div className="flex gap-3">
+                    {(["number", "group"] as const).map(type => (
+                        <label key={type} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="radio"
+                                name="dest_type"
+                                checked={form.destination_type === type}
+                                onChange={() => setForm(p => ({ ...p, destination_type: type, destination_id: "", destination_name: "" }))}
+                                className="accent-primary"
+                            />
+                            <span className="text-sm text-foreground">{type === "number" ? "Número" : "Grupo"}</span>
+                        </label>
+                    ))}
+                </div>
+
+                {form.destination_type === "number" ? (
+                    <input
+                        value={form.destination_id}
+                        onChange={e => setForm(p => ({ ...p, destination_id: e.target.value }))}
+                        placeholder="5511999999999"
+                        className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    />
+                ) : (
+                    <div className="space-y-2">
+                        <Button
+                            onClick={loadGroups}
+                            disabled={loadingGroups || !waConfigured}
+                            variant="outline"
+                            className="text-xs h-8"
+                        >
+                            {loadingGroups ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Users className="w-3 h-3 mr-1" />}
+                            {loadingGroups ? "Carregando..." : "Carregar grupos"}
+                        </Button>
+                        {!waConfigured && <p className="text-xs text-amber-400">Configure o WhatsApp nas Configurações primeiro.</p>}
+                        {groups.length > 0 && (
+                            <select
+                                value={form.destination_id}
+                                onChange={e => {
+                                    const g = groups.find(g => g.id === e.target.value);
+                                    setForm(p => ({ ...p, destination_id: e.target.value, destination_name: g?.name ?? "" }));
+                                }}
+                                className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                <option value="">Selecione um grupo</option>
+                                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                            </select>
+                        )}
+                        {form.destination_id && (
+                            <p className="text-xs text-muted-foreground truncate">{form.destination_name || form.destination_id}</p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Messages */}
+            <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Mensagens</label>
+                <p className="text-xs text-muted-foreground">As mensagens são enviadas em sequência, com 1 segundo de intervalo.</p>
+                {form.messages.map((msg, i) => (
+                    <div key={i} className="relative">
+                        <textarea
+                            value={msg}
+                            onChange={e => setMessage(i, e.target.value)}
+                            placeholder={`Mensagem ${i + 1}…`}
+                            rows={3}
+                            className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none pr-8"
+                        />
+                        {form.messages.length > 1 && (
+                            <button
+                                onClick={() => removeMessage(i)}
+                                className="absolute top-2 right-2 text-muted-foreground hover:text-red-400 transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                ))}
+                <Button onClick={addMessage} variant="outline" className="text-xs h-8 flex items-center gap-1.5">
+                    <Plus className="w-3 h-3" /> Adicionar mensagem
+                </Button>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/50">
+                <Button onClick={onCancel} variant="outline" className="text-sm">Cancelar</Button>
+                <Button
+                    onClick={handleSave}
+                    disabled={saving || !form.name.trim() || form.schedule_days.length === 0 || !form.destination_id.trim()}
+                    variant="primary"
+                    className="flex items-center gap-2 text-sm"
+                >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                    {initial ? "Salvar" : "Criar"}
+                </Button>
+            </div>
+        </GlassCard>
+    );
+}
+
+function WaBlastSection({ waConfigured }: { waConfigured: boolean }) {
+    const [blasts, setBlasts] = useState<WaBlastRecord[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [editing, setEditing] = useState<WaBlastRecord | null | "new">(null);
+
+    async function loadBlasts() {
+        setLoading(true);
+        setBlasts(await listWaBlastAutomationsAction());
+        setLoading(false);
+    }
+
+    useEffect(() => { loadBlasts(); }, []);
+
+    async function handleToggle(id: string, enabled: boolean) {
+        await toggleWaBlastAutomationAction(id, enabled);
+        setBlasts(prev => prev.map(b => b.id === id ? { ...b, enabled } : b));
+    }
+
+    async function handleDelete(id: string) {
+        if (!confirm("Excluir esta automação?")) return;
+        await deleteWaBlastAutomationAction(id);
+        setBlasts(prev => prev.filter(b => b.id !== id));
+    }
+
+    if (editing !== null) {
+        return (
+            <WaBlastForm
+                initial={editing === "new" ? null : editing}
+                waConfigured={waConfigured}
+                onSave={() => { setEditing(null); loadBlasts(); }}
+                onCancel={() => setEditing(null)}
+            />
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-muted-foreground">
+                    Envie mensagens automáticas para clientes em dias e horários configurados.
+                </p>
+                <Button onClick={() => setEditing("new")} variant="primary" className="flex items-center gap-2 text-sm shrink-0">
+                    <Plus className="w-4 h-4" /> Nova
+                </Button>
+            </div>
+
+            {loading ? (
+                <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            ) : blasts.length === 0 ? (
+                <GlassCard className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                        <MessageCircle className="w-8 h-8 text-primary opacity-60" />
+                    </div>
+                    <h3 className="font-bold text-foreground mb-2">Nenhuma automação criada</h3>
+                    <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                        Crie automações semanais para enviar mensagens automáticas para seus clientes.
+                    </p>
+                    <Button onClick={() => setEditing("new")} variant="primary" className="flex items-center gap-2">
+                        <Plus className="w-4 h-4" /> Criar Primeira Automação
+                    </Button>
+                </GlassCard>
+            ) : (
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {blasts.map(blast => (
+                        <WaBlastCard
+                            key={blast.id}
+                            blast={blast}
+                            onToggle={enabled => handleToggle(blast.id, enabled)}
+                            onEdit={() => setEditing(blast)}
+                            onDelete={() => handleDelete(blast.id)}
+                            onRunNow={loadBlasts}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 type View = { type: "list" } | { type: "form"; editing: AutomationRecord | null };
@@ -840,6 +1260,7 @@ type SendAllStatus = {
 };
 
 export default function AutomationsPage() {
+    const [activeTab, setActiveTab] = useState<"reports" | "disparo">("reports");
     const [automations, setAutomations] = useState<AutomationRecord[]>([]);
     const [accounts, setAccounts]       = useState<MetaAdAccount[]>([]);
     const [loading, setLoading]         = useState(true);
@@ -951,135 +1372,167 @@ export default function AutomationsPage() {
                 <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Automações</h1>
                     <p className="text-sm text-muted-foreground">
-                        Configure relatórios automáticos multi-conta enviados via WhatsApp.
+                        {activeTab === "reports"
+                            ? "Configure relatórios automáticos multi-conta enviados via WhatsApp."
+                            : "Envie mensagens automáticas para clientes em dias configurados."}
                     </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
-                    {automations.filter(a => a.enabled).length > 0 && (
-                        <>
-                            <select
-                                value={overridePreset}
-                                onChange={e => handleOverridePresetChange(e.target.value)}
-                                disabled={!!sendAll?.running || savingPreset}
-                                title="Período de envio"
-                                className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
-                            >
-                                <option value="">Período original</option>
-                                {DATE_PRESETS.map(p => (
-                                    <option key={p.value} value={p.value}>{p.label}</option>
-                                ))}
-                            </select>
-                            {overridePreset && (
-                                <Button
-                                    onClick={handleSavePresetForAll}
-                                    disabled={savingPreset || !!sendAll?.running}
-                                    variant="outline"
-                                    className="flex items-center gap-2 text-xs h-9"
+                {activeTab === "reports" && (
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+                        {automations.filter(a => a.enabled).length > 0 && (
+                            <>
+                                <select
+                                    value={overridePreset}
+                                    onChange={e => handleOverridePresetChange(e.target.value)}
+                                    disabled={!!sendAll?.running || savingPreset}
+                                    title="Período de envio"
+                                    className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
                                 >
-                                    {savingPreset
-                                        ? <Loader2 className="w-3 h-3 animate-spin" />
-                                        : "Salvar em Todas"}
+                                    <option value="">Período original</option>
+                                    {DATE_PRESETS.map(p => (
+                                        <option key={p.value} value={p.value}>{p.label}</option>
+                                    ))}
+                                </select>
+                                {overridePreset && (
+                                    <Button
+                                        onClick={handleSavePresetForAll}
+                                        disabled={savingPreset || !!sendAll?.running}
+                                        variant="outline"
+                                        className="flex items-center gap-2 text-xs h-9"
+                                    >
+                                        {savingPreset
+                                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                                            : "Salvar em Todas"}
+                                    </Button>
+                                )}
+                                <Button
+                                    onClick={handleSendAll}
+                                    disabled={!!sendAll?.running || loading}
+                                    variant="secondary"
+                                    className="flex items-center gap-2 text-sm"
+                                >
+                                    {sendAll?.running
+                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
+                                        : <><Send className="w-4 h-4" /> Enviar Todos</>}
                                 </Button>
-                            )}
-                            <Button
-                                onClick={handleSendAll}
-                                disabled={!!sendAll?.running || loading}
-                                variant="secondary"
-                                className="flex items-center gap-2 text-sm"
-                            >
-                                {sendAll?.running
-                                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {sendAll.current}/{sendAll.total}</>
-                                    : <><Send className="w-4 h-4" /> Enviar Todos</>}
-                            </Button>
-                        </>
-                    )}
-                    <Button
-                        onClick={() => setView({ type: "form", editing: null })}
-                        variant="primary"
-                        className="flex items-center gap-2 text-sm"
-                    >
-                        <Plus className="w-4 h-4" /> Nova
-                    </Button>
-                </div>
+                            </>
+                        )}
+                        <Button
+                            onClick={() => setView({ type: "form", editing: null })}
+                            variant="primary"
+                            className="flex items-center gap-2 text-sm"
+                        >
+                            <Plus className="w-4 h-4" /> Nova
+                        </Button>
+                    </div>
+                )}
             </div>
 
-            {/* Send All progress */}
-            {sendAll && (
-                <GlassCard className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-foreground">
-                            {sendAll.running
-                                ? `Enviando ${sendAll.current} de ${sendAll.total}…`
-                                : `Envio concluído — ${sendAll.results.filter(r => r.success).length}/${sendAll.total} enviados`}
-                        </p>
-                        {!sendAll.running && (
-                            <button
-                                onClick={() => setSendAll(null)}
-                                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                                Fechar
-                            </button>
+            {/* Tabs */}
+            <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
+                {([
+                    { id: "reports", label: "Relatórios", icon: Zap },
+                    { id: "disparo", label: "Disparo WhatsApp", icon: MessageCircle },
+                ] as const).map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                            activeTab === tab.id
+                                ? "bg-background text-foreground shadow-sm"
+                                : "text-muted-foreground hover:text-foreground"
                         )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {sendAll.results.map((r, i) => (
-                            <span key={i} className={cn(
-                                "text-xs px-2 py-1 rounded-md flex items-center gap-1",
-                                r.success
-                                    ? "bg-emerald-500/10 text-emerald-400"
-                                    : "bg-red-500/10 text-red-400"
-                            )}>
-                                {r.success ? "✓" : "✗"} {r.name}
-                            </span>
-                        ))}
-                        {sendAll.running && sendAll.current <= sendAll.total && (
-                            <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground flex items-center gap-1">
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                                {automations.filter(a => a.enabled)[sendAll.current - 1]?.name ?? "…"}
-                            </span>
-                        )}
-                    </div>
-                </GlassCard>
-            )}
-
-            {/* Automation list */}
-            {loading ? (
-                <div className="flex justify-center py-16">
-                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                </div>
-            ) : automations.length === 0 ? (
-                <GlassCard className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                        <Zap className="w-8 h-8 text-primary opacity-60" />
-                    </div>
-                    <h3 className="font-bold text-foreground mb-2">Nenhuma automação criada</h3>
-                    <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                        Crie sua primeira automação para enviar relatórios combinados de múltiplas contas automaticamente.
-                    </p>
-                    <Button
-                        onClick={() => setView({ type: "form", editing: null })}
-                        variant="primary"
-                        className="flex items-center gap-2"
                     >
-                        <Plus className="w-4 h-4" /> Criar Primeira Automação
-                    </Button>
-                </GlassCard>
+                        <tab.icon className="w-4 h-4" />
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Tab content */}
+            {activeTab === "reports" ? (
+                <>
+                    {/* Send All progress */}
+                    {sendAll && (
+                        <GlassCard className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-foreground">
+                                    {sendAll.running
+                                        ? `Enviando ${sendAll.current} de ${sendAll.total}…`
+                                        : `Envio concluído — ${sendAll.results.filter(r => r.success).length}/${sendAll.total} enviados`}
+                                </p>
+                                {!sendAll.running && (
+                                    <button
+                                        onClick={() => setSendAll(null)}
+                                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        Fechar
+                                    </button>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {sendAll.results.map((r, i) => (
+                                    <span key={i} className={cn(
+                                        "text-xs px-2 py-1 rounded-md flex items-center gap-1",
+                                        r.success
+                                            ? "bg-emerald-500/10 text-emerald-400"
+                                            : "bg-red-500/10 text-red-400"
+                                    )}>
+                                        {r.success ? "✓" : "✗"} {r.name}
+                                    </span>
+                                ))}
+                                {sendAll.running && sendAll.current <= sendAll.total && (
+                                    <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground flex items-center gap-1">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        {automations.filter(a => a.enabled)[sendAll.current - 1]?.name ?? "…"}
+                                    </span>
+                                )}
+                            </div>
+                        </GlassCard>
+                    )}
+                    {/* Automation list */}
+                    {loading ? (
+                        <div className="flex justify-center py-16">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : automations.length === 0 ? (
+                        <GlassCard className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                <Zap className="w-8 h-8 text-primary opacity-60" />
+                            </div>
+                            <h3 className="font-bold text-foreground mb-2">Nenhuma automação criada</h3>
+                            <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                                Crie sua primeira automação para enviar relatórios combinados de múltiplas contas automaticamente.
+                            </p>
+                            <Button
+                                onClick={() => setView({ type: "form", editing: null })}
+                                variant="primary"
+                                className="flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" /> Criar Primeira Automação
+                            </Button>
+                        </GlassCard>
+                    ) : (
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {automations.map(automation => (
+                                <AutomationCard
+                                    key={automation.id}
+                                    automation={automation}
+                                    accounts={accounts}
+                                    onToggle={enabled => handleToggle(automation.id, enabled)}
+                                    onEdit={() => setView({ type: "form", editing: automation })}
+                                    onDelete={() => handleDelete(automation.id)}
+                                    onRunNow={loadData}
+                                    globalDisabled={!!sendAll?.running}
+                                    overridePreset={overridePreset || undefined}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </>
             ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {automations.map(automation => (
-                        <AutomationCard
-                            key={automation.id}
-                            automation={automation}
-                            accounts={accounts}
-                            onToggle={enabled => handleToggle(automation.id, enabled)}
-                            onEdit={() => setView({ type: "form", editing: automation })}
-                            onDelete={() => handleDelete(automation.id)}
-                            onRunNow={loadData}
-                            globalDisabled={!!sendAll?.running}
-                            overridePreset={overridePreset || undefined}
-                        />
-                    ))}
-                </div>
+                <WaBlastSection waConfigured={waConfigured} />
             )}
 
         </div>

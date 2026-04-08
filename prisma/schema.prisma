@@ -69,14 +69,15 @@ model Workspace {
   nome_empresa        String
   status              String    @default("ACTIVE")
   criado_em           DateTime  @default(now())
-  
+
   meta_access_token   String?
-  
+
   users               User[]
   accounts            Account[]
   settings            Setting[]
   invites             Invite[]
   automations         ReportAutomation[]
+  wa_blast_automations WaBlastAutomation[]
 }
 
 model Setting {
@@ -206,6 +207,30 @@ model ReportLog {
   @@index([sent_at])
   @@index([account_id])
   @@index([channel])
+}
+
+model WaBlastAutomation {
+  id             String    @id @default(uuid())
+  workspace_id   String
+  workspace      Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  name           String
+  enabled        Boolean   @default(true)
+
+  schedule_days  Json      // number[] — 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb
+  schedule_time  String    @default("09:00")
+
+  messages       Json      // string[] — message texts to send in sequence
+
+  destination_type String   @default("number")  // "number" | "group"
+  destination_id   String?  // phone number or group JID
+  destination_name String?  // human label
+
+  last_sent_at   DateTime?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  @@index([workspace_id])
 }
 
 model ReportAutomation {

@@ -148,6 +148,30 @@ export async function runWaBlastNowAction(id: string): Promise<{ success: boolea
     return { success: sent > 0, sent };
 }
 
+// ── Groups from existing automations ─────────────────────────────────────────
+
+export async function getGroupsFromAutomationsAction(): Promise<{ id: string; name: string }[]> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return [];
+
+    const automations = await prisma.reportAutomation.findMany({
+        where: { workspace_id: workspaceId, destination_type: "group" },
+        select: { destination_id: true, destination_name: true },
+    });
+
+    const seen = new Set<string>();
+    const groups: { id: string; name: string }[] = [];
+
+    for (const a of automations) {
+        if (a.destination_id && !seen.has(a.destination_id)) {
+            seen.add(a.destination_id);
+            groups.push({ id: a.destination_id, name: a.destination_name || a.destination_id });
+        }
+    }
+
+    return groups;
+}
+
 // ── Cron Send (called by /api/cron/wa-blast) ─────────────────────────────────
 
 export async function sendScheduledWaBlastsAction(todayDay: number, currentTime: string) {

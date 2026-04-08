@@ -25,9 +25,11 @@ import {
     deleteWaBlastAutomationAction,
     toggleWaBlastAutomationAction,
     runWaBlastNowAction,
+    getGroupsFromAutomationsAction,
     type WaBlastRecord,
     type WaBlastFormData,
 } from "@/actions/wa-blast-actions";
+import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
@@ -975,10 +977,22 @@ function WaBlastForm({
     const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
 
+    // Auto-load groups from existing report automations on mount
+    useEffect(() => {
+        getGroupsFromAutomationsAction().then(g => {
+            if (g.length > 0) setGroups(g);
+        });
+    }, []);
+
     async function loadGroups() {
         setLoadingGroups(true);
         const res = await listGroupsAction();
-        setGroups(res.groups ?? []);
+        // Merge with existing groups, deduplicate by id
+        setGroups(prev => {
+            const map = new Map(prev.map(g => [g.id, g]));
+            for (const g of (res.groups ?? [])) map.set(g.id, g);
+            return Array.from(map.values());
+        });
         setLoadingGroups(false);
     }
 
@@ -1260,7 +1274,7 @@ type SendAllStatus = {
 };
 
 export default function AutomationsPage() {
-    const [activeTab, setActiveTab] = useState<"reports" | "disparo">("reports");
+    const [activeTab, setActiveTab] = useState<"reports" | "disparo" | "whatsapp">("reports");
     const [automations, setAutomations] = useState<AutomationRecord[]>([]);
     const [accounts, setAccounts]       = useState<MetaAdAccount[]>([]);
     const [loading, setLoading]         = useState(true);
@@ -1374,7 +1388,9 @@ export default function AutomationsPage() {
                     <p className="text-sm text-muted-foreground">
                         {activeTab === "reports"
                             ? "Configure relatórios automáticos multi-conta enviados via WhatsApp."
-                            : "Envie mensagens automáticas para clientes em dias configurados."}
+                            : activeTab === "disparo"
+                            ? "Envie mensagens automáticas para clientes em dias configurados."
+                            : "Configure a conexão do WhatsApp para os disparos automáticos."}
                     </p>
                 </div>
                 {activeTab === "reports" && (
@@ -1429,10 +1445,11 @@ export default function AutomationsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
+            <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit flex-wrap">
                 {([
                     { id: "reports", label: "Relatórios", icon: Zap },
                     { id: "disparo", label: "Disparo WhatsApp", icon: MessageCircle },
+                    { id: "whatsapp", label: "WhatsApp", icon: Wifi },
                 ] as const).map(tab => (
                     <button
                         key={tab.id}
@@ -1531,8 +1548,10 @@ export default function AutomationsPage() {
                         </div>
                     )}
                 </>
-            ) : (
+            ) : activeTab === "disparo" ? (
                 <WaBlastSection waConfigured={waConfigured} />
+            ) : (
+                <UazAPIPanel />
             )}
 
         </div>

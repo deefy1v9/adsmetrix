@@ -29,7 +29,7 @@ import {
     type WaBlastRecord,
     type WaBlastFormData,
 } from "@/actions/wa-blast-actions";
-import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
+import { BalanceAlertPanel } from "@/components/features/balance/BalanceAlertPanel";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/Badge";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
     Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
-    Phone, Users, Eye, EyeOff, Send, MessageCircle, Calendar, X,
+    Phone, Users, Eye, EyeOff, Send, MessageCircle, Calendar, X, Bell,
 } from "lucide-react";
 import { MetaAdAccount } from "@/lib/meta-api";
 import {
@@ -1274,7 +1274,7 @@ type SendAllStatus = {
 };
 
 export default function AutomationsPage() {
-    const [activeTab, setActiveTab] = useState<"reports" | "disparo" | "whatsapp">("reports");
+    const [activeTab, setActiveTab] = useState<"reports" | "disparo" | "alertas">("reports");
     const [automations, setAutomations] = useState<AutomationRecord[]>([]);
     const [accounts, setAccounts]       = useState<MetaAdAccount[]>([]);
     const [loading, setLoading]         = useState(true);
@@ -1390,7 +1390,7 @@ export default function AutomationsPage() {
                             ? "Configure relatórios automáticos multi-conta enviados via WhatsApp."
                             : activeTab === "disparo"
                             ? "Envie mensagens automáticas para clientes em dias configurados."
-                            : "Configure a conexão do WhatsApp para os disparos automáticos."}
+                            : "Receba notificações quando o saldo de uma conta estiver abaixo do limite."}
                     </p>
                 </div>
                 {activeTab === "reports" && (
@@ -1449,7 +1449,7 @@ export default function AutomationsPage() {
                 {([
                     { id: "reports", label: "Relatórios", icon: Zap },
                     { id: "disparo", label: "Disparo WhatsApp", icon: MessageCircle },
-                    { id: "whatsapp", label: "WhatsApp", icon: Wifi },
+                    { id: "alertas", label: "Alertas de Saldo", icon: Bell },
                 ] as const).map(tab => (
                     <button
                         key={tab.id}
@@ -1551,7 +1551,7 @@ export default function AutomationsPage() {
             ) : activeTab === "disparo" ? (
                 <WaBlastSection waConfigured={waConfigured} />
             ) : (
-                <UazAPIPanel />
+                <BalanceAlertPanel />
             )}
 
         </div>

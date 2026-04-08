@@ -28,7 +28,13 @@ import {
     getGroupsFromAutomationsAction,
     type WaBlastRecord,
     type WaBlastFormData,
+    type WaBlastDestination,
 } from "@/actions/wa-blast-actions";
+import {
+    fetchMetaWATemplatesAction,
+    saveMetaWAConfigAction,
+    getMetaWAConfigAction,
+} from "@/actions/uazapi-actions";
 import { BalanceAlertPanel } from "@/components/features/balance/BalanceAlertPanel";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
@@ -847,12 +853,14 @@ const DAYS_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const EMPTY_WA_BLAST: WaBlastFormData = {
     name: "",
     enabled: true,
-    schedule_days: [1, 2, 3, 4, 5], // Seg-Sex by default
+    schedule_days: [1, 2, 3, 4, 5],
     schedule_time: "09:00",
     messages: [""],
-    destination_type: "number",
-    destination_id: "",
-    destination_name: "",
+    destination_type: "group",
+    destination_ids: [],
+    channel: "uazapi",
+    template_name: "",
+    template_language: "pt_BR",
 };
 
 function WaBlastCard({
@@ -901,16 +909,24 @@ function WaBlastCard({
                 <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md whitespace-nowrap">
                     <Calendar className="w-3 h-3" /> {daysLabel}
                 </span>
-                {blast.destination_type === "group" ? (
-                    <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md max-w-[160px] truncate">
-                        <Users className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{blast.destination_name || blast.destination_id || "Grupo"}</span>
-                    </span>
+                {blast.destination_ids.length > 0 ? (
+                    <>
+                        {blast.destination_ids.slice(0, 2).map(d => (
+                            <span key={d.id} className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md max-w-[140px] truncate">
+                                {blast.destination_type === "group"
+                                    ? <Users className="w-3 h-3 shrink-0" />
+                                    : <Phone className="w-3 h-3 shrink-0" />}
+                                <span className="truncate">{d.name}</span>
+                            </span>
+                        ))}
+                        {blast.destination_ids.length > 2 && (
+                            <span className="bg-muted/50 px-2 py-0.5 rounded-md whitespace-nowrap">
+                                +{blast.destination_ids.length - 2}
+                            </span>
+                        )}
+                    </>
                 ) : (
-                    <span className="flex items-center gap-1 bg-muted/50 px-2 py-0.5 rounded-md max-w-[160px] truncate">
-                        <Phone className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{blast.destination_id || "Número"}</span>
-                    </span>
+                    <span className="text-muted-foreground/50 italic">sem destino</span>
                 )}
             </div>
 
@@ -968,14 +984,23 @@ function WaBlastForm({
                 schedule_time: initial.schedule_time,
                 messages: initial.messages.length > 0 ? initial.messages : [""],
                 destination_type: initial.destination_type,
-                destination_id: initial.destination_id ?? "",
-                destination_name: initial.destination_name ?? "",
+                destination_ids: initial.destination_ids,
+                channel: initial.channel ?? "uazapi",
+                template_name: initial.template_name ?? "",
+                template_language: initial.template_language ?? "pt_BR",
             }
             : { ...EMPTY_WA_BLAST }
     );
     const [saving, setSaving] = useState(false);
     const [groups, setGroups] = useState<WhatsAppGroup[]>([]);
     const [loadingGroups, setLoadingGroups] = useState(false);
+    const [templates, setTemplates] = useState<{ id: string; name: string; status: string; language: string }[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
+    const [numberInput, setNumberInput] = useState(
+        initial?.destination_type === "number" && initial.destination_ids.length > 0
+            ? initial.destination_ids[0].id
+            : ""
+    );
 
     // Auto-load groups from existing report automations on mount
     useEffect(() => {
@@ -984,16 +1009,22 @@ function WaBlastForm({
         });
     }, []);
 
-    async function loadGroups() {
+    async function loadGroupsFromAPI() {
         setLoadingGroups(true);
         const res = await listGroupsAction();
-        // Merge with existing groups, deduplicate by id
         setGroups(prev => {
             const map = new Map(prev.map(g => [g.id, g]));
             for (const g of (res.groups ?? [])) map.set(g.id, g);
             return Array.from(map.values());
         });
         setLoadingGroups(false);
+    }
+
+    async function loadTemplates() {
+        setLoadingTemplates(true);
+        const tpls = await fetchMetaWATemplatesAction();
+        setTemplates(tpls);
+        setLoadingTemplates(false);
     }
 
     function toggleDay(day: number) {
@@ -1005,35 +1036,56 @@ function WaBlastForm({
         }));
     }
 
-    function setMessage(index: number, value: string) {
+    function toggleGroup(group: WhatsAppGroup) {
         setForm(prev => {
-            const msgs = [...prev.messages];
-            msgs[index] = value;
-            return { ...prev, messages: msgs };
+            const exists = prev.destination_ids.some(d => d.id === group.id);
+            return {
+                ...prev,
+                destination_ids: exists
+                    ? prev.destination_ids.filter(d => d.id !== group.id)
+                    : [...prev.destination_ids, { id: group.id, name: group.name }],
+            };
         });
     }
 
-    function addMessage() {
-        setForm(prev => ({ ...prev, messages: [...prev.messages, ""] }));
+    function selectAllGroups() {
+        setForm(prev => ({ ...prev, destination_ids: groups.map(g => ({ id: g.id, name: g.name })) }));
     }
 
-    function removeMessage(index: number) {
-        setForm(prev => ({ ...prev, messages: prev.messages.filter((_, i) => i !== index) }));
+    function clearAllGroups() {
+        setForm(prev => ({ ...prev, destination_ids: [] }));
     }
+
+    function setMessage(index: number, value: string) {
+        setForm(prev => { const msgs = [...prev.messages]; msgs[index] = value; return { ...prev, messages: msgs }; });
+    }
+
+    function addMessage() { setForm(prev => ({ ...prev, messages: [...prev.messages, ""] })); }
+    function removeMessage(index: number) { setForm(prev => ({ ...prev, messages: prev.messages.filter((_, i) => i !== index) })); }
 
     async function handleSave() {
         if (!form.name.trim()) return;
         if (form.schedule_days.length === 0) return;
-        if (!form.destination_id.trim()) return;
+        if (form.destination_ids.length === 0 && !numberInput.trim()) return;
+
+        let finalForm = form;
+        if (form.destination_type === "number" && numberInput.trim()) {
+            finalForm = { ...form, destination_ids: [{ id: numberInput.trim(), name: numberInput.trim() }] };
+        }
+
         setSaving(true);
         if (initial) {
-            await updateWaBlastAutomationAction(initial.id, form);
+            await updateWaBlastAutomationAction(initial.id, finalForm);
         } else {
-            await createWaBlastAutomationAction(form);
+            await createWaBlastAutomationAction(finalForm);
         }
         setSaving(false);
         onSave();
     }
+
+    const isGroupType = form.destination_type === "group";
+    const canSave = form.name.trim() && form.schedule_days.length > 0 &&
+        (isGroupType ? form.destination_ids.length > 0 : numberInput.trim().length > 0);
 
     return (
         <GlassCard className="space-y-6">
@@ -1092,48 +1144,167 @@ function WaBlastForm({
                                 type="radio"
                                 name="dest_type"
                                 checked={form.destination_type === type}
-                                onChange={() => setForm(p => ({ ...p, destination_type: type, destination_id: "", destination_name: "" }))}
+                                onChange={() => setForm(p => ({ ...p, destination_type: type, destination_ids: [] }))}
                                 className="accent-primary"
                             />
-                            <span className="text-sm text-foreground">{type === "number" ? "Número" : "Grupo"}</span>
+                            <span className="text-sm text-foreground">{type === "number" ? "Número" : "Grupo(s)"}</span>
                         </label>
                     ))}
                 </div>
 
                 {form.destination_type === "number" ? (
                     <input
-                        value={form.destination_id}
-                        onChange={e => setForm(p => ({ ...p, destination_id: e.target.value }))}
+                        value={numberInput}
+                        onChange={e => setNumberInput(e.target.value)}
                         placeholder="5511999999999"
                         className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                     />
                 ) : (
-                    <div className="space-y-2">
-                        <Button
-                            onClick={loadGroups}
-                            disabled={loadingGroups || !waConfigured}
-                            variant="outline"
-                            className="text-xs h-8"
-                        >
-                            {loadingGroups ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Users className="w-3 h-3 mr-1" />}
-                            {loadingGroups ? "Carregando..." : "Carregar grupos"}
-                        </Button>
-                        {!waConfigured && <p className="text-xs text-amber-400">Configure o WhatsApp nas Configurações primeiro.</p>}
-                        {groups.length > 0 && (
-                            <select
-                                value={form.destination_id}
-                                onChange={e => {
-                                    const g = groups.find(g => g.id === e.target.value);
-                                    setForm(p => ({ ...p, destination_id: e.target.value, destination_name: g?.name ?? "" }));
-                                }}
-                                className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    <div className="space-y-3">
+                        {/* Load + select all controls */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                                onClick={loadGroupsFromAPI}
+                                disabled={loadingGroups || !waConfigured}
+                                variant="outline"
+                                className="text-xs h-8"
                             >
-                                <option value="">Selecione um grupo</option>
-                                {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                            </select>
+                                {loadingGroups ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Users className="w-3 h-3 mr-1" />}
+                                {loadingGroups ? "Carregando..." : groups.length > 0 ? "Atualizar grupos" : "Carregar grupos"}
+                            </Button>
+                            {groups.length > 0 && (
+                                <>
+                                    <button
+                                        onClick={selectAllGroups}
+                                        className="text-xs text-primary hover:underline"
+                                    >
+                                        Selecionar todos
+                                    </button>
+                                    {form.destination_ids.length > 0 && (
+                                        <button
+                                            onClick={clearAllGroups}
+                                            className="text-xs text-muted-foreground hover:underline"
+                                        >
+                                            Limpar
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                        {!waConfigured && groups.length === 0 && (
+                            <p className="text-xs text-amber-400">Configure o WhatsApp nas Configurações para carregar grupos.</p>
                         )}
-                        {form.destination_id && (
-                            <p className="text-xs text-muted-foreground truncate">{form.destination_name || form.destination_id}</p>
+
+                        {/* Group checklist */}
+                        {groups.length > 0 && (
+                            <div className="rounded-xl border border-border bg-muted/30 divide-y divide-border max-h-56 overflow-y-auto">
+                                {groups.map(g => {
+                                    const selected = form.destination_ids.some(d => d.id === g.id);
+                                    return (
+                                        <label
+                                            key={g.id}
+                                            className={cn(
+                                                "flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors",
+                                                selected ? "bg-primary/10" : "hover:bg-muted/50"
+                                            )}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selected}
+                                                onChange={() => toggleGroup(g)}
+                                                className="accent-primary w-4 h-4 shrink-0"
+                                            />
+                                            <span className="text-sm text-foreground truncate">{g.name}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {form.destination_ids.length > 0 && (
+                            <p className="text-xs text-emerald-400">
+                                {form.destination_ids.length} grupo(s) selecionado(s)
+                            </p>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Canal */}
+            <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Canal de envio</label>
+                <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit">
+                    {([
+                        { id: "uazapi", label: "UazAPI (grupos)" },
+                        { id: "meta_api", label: "Meta API Oficial" },
+                    ] as const).map(c => (
+                        <button
+                            key={c.id}
+                            onClick={() => setForm(p => ({ ...p, channel: c.id }))}
+                            className={cn(
+                                "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                                form.channel === c.id
+                                    ? "bg-background text-foreground shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            {c.label}
+                        </button>
+                    ))}
+                </div>
+
+                {form.channel === "meta_api" && (
+                    <div className="space-y-3 p-3 rounded-xl border border-border bg-muted/30">
+                        <p className="text-xs text-muted-foreground">
+                            Usa a API Oficial do Meta. Cada mensagem será enviada como variável <code className="font-mono bg-muted px-1 rounded">{"{{1}}"}</code> do template.
+                        </p>
+                        <div className="flex gap-2 items-end flex-wrap">
+                            <div className="flex-1 space-y-1 min-w-40">
+                                <label className="text-xs font-medium text-muted-foreground">Nome do template</label>
+                                <input
+                                    value={form.template_name}
+                                    onChange={e => setForm(p => ({ ...p, template_name: e.target.value }))}
+                                    placeholder="ex: mensagem_semanal"
+                                    className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <div className="space-y-1 w-28">
+                                <label className="text-xs font-medium text-muted-foreground">Idioma</label>
+                                <input
+                                    value={form.template_language}
+                                    onChange={e => setForm(p => ({ ...p, template_language: e.target.value }))}
+                                    placeholder="pt_BR"
+                                    className="w-full px-3 py-2 text-sm rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+                            <Button
+                                onClick={loadTemplates}
+                                disabled={loadingTemplates}
+                                variant="outline"
+                                className="text-xs h-9"
+                            >
+                                {loadingTemplates ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                Buscar templates
+                            </Button>
+                        </div>
+                        {templates.length > 0 && (
+                            <div className="rounded-xl border border-border bg-muted/30 divide-y divide-border max-h-40 overflow-y-auto">
+                                {templates.map(t => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setForm(p => ({ ...p, template_name: t.name, template_language: t.language }))}
+                                        className={cn(
+                                            "w-full flex items-center justify-between px-3 py-2 text-sm text-left transition-colors hover:bg-muted/50",
+                                            form.template_name === t.name && "bg-primary/10 text-primary"
+                                        )}
+                                    >
+                                        <span className="font-mono text-xs">{t.name}</span>
+                                        <span className={cn("text-xs", t.status === "APPROVED" ? "text-emerald-400" : "text-amber-400")}>
+                                            {t.status}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
                 )}
@@ -1142,7 +1313,11 @@ function WaBlastForm({
             {/* Messages */}
             <div className="space-y-3">
                 <label className="text-sm font-medium text-foreground">Mensagens</label>
-                <p className="text-xs text-muted-foreground">As mensagens são enviadas em sequência, com 1 segundo de intervalo.</p>
+                <p className="text-xs text-muted-foreground">
+                    {form.channel === "meta_api"
+                        ? "Cada mensagem é enviada como valor de {{1}} no template, em sequência."
+                        : "Enviadas em sequência para cada destino, com 1s de intervalo."}
+                </p>
                 {form.messages.map((msg, i) => (
                     <div key={i} className="relative">
                         <textarea
@@ -1171,7 +1346,7 @@ function WaBlastForm({
                 <Button onClick={onCancel} variant="outline" className="text-sm">Cancelar</Button>
                 <Button
                     onClick={handleSave}
-                    disabled={saving || !form.name.trim() || form.schedule_days.length === 0 || !form.destination_id.trim()}
+                    disabled={saving || !canSave}
                     variant="primary"
                     className="flex items-center gap-2 text-sm"
                 >

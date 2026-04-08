@@ -104,6 +104,10 @@ model Setting {
   // Dashboard — métricas visíveis nos KPI cards (configurável por workspace)
   dashboard_metrics_config Json?
 
+  // Meta WhatsApp Business API (API Oficial)
+  meta_wa_phone_number_id  String?  // Phone Number ID do app Meta
+  meta_wa_access_token     String?  // Token de acesso permanente
+
   criado_em      DateTime  @default(now())
 }
 
@@ -223,8 +227,13 @@ model WaBlastAutomation {
   messages       Json      // string[] — message texts to send in sequence
 
   destination_type String   @default("number")  // "number" | "group"
-  destination_id   String?  // phone number or group JID
-  destination_name String?  // human label
+  destination_id   String?  // legacy single dest (kept for compat)
+  destination_name String?  // legacy single dest name
+  destination_ids  Json     @default("[]")  // { id: string; name: string }[] — supports multiple
+
+  channel          String   @default("uazapi")  // "uazapi" | "meta_api"
+  template_name    String?  // template name (Meta API only)
+  template_language String  @default("pt_BR")   // template language (Meta API only)
 
   last_sent_at   DateTime?
   created_at     DateTime  @default(now())

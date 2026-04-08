@@ -170,3 +170,36 @@ export async function toggleCombinedReportAction(enabled: boolean) {
         return { success: false, error: err.message };
     }
 }
+
+
+// ── Meta WhatsApp Business API Config ────────────────────────────────────────
+
+export async function getMetaWAConfigAction(): Promise<{ phoneNumberId: string; accessToken: string } | null> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return null;
+    const setting = await prisma.setting.findUnique({ where: { workspace_id: workspaceId } });
+    if (!setting?.meta_wa_phone_number_id || !setting?.meta_wa_access_token) return null;
+    return { phoneNumberId: setting.meta_wa_phone_number_id, accessToken: setting.meta_wa_access_token };
+}
+
+export async function saveMetaWAConfigAction(phoneNumberId: string, accessToken: string): Promise<{ success: boolean; error?: string }> {
+    const workspaceId = await getWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'Não autenticado' };
+    try {
+        await prisma.setting.upsert({
+            where:  { workspace_id: workspaceId },
+            update: { meta_wa_phone_number_id: phoneNumberId, meta_wa_access_token: accessToken },
+            create: { workspace_id: workspaceId, meta_wa_phone_number_id: phoneNumberId, meta_wa_access_token: accessToken },
+        });
+        return { success: true };
+    } catch (err: any) {
+        return { success: false, error: err.message };
+    }
+}
+
+export async function fetchMetaWATemplatesAction(): Promise<{ id: string; name: string; status: string; language: string }[]> {
+    const config = await getMetaWAConfigAction();
+    if (!config) return [];
+    const { fetchApprovedTemplates } = await import('@/lib/meta-wa-client');
+    return fetchApprovedTemplates(config);
+}

@@ -11,12 +11,131 @@ import {
     saveUazAPIConfigAction,
     sendTestMessageAction,
     getWorkspaceSettingAction,
+    saveMetaWAConfigAction,
+    getMetaWAConfigAction,
+    fetchMetaWATemplatesAction,
 } from '@/actions/uazapi-actions';
 import {
     Wifi, WifiOff, QrCode, Save, Send, RefreshCw,
-    CheckCircle2, XCircle, Loader2,
+    CheckCircle2, XCircle, Loader2, Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// ── Meta API Config Panel ─────────────────────────────────────────────────────
+
+function MetaAPIPanel() {
+    const [phoneNumberId, setPhoneNumberId] = useState('');
+    const [accessToken, setAccessToken] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [result, setResult] = useState<{ success: boolean; error?: string } | null>(null);
+    const [templates, setTemplates] = useState<{ id: string; name: string; status: string; language: string }[]>([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+    useEffect(() => {
+        getMetaWAConfigAction().then(cfg => {
+            if (cfg) {
+                setPhoneNumberId(cfg.phoneNumberId);
+                setAccessToken(cfg.accessToken);
+            }
+        });
+    }, []);
+
+    async function handleSave() {
+        setSaving(true);
+        setResult(null);
+        const r = await saveMetaWAConfigAction(phoneNumberId.trim(), accessToken.trim());
+        setResult(r);
+        setSaving(false);
+    }
+
+    async function handleFetchTemplates() {
+        setLoadingTemplates(true);
+        const tpls = await fetchMetaWATemplatesAction();
+        setTemplates(tpls);
+        setLoadingTemplates(false);
+    }
+
+    return (
+        <GlassCard className="space-y-5">
+            <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-bold text-foreground">Meta API Oficial (WABA)</h3>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+                Para envios de templates aprovados para números individuais. Não suporta grupos.
+            </p>
+
+            <div className="space-y-3">
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Phone Number ID</label>
+                    <Input
+                        placeholder="Ex: 123456789012345"
+                        value={phoneNumberId}
+                        onChange={e => setPhoneNumberId(e.target.value)}
+                    />
+                </div>
+                <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Token de Acesso Permanente</label>
+                    <Input
+                        type="password"
+                        placeholder="EAAxxxx..."
+                        value={accessToken}
+                        onChange={e => setAccessToken(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="flex gap-2">
+                <Button
+                    onClick={handleSave}
+                    disabled={saving || !phoneNumberId || !accessToken}
+                    variant="primary"
+                    className="flex-1"
+                >
+                    {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando…</> : <><Save className="h-4 w-4 mr-2" /> Salvar</>}
+                </Button>
+                <Button
+                    onClick={handleFetchTemplates}
+                    disabled={loadingTemplates || !phoneNumberId || !accessToken}
+                    variant="secondary"
+                    className="flex-1"
+                >
+                    {loadingTemplates ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Buscando…</> : 'Ver Templates'}
+                </Button>
+            </div>
+
+            {result && (
+                <div className={cn('flex items-center gap-2 text-sm p-3 rounded-lg',
+                    result.success ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        : 'bg-red-500/10 text-red-400 border border-red-500/20')}>
+                    {result.success ? <><CheckCircle2 className="h-4 w-4 shrink-0" /> Configuração salva!</>
+                        : <><XCircle className="h-4 w-4 shrink-0" /> {result.error}</>}
+                </div>
+            )}
+
+            {templates.length > 0 && (
+                <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Templates aprovados</p>
+                    <div className="rounded-xl border border-border divide-y divide-border max-h-48 overflow-y-auto">
+                        {templates.map(t => (
+                            <div key={t.id} className="flex items-center justify-between px-3 py-2">
+                                <span className="font-mono text-xs text-foreground">{t.name}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground">{t.language}</span>
+                                    <span className={cn("text-xs font-medium", t.status === "APPROVED" ? "text-emerald-400" : "text-amber-400")}>
+                                        {t.status}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </GlassCard>
+    );
+}
+
+// ── UazAPI Panel ──────────────────────────────────────────────────────────────
 
 export function UazAPIPanel() {
     const [status, setStatus] = useState<{
@@ -287,6 +406,11 @@ export function UazAPIPanel() {
                     </div>
                 )}
             </GlassCard>
+        </div>
+
+        {/* Meta API Official */}
+        <div className="mt-6">
+            <MetaAPIPanel />
         </div>
     );
 }

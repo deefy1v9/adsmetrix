@@ -1,9 +1,14 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { getWorkspaceId } from "@/lib/auth";
 import { sendTextMessage } from "@/lib/uazapi";
 import type { UazAPIConfig } from "@/lib/uazapi";
+
+async function getWorkspaceId(): Promise<string | null> {
+    const h = await headers();
+    return h.get("x-workspace-id");
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

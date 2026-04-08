@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { sendTextMessage } from "@/lib/uazapi";
 import type { UazAPIConfig } from "@/lib/uazapi";
@@ -138,7 +139,7 @@ export async function createWaBlastAutomationAction(data: WaBlastFormData): Prom
             schedule_time: data.schedule_time,
             messages: data.messages.filter(m => m.trim()),
             destination_type: data.destination_type,
-            destination_ids: data.destination_ids,
+            destination_ids: data.destination_ids as unknown as Prisma.InputJsonValue,
             destination_id: first?.id ?? null,
             destination_name: first?.name ?? null,
             channel: data.channel,
@@ -162,7 +163,7 @@ export async function updateWaBlastAutomationAction(id: string, data: WaBlastFor
             schedule_time: data.schedule_time,
             messages: data.messages.filter(m => m.trim()),
             destination_type: data.destination_type,
-            destination_ids: data.destination_ids,
+            destination_ids: data.destination_ids as unknown as Prisma.InputJsonValue,
             destination_id: first?.id ?? null,
             destination_name: first?.name ?? null,
             channel: data.channel,

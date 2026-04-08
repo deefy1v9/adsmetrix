@@ -218,6 +218,7 @@ export function UazAPIPanel() {
     const isConnected = status?.connected && status?.loggedIn;
 
     return (
+        <>
         <div className="grid gap-6 lg:grid-cols-2">
             {/* Config Form */}
             <GlassCard className="space-y-5">
@@ -412,5 +413,6 @@ export function UazAPIPanel() {
         <div className="mt-6">
             <MetaAPIPanel />
         </div>
+        </>
     );
 }

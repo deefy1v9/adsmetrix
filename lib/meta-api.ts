@@ -597,7 +597,9 @@ function countResults(actions: any[]): number {
         val('offsite_conversion.fb_pixel_purchase'),
     );
 
-    return leads + conversations + purchases;
+    // Use Math.max to avoid double-counting: Meta can report both 'lead' and
+    // 'messaging_conversation_started_7d' for the same event on messaging campaigns.
+    return Math.max(leads, conversations) + purchases;
 }
 
 export async function getAccountDailyInsights(
@@ -607,7 +609,7 @@ export async function getAccountDailyInsights(
     workspaceId?: string
 ): Promise<Record<number, { leads: number; spend: number }>> {
     const cleanId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
-    const cacheKey = `${cleanId}_daily3_${year}_${month}_${workspaceId}`;
+    const cacheKey = `${cleanId}_daily4_${year}_${month}_${workspaceId}`;
     const cached = accountDailyCache.get(cacheKey);
     if (cached && Date.now() - cached.ts < 10 * 60 * 1000) return cached.data;
 

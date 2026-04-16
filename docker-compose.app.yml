@@ -107,7 +107,7 @@ services:
       - -c
       - |
         mkdir -p /etc/crontabs
-        printf '*/10 * * * * wget -qO /dev/null http://app:3000/api/cron/daily-reports?token=%s\n*/10 * * * * wget -qO /dev/null http://app:3000/api/cron/sync-leads?token=%s\n' "$$CRON_SECRET" "$$CRON_SECRET" > /etc/crontabs/root
+        printf '*/10 * * * * wget -qO /dev/null "http://app:3000/api/cron/daily-reports?token=%s"\n*/10 * * * * wget -qO /dev/null "http://app:3000/api/cron/sync-leads?token=%s"\n* * * * * wget -qO /dev/null "http://app:3000/api/cron/wa-blast?token=%s"\n0 * * * * wget -qO /dev/null "http://app:3000/api/cron/balance-check?token=%s"\n' "$$CRON_SECRET" "$$CRON_SECRET" "$$CRON_SECRET" "$$CRON_SECRET" > /etc/crontabs/root
         echo "==> Cron jobs registered:"
         cat /etc/crontabs/root
         crond -f -l 8

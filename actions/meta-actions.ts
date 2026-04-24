@@ -315,9 +315,9 @@ export async function updateLeadStatusAction(leadId: string, status: string) {
     }
 }
 
-export async function fetchAggregatedMetricsAction(accountId: string, datePreset: string = 'last_30d') {
+export async function fetchAggregatedMetricsAction(accountId: string, datePreset: string = 'last_30d', explicitWorkspaceId?: string) {
     if (!accountId) return null;
-    const workspaceId = await getWorkspaceId();
+    const workspaceId = explicitWorkspaceId || await getWorkspaceId();
 
     const [campaigns, accounts] = await Promise.all([
         getCampaigns(accountId, datePreset, workspaceId),

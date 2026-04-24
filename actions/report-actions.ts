@@ -44,7 +44,7 @@ export async function sendDailyReportAction(accountId: string) {
 
         // 2. Fetch Metrics
         const range = account.daily_report_range || 'today';
-        const metrics = await fetchAggregatedMetricsAction(account.account_id, range);
+        const metrics = await fetchAggregatedMetricsAction(account.account_id, range, account.workspace_id || undefined);
 
         if (!metrics) {
             return { success: false, error: 'Failed to fetch metrics' };

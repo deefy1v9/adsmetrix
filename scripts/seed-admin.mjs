@@ -22,27 +22,23 @@ async function main() {
         }
     });
 
-    // 2. Criar/Atualizar Admin vinculado ao Workspace
-    await prisma.user.upsert({
-        where: { email },
-        update: {
-            password: hashedPassword,
-            name,
-            role: "SuperAdmin",
-            is_super_admin: true,
-            workspace_id: workspace.id
-        },
-        create: {
-            email,
-            password: hashedPassword,
-            name,
-            role: "SuperAdmin",
-            is_super_admin: true,
-            workspace_id: workspace.id
-        },
-    });
-
-    console.log(`Admin user updated/created: ${email}`);
+    // 2. Criar Admin apenas se não existir — preserva senha e workspace_id em deploys subsequentes
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+        console.log(`Admin user already exists, skipping seed: ${email}`);
+    } else {
+        await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+                name,
+                role: "SuperAdmin",
+                is_super_admin: true,
+                workspace_id: workspace.id
+            },
+        });
+        console.log(`Admin user created: ${email}`);
+    }
 }
 
 main()

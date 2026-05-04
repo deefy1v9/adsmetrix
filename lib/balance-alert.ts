@@ -38,7 +38,10 @@ function buildAlertMessage(
     );
 }
 
-export async function checkBalanceAlertsForWorkspace(workspaceId: string): Promise<{
+export async function checkBalanceAlertsForWorkspace(
+    workspaceId: string,
+    options: { skipTimeWindow?: boolean } = {},
+): Promise<{
     checked: number;
     alerted: number;
     skipped: number;
@@ -55,18 +58,20 @@ export async function checkBalanceAlertsForWorkspace(workspaceId: string): Promi
         return { checked: 0, alerted: 0, skipped: 0 };
     }
 
-    // Check if current BRT time is within the configured alert window (±0 min, same hour)
-    const alertTime = ((setting as any).balance_alert_time as string | null) ?? '09:00';
-    const nowBR     = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
-    const brTime    = `${String(nowBR.getHours()).padStart(2, '0')}:${String(nowBR.getMinutes()).padStart(2, '0')}`;
-    const [alertH, alertM] = alertTime.split(':').map(Number);
-    const alertMinutes     = alertH * 60 + alertM;
-    const nowMinutes       = nowBR.getHours() * 60 + nowBR.getMinutes();
+    // Check if current BRT time matches the configured alert minute (cron-only)
+    if (!options.skipTimeWindow) {
+        const alertTime = ((setting as any).balance_alert_time as string | null) ?? '09:00';
+        const nowBR     = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+        const brTime    = `${String(nowBR.getHours()).padStart(2, '0')}:${String(nowBR.getMinutes()).padStart(2, '0')}`;
+        const [alertH, alertM] = alertTime.split(':').map(Number);
+        const alertMinutes     = alertH * 60 + alertM;
+        const nowMinutes       = nowBR.getHours() * 60 + nowBR.getMinutes();
 
-    // Allow a 59-minute window starting at the configured time
-    if (nowMinutes < alertMinutes || nowMinutes >= alertMinutes + 60) {
-        console.log(`[BalanceAlert] Workspace ${workspaceId} — fora do horário configurado (${alertTime}, agora ${brTime}). Pulando.`);
-        return { checked: 0, alerted: 0, skipped: 0 };
+        // Fires only at the exact configured minute (cron runs every minute)
+        if (nowMinutes !== alertMinutes) {
+            console.log(`[BalanceAlert] Workspace ${workspaceId} — fora do horário configurado (${alertTime}, agora ${brTime}). Pulando.`);
+            return { checked: 0, alerted: 0, skipped: 0 };
+        }
     }
 
     const uazConfig: UazAPIConfig = {

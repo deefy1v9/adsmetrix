@@ -174,7 +174,7 @@ export async function runBalanceCheckNowAction(): Promise<{
     if (!workspaceId) return { success: false, alerted: 0, checked: 0, error: 'Não autenticado' };
 
     try {
-        const result = await checkBalanceAlertsForWorkspace(workspaceId);
+        const result = await checkBalanceAlertsForWorkspace(workspaceId, { skipTimeWindow: true });
         return { success: true, ...result };
     } catch (err: any) {
         return { success: false, alerted: 0, checked: 0, error: err.message };

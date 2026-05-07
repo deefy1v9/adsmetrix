@@ -36,6 +36,7 @@ import {
     getMetaWAConfigAction,
 } from "@/actions/uazapi-actions";
 import { BalanceAlertPanel } from "@/components/features/balance/BalanceAlertPanel";
+import { CampaignEndDatesPanel } from "@/components/features/balance/CampaignEndDatesPanel";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
@@ -1726,7 +1727,10 @@ export default function AutomationsPage() {
             ) : activeTab === "disparo" ? (
                 <WaBlastSection waConfigured={waConfigured} />
             ) : (
-                <BalanceAlertPanel />
+                <div className="space-y-6">
+                    <BalanceAlertPanel />
+                    <CampaignEndDatesPanel />
+                </div>
             )}
 
         </div>

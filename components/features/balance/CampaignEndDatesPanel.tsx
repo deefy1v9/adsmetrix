@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarClock, RefreshCw, Loader2 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/Button';
 import { listActiveCampaignsWithEndDateAction, type CampaignWithEndDate } from '@/actions/campaign-end-actions';
 import { cn } from '@/lib/utils';
 

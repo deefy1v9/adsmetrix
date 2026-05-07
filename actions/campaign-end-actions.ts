@@ -47,6 +47,11 @@ export async function listActiveCampaignsWithEndDateAction(): Promise<{
             select: { account_id: true, account_name: true },
         });
 
+        // Cutoff: only include campaigns ending within the last 7 days or in the future
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 7);
+        cutoff.setHours(0, 0, 0, 0);
+
         const fields = 'id,name,status,stop_time';
         const results = await Promise.all(
             accounts.map(async (account) => {
@@ -60,6 +65,7 @@ export async function listActiveCampaignsWithEndDateAction(): Promise<{
                         for (const c of data.data || []) {
                             if (c.status !== 'ACTIVE') continue;
                             if (!c.stop_time) continue;
+                            if (new Date(c.stop_time) < cutoff) continue;
                             out.push({
                                 accountId:    account.account_id,
                                 accountName:  account.account_name,

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkAllBalanceAlerts } from '@/lib/balance-alert';
+import { checkAllCampaignEndAlerts } from '@/lib/campaign-end-alert';
 
 /**
  * Balance Check Cron Job
@@ -29,12 +30,16 @@ export async function GET(request: Request) {
     }
 
     try {
-        const result = await checkAllBalanceAlerts();
+        const [balance, campaignEnd] = await Promise.all([
+            checkAllBalanceAlerts(),
+            checkAllCampaignEndAlerts(),
+        ]);
 
         return NextResponse.json({
-            timestamp:     new Date().toISOString(),
-            workspaces:    result.workspaces,
-            totalAlerted:  result.totalAlerted,
+            timestamp:               new Date().toISOString(),
+            workspaces:              balance.workspaces,
+            balanceAlerted:          balance.totalAlerted,
+            campaignEndAlerted:      campaignEnd.totalAlerted,
         });
     } catch (error) {
         console.error('[Cron] balance-check error:', error);

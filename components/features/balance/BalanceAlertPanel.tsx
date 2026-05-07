@@ -232,7 +232,7 @@ export function BalanceAlertPanel() {
     const [savingGroup, setSavingGroup] = useState(false);
     const [groupResult, setGroupResult] = useState<{ success: boolean; error?: string } | null>(null);
     const [checking,    setChecking]    = useState(false);
-    const [checkResult, setCheckResult] = useState<{ alerted: number; checked: number } | null>(null);
+    const [checkResult, setCheckResult] = useState<{ alerted: number; checked: number; campaignsAlerted?: number } | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -269,7 +269,7 @@ export function BalanceAlertPanel() {
         setChecking(true);
         setCheckResult(null);
         const res = await runBalanceCheckNowAction();
-        setCheckResult({ alerted: res.alerted, checked: res.checked });
+        setCheckResult({ alerted: res.alerted, checked: res.checked, campaignsAlerted: res.campaignsAlerted });
         setChecking(false);
         load(); // refresh last sent timestamps
     };
@@ -326,17 +326,33 @@ export function BalanceAlertPanel() {
 
             {/* Check result */}
             {checkResult && (
-                <div className={cn(
-                    'flex items-center gap-2 text-sm p-3 rounded-lg',
-                    checkResult.alerted > 0
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-                )}>
-                    {checkResult.alerted > 0
-                        ? <><AlertTriangle className="h-4 w-4 shrink-0" />
-                            {checkResult.alerted} alerta{checkResult.alerted !== 1 ? 's' : ''} enviado{checkResult.alerted !== 1 ? 's' : ''} de {checkResult.checked} conta{checkResult.checked !== 1 ? 's' : ''} verificada{checkResult.checked !== 1 ? 's' : ''}.</>
-                        : <><CheckCircle2 className="h-4 w-4 shrink-0" />
-                            Todas as {checkResult.checked} conta{checkResult.checked !== 1 ? 's' : ''} verificada{checkResult.checked !== 1 ? 's' : ''} — saldo OK.</>}
+                <div className="space-y-2">
+                    <div className={cn(
+                        'flex items-center gap-2 text-sm p-3 rounded-lg',
+                        checkResult.alerted > 0
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                    )}>
+                        {checkResult.alerted > 0
+                            ? <><AlertTriangle className="h-4 w-4 shrink-0" />
+                                {checkResult.alerted} alerta{checkResult.alerted !== 1 ? 's' : ''} de saldo enviado{checkResult.alerted !== 1 ? 's' : ''} de {checkResult.checked} conta{checkResult.checked !== 1 ? 's' : ''} verificada{checkResult.checked !== 1 ? 's' : ''}.</>
+                            : <><CheckCircle2 className="h-4 w-4 shrink-0" />
+                                Todas as {checkResult.checked} conta{checkResult.checked !== 1 ? 's' : ''} verificada{checkResult.checked !== 1 ? 's' : ''} — saldo OK.</>}
+                    </div>
+                    {checkResult.campaignsAlerted !== undefined && (
+                        <div className={cn(
+                            'flex items-center gap-2 text-sm p-3 rounded-lg',
+                            checkResult.campaignsAlerted > 0
+                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                        )}>
+                            {checkResult.campaignsAlerted > 0
+                                ? <><AlertTriangle className="h-4 w-4 shrink-0" />
+                                    {checkResult.campaignsAlerted} campanha{checkResult.campaignsAlerted !== 1 ? 's' : ''} terminando hoje/amanhã — alerta enviado.</>
+                                : <><CheckCircle2 className="h-4 w-4 shrink-0" />
+                                    Nenhuma campanha terminando hoje ou amanhã.</>}
+                        </div>
+                    )}
                 </div>
             )}
 

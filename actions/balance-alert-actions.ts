@@ -3,6 +3,7 @@
 import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { checkBalanceAlertsForWorkspace } from '@/lib/balance-alert';
+import { checkCampaignEndAlertsForWorkspace } from '@/lib/campaign-end-alert';
 
 async function getWorkspaceId(): Promise<string | null> {
     const h = await headers();
@@ -168,14 +169,25 @@ export async function runBalanceCheckNowAction(): Promise<{
     success: boolean;
     alerted: number;
     checked: number;
+    skipped?: number;
+    campaignsAlerted?: number;
     error?: string;
 }> {
     const workspaceId = await getWorkspaceId();
     if (!workspaceId) return { success: false, alerted: 0, checked: 0, error: 'Não autenticado' };
 
     try {
-        const result = await checkBalanceAlertsForWorkspace(workspaceId, { skipTimeWindow: true });
-        return { success: true, ...result };
+        const [balance, campaignEnd] = await Promise.all([
+            checkBalanceAlertsForWorkspace(workspaceId, { skipTimeWindow: true }),
+            checkCampaignEndAlertsForWorkspace(workspaceId, { skipTimeWindow: true }),
+        ]);
+        return {
+            success: true,
+            checked: balance.checked,
+            alerted: balance.alerted,
+            skipped: balance.skipped,
+            campaignsAlerted: campaignEnd.alerted,
+        };
     } catch (err: any) {
         return { success: false, alerted: 0, checked: 0, error: err.message };
     }

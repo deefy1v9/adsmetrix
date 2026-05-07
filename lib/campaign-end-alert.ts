@@ -9,11 +9,45 @@
  */
 
 import { prisma } from './prisma';
-import { getCampaigns } from './meta-api';
 import { sendTextMessage, UazAPIConfig } from './uazapi';
 
 function dateBRT(date: Date): string {
     return date.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+}
+
+async function getMetaToken(workspaceId: string): Promise<string | null> {
+    const ws = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { meta_access_token: true },
+    });
+    if (ws?.meta_access_token) return ws.meta_access_token;
+    const gc = await prisma.globalConfig.findUnique({
+        where: { id: 'singleton' },
+        select: { meta_access_token: true },
+    });
+    return gc?.meta_access_token ?? process.env.META_ACCESS_TOKEN ?? null;
+}
+
+async function fetchCampaignsLight(
+    accountId: string,
+    token: string,
+): Promise<Array<{ name: string; status: string; stop_time?: string }>> {
+    const fields = 'name,status,stop_time';
+    let url: string | null = `https://graph.facebook.com/v20.0/${accountId}/campaigns?fields=${fields}&limit=200&access_token=${token}`;
+    const out: Array<{ name: string; status: string; stop_time?: string }> = [];
+    while (url) {
+        const res: any = await fetch(url);
+        const data: any = await res.json();
+        if (data.error) {
+            console.error(`[CampaignEndAlert] API error for ${accountId}:`, data.error.message);
+            break;
+        }
+        for (const c of data.data || []) {
+            out.push({ name: c.name, status: c.status, stop_time: c.stop_time });
+        }
+        url = data.paging?.next ?? null;
+    }
+    return out;
 }
 
 export async function checkCampaignEndAlertsForWorkspace(
@@ -52,6 +86,12 @@ export async function checkCampaignEndAlertsForWorkspace(
     });
     if (!accounts.length) return { checked: 0, alerted: 0 };
 
+    const token = await getMetaToken(workspaceId);
+    if (!token) {
+        console.error(`[CampaignEndAlert] No Meta token for workspace ${workspaceId}`);
+        return { checked: 0, alerted: 0 };
+    }
+
     const nowBR       = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
     const todayBRT    = dateBRT(nowBR);
     const tomorrowBR  = new Date(nowBR);
@@ -61,22 +101,29 @@ export async function checkCampaignEndAlertsForWorkspace(
     const endingToday:    { account: string; campaign: string }[] = [];
     const endingTomorrow: { account: string; campaign: string }[] = [];
 
-    for (const account of accounts) {
-        try {
-            const campaigns = await getCampaigns(account.account_id, 'today', workspaceId);
-            for (const c of campaigns) {
-                const endTime = (c as any).end_time;
-                if (!endTime) continue;
-                if (c.status !== 'ACTIVE') continue;
-                const endDateBRT = dateBRT(new Date(endTime));
-                if (endDateBRT === todayBRT) {
-                    endingToday.push({ account: account.account_name, campaign: c.name });
-                } else if (endDateBRT === tomorrowBRT) {
-                    endingTomorrow.push({ account: account.account_name, campaign: c.name });
-                }
+    // Parallel fetch (lightweight: name + status + stop_time only)
+    const results = await Promise.all(
+        accounts.map(async (account) => {
+            try {
+                const campaigns = await fetchCampaignsLight(account.account_id, token);
+                return { account, campaigns };
+            } catch (err: any) {
+                console.error(`[CampaignEndAlert] Error for ${account.account_name}:`, err.message);
+                return { account, campaigns: [] };
             }
-        } catch (err: any) {
-            console.error(`[CampaignEndAlert] Error fetching campaigns for ${account.account_name}:`, err.message);
+        }),
+    );
+
+    for (const { account, campaigns } of results) {
+        for (const c of campaigns) {
+            if (!c.stop_time) continue;
+            if (c.status !== 'ACTIVE') continue;
+            const endDateBRT = dateBRT(new Date(c.stop_time));
+            if (endDateBRT === todayBRT) {
+                endingToday.push({ account: account.account_name, campaign: c.name });
+            } else if (endDateBRT === tomorrowBRT) {
+                endingTomorrow.push({ account: account.account_name, campaign: c.name });
+            }
         }
     }
 

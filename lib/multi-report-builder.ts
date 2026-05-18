@@ -3,6 +3,7 @@ import { MetaCampaign } from './meta-api';
 export interface MultiReportMetrics {
     spend?: boolean;
     leads?: boolean;
+    cost_per_lead?: boolean;
     clicks?: boolean;
     conversations?: boolean;
     cost_per_conversation?: boolean;
@@ -22,6 +23,7 @@ export interface MultiReportMetrics {
 export const DEFAULT_AUTOMATION_METRICS: MultiReportMetrics = {
     spend: true,
     leads: true,
+    cost_per_lead: false,
     clicks: true,
     conversations: true,
     cost_per_conversation: true,
@@ -41,6 +43,7 @@ export const DEFAULT_AUTOMATION_METRICS: MultiReportMetrics = {
 export const METRIC_LABELS: Record<keyof MultiReportMetrics, string> = {
     spend: 'Investimento',
     leads: 'Leads',
+    cost_per_lead: 'Custo por Lead',
     clicks: 'Cliques',
     conversations: 'Conversas',
     cost_per_conversation: 'Custo por Conversa',
@@ -160,6 +163,7 @@ export function buildMultiAccountReport(
                 if (cm.reach)   lines.push(`   📊 Alcance: ${fmt(ins?.reach, 'number')}`);
                 if (cm.clicks && hasN(ins?.clicks))  lines.push(`   🖱️ Cliques: ${fmt(ins?.clicks, 'number')}`);
                 if (cm.leads          && hasN(ins?.leads))         lines.push(`   🎯 Leads: ${fmt(ins?.leads, 'number')}`);
+                if (cm.cost_per_lead  && hasN(ins?.leads))         lines.push(`   💸 Custo por Lead: ${costPer(ins?.spend, ins?.leads)}`);
                 if (cm.conversations  && hasN(ins?.conversations))  lines.push(`   💬 Conversas: ${fmt(ins?.conversations, 'number')}`);
                 if (cm.cost_per_conversation && hasN(ins?.conversations)) lines.push(`   💸 Custo por Conversa: ${costPer(ins?.spend, ins?.conversations)}`);
                 if (cm.purchases      && hasN(ins?.sales))          lines.push(`   ✅ Compras: ${fmt(ins?.sales, 'number')}`);
@@ -203,6 +207,7 @@ export function buildMultiAccountReport(
     if (m.spend)                   lines.push(`💸 Investimento: ${fmt(totalSpend, 'currency')}`);
     if (m.reach)                   lines.push(`📊 Alcance: ${totalReach.toLocaleString('pt-BR')}`);
     if (m.leads)                   lines.push(`🎯 Leads: ${totalLeads.toLocaleString('pt-BR')}`);
+    if (m.cost_per_lead)           lines.push(`💸 Custo por Lead: ${costPer(totalSpend.toString(), totalLeads.toString())}`);
     if (m.clicks)                  lines.push(`🖱️ Cliques: ${totalClicks.toLocaleString('pt-BR')}`);
     if (m.conversations)           lines.push(`💬 Conversas: ${totalConversations.toLocaleString('pt-BR')}`);
     if (m.cost_per_conversation)   lines.push(`💸 Custo por Conversa: ${costPer(totalSpend.toString(), totalConversations.toString())}`);

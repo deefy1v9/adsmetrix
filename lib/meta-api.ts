@@ -1236,70 +1236,74 @@ export async function syncLeadsFromMeta(accountId: string) {
 
         let totalUpserted = 0;
 
-        // 3. For each form, fetch ALL leads
-        for (const formId of Array.from(formIds)) {
-            console.log(`[MetaAPI] Fetching leads for form: ${formId}`);
-            let nextLeadsUrl: string | null = `https://graph.facebook.com/v20.0/${formId}/leads?fields=id,created_time,field_data,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name&limit=100&access_token=${token}`;
+        // 3. Fetch leads for all forms in parallel (much faster than sequential)
+        const formResults = await Promise.all(
+            Array.from(formIds).map(async (formId): Promise<number> => {
+                let count = 0;
+                let nextLeadsUrl: string | null = `https://graph.facebook.com/v20.0/${formId}/leads?fields=id,created_time,field_data,ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name&limit=100&access_token=${token}`;
 
-            while (nextLeadsUrl) {
-                const leadsRes: any = await fetch(nextLeadsUrl);
-                const leadsData: any = await leadsRes.json();
+                while (nextLeadsUrl) {
+                    const leadsRes: any = await fetch(nextLeadsUrl);
+                    const leadsData: any = await leadsRes.json();
 
-                if (leadsData.error) {
-                    console.error(`[MetaAPI] Error fetching leads for form ${formId}:`, leadsData.error.message);
-                    break;
+                    if (leadsData.error) {
+                        console.error(`[MetaAPI] Error fetching leads for form ${formId}:`, leadsData.error.message);
+                        break;
+                    }
+
+                    const leads = leadsData.data || [];
+
+                    // 4. Upsert leads in parallel within this page
+                    await Promise.all(
+                        leads.map((lead: any) => {
+                            const fullName = extractLeadField(lead.field_data, 'name');
+                            const email    = extractLeadField(lead.field_data, 'email');
+                            const phone    = extractLeadField(lead.field_data, 'phone');
+                            return prisma.lead.upsert({
+                                where:  { lead_id: lead.id },
+                                update: {
+                                    account_id:    dbAccount.id,
+                                    campaign_id:   lead.campaign_id,
+                                    campaign_name: lead.campaign_name,
+                                    adset_id:      lead.adset_id,
+                                    adset_name:    lead.adset_name,
+                                    ad_id:         lead.ad_id,
+                                    ad_name:       lead.ad_name,
+                                    form_id:       formId,
+                                    full_name:     fullName,
+                                    email:         email,
+                                    phone:         phone,
+                                    raw_data:      JSON.stringify(lead),
+                                    synced_at:     new Date(),
+                                },
+                                create: {
+                                    lead_id:       lead.id,
+                                    account_id:    dbAccount.id,
+                                    campaign_id:   lead.campaign_id,
+                                    campaign_name: lead.campaign_name,
+                                    adset_id:      lead.adset_id,
+                                    adset_name:    lead.adset_name,
+                                    ad_id:         lead.ad_id,
+                                    ad_name:       lead.ad_name,
+                                    form_id:       formId,
+                                    full_name:     fullName,
+                                    email:         email,
+                                    phone:         phone,
+                                    created_time:  new Date(lead.created_time),
+                                    raw_data:      JSON.stringify(lead),
+                                    synced_at:     new Date(),
+                                },
+                            });
+                        }),
+                    );
+                    count += leads.length;
+
+                    nextLeadsUrl = leadsData.paging?.next || null;
                 }
-
-                const leads = leadsData.data || [];
-                console.log(`[MetaAPI] Received ${leads.length} leads from API for form ${formId}`);
-
-                // 4. Save to DB
-                for (const lead of leads) {
-                    const fullName = extractLeadField(lead.field_data, 'name');
-                    const email = extractLeadField(lead.field_data, 'email');
-                    const phone = extractLeadField(lead.field_data, 'phone');
-
-                    await prisma.lead.upsert({
-                        where: { lead_id: lead.id },
-                        update: {
-                            account_id: dbAccount.id,
-                            campaign_id: lead.campaign_id,
-                            campaign_name: lead.campaign_name,
-                            adset_id: lead.adset_id,
-                            adset_name: lead.adset_name,
-                            ad_id: lead.ad_id,
-                            ad_name: lead.ad_name,
-                            form_id: formId,
-                            full_name: fullName,
-                            email: email,
-                            phone: phone,
-                            raw_data: JSON.stringify(lead),
-                            synced_at: new Date()
-                        },
-                        create: {
-                            lead_id: lead.id,
-                            account_id: dbAccount.id,
-                            campaign_id: lead.campaign_id,
-                            campaign_name: lead.campaign_name,
-                            adset_id: lead.adset_id,
-                            adset_name: lead.adset_name,
-                            ad_id: lead.ad_id,
-                            ad_name: lead.ad_name,
-                            form_id: formId,
-                            full_name: fullName,
-                            email: email,
-                            phone: phone,
-                            created_time: new Date(lead.created_time),
-                            raw_data: JSON.stringify(lead),
-                            synced_at: new Date()
-                        }
-                    });
-                    totalUpserted++;
-                }
-
-                nextLeadsUrl = leadsData.paging?.next || null;
-            }
-        }
+                return count;
+            }),
+        );
+        totalUpserted = formResults.reduce((a, b) => a + b, 0);
 
         // Step 4: Sync campaigns for this account so webhook linkage works going forward
         try {

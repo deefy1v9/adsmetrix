@@ -242,6 +242,15 @@ export async function getGroupsFromAutomationsAction(): Promise<WaBlastDestinati
 export async function sendScheduledWaBlastsAction(todayDay: number, currentTime: string) {
     const allAutomations = await prisma.waBlastAutomation.findMany({ where: { enabled: true } });
 
+    // Início de "hoje" em BRT (UTC-3, Brasil não tem horário de verão) como
+    // instante UTC. Usado para garantir que cada automação dispare só uma vez
+    // por dia agendado.
+    const brtDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date());
+    const startOfTodayBRT = new Date(`${brtDate}T00:00:00-03:00`);
+
     const toSend = allAutomations.filter(auto => {
         const days = auto.schedule_days as number[];
         if (!days.includes(todayDay)) return false;
@@ -253,6 +262,24 @@ export async function sendScheduledWaBlastsAction(todayDay: number, currentTime:
     const results = [];
 
     for (const auto of toSend) {
+        // Reivindica a automação para hoje de forma atômica. O cron roda a cada
+        // minuto e a janela de match acima é de ±5 min, então sem essa trava o
+        // mesmo disparo seria enviado ~11 vezes. O updateMany só tem sucesso
+        // (count === 1) para a primeira execução que encontrar a automação
+        // ainda não enviada hoje; execuções concorrentes/sobrepostas recebem
+        // count === 0 e são puladas.
+        const claim = await prisma.waBlastAutomation.updateMany({
+            where: {
+                id: auto.id,
+                OR: [
+                    { last_sent_at: null },
+                    { last_sent_at: { lt: startOfTodayBRT } },
+                ],
+            },
+            data: { last_sent_at: new Date() },
+        });
+        if (claim.count === 0) continue; // já enviado hoje
+
         const record = mapRecord(auto);
         if (record.destination_ids.length === 0) {
             results.push({ id: auto.id, name: auto.name, success: false, error: "Sem destino" });
@@ -265,7 +292,6 @@ export async function sendScheduledWaBlastsAction(todayDay: number, currentTime:
         if (record.channel === "meta_api" && !metaConfig) { results.push({ id: auto.id, name: auto.name, success: false, error: "Meta API não configurada" }); continue; }
 
         const sent = await sendToAllDests(record, uazConfig, metaConfig);
-        await prisma.waBlastAutomation.update({ where: { id: auto.id }, data: { last_sent_at: new Date() } });
         results.push({ id: auto.id, name: auto.name, success: sent > 0, sent });
     }
 

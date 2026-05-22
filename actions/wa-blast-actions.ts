@@ -220,7 +220,7 @@ export async function getGroupsFromAutomationsAction(): Promise<WaBlastDestinati
     if (!workspaceId) return [];
 
     const automations = await prisma.reportAutomation.findMany({
-        where: { workspace_id: workspaceId, destination_type: "group" },
+        where: { workspace_id: workspaceId, destination_type: "group", enabled: true },
         select: { destination_id: true, destination_name: true },
     });
 

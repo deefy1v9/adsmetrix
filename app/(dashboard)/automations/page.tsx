@@ -1003,10 +1003,19 @@ function WaBlastForm({
             : ""
     );
 
-    // Auto-load groups from existing report automations on mount
+    // Auto-load groups from active report automations on mount.
+    // For new blasts, pre-select all of them as destinations.
     useEffect(() => {
         getGroupsFromAutomationsAction().then(g => {
-            if (g.length > 0) setGroups(g);
+            if (g.length === 0) return;
+            setGroups(g);
+            if (!initial) {
+                setForm(prev =>
+                    prev.destination_type === "group" && prev.destination_ids.length === 0
+                        ? { ...prev, destination_ids: g.map(grp => ({ id: grp.id, name: grp.name })) }
+                        : prev
+                );
+            }
         });
     }, []);
 

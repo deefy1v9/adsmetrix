@@ -219,21 +219,64 @@ export async function getGroupsFromAutomationsAction(): Promise<WaBlastDestinati
     const workspaceId = await getWorkspaceId();
     if (!workspaceId) return [];
 
+    // Pega TODOS os relatórios com destino de grupo (ativos e inativos).
+    // O critério final é: incluir o grupo se o relatório está ativo OU se
+    // alguma das contas vinculadas teve gasto de campanha nos últimos 30 dias.
     const automations = await prisma.reportAutomation.findMany({
-        where: { workspace_id: workspaceId, destination_type: "group", enabled: true },
-        select: { destination_id: true, destination_name: true },
+        where: { workspace_id: workspaceId, destination_type: "group" },
+        select: { enabled: true, destination_id: true, destination_name: true, account_ids: true },
     });
+    if (automations.length === 0) return [];
+
+    // Account IDs (formato Meta) referenciados por qualquer automação.
+    // Normalizamos removendo o prefixo "act_" porque ele varia entre registros.
+    const normalize = (s: string) => (s.startsWith("act_") ? s.slice(4) : s);
+    const referencedIds = new Set<string>();
+    for (const a of automations) {
+        const ids = (a.account_ids as string[] | null) ?? [];
+        for (const id of ids) referencedIds.add(normalize(id));
+    }
+
+    // Resolve Meta ID → uuid interno (testa com e sem o prefixo act_).
+    const idVariants = Array.from(referencedIds).flatMap(id => [id, `act_${id}`]);
+    const accountRows = idVariants.length === 0
+        ? []
+        : await prisma.account.findMany({
+            where: { workspace_id: workspaceId, account_id: { in: idVariants } },
+            select: { id: true, account_id: true },
+        });
+    const metaToUuid = new Map<string, string>();
+    for (const a of accountRows) metaToUuid.set(normalize(a.account_id), a.id);
+
+    // Quais contas tiveram gasto > 0 nos últimos 30 dias?
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const uuidsWithSpend = new Set<string>();
+    if (metaToUuid.size > 0) {
+        const spent = await prisma.campaign.findMany({
+            where: {
+                account_id: { in: Array.from(metaToUuid.values()) },
+                spend: { gt: 0 },
+                date: { gte: since },
+            },
+            select: { account_id: true },
+        });
+        for (const c of spent) uuidsWithSpend.add(c.account_id);
+    }
 
     const seen = new Set<string>();
     const groups: WaBlastDestination[] = [];
-
     for (const a of automations) {
-        if (a.destination_id && !seen.has(a.destination_id)) {
-            seen.add(a.destination_id);
-            groups.push({ id: a.destination_id, name: a.destination_name || a.destination_id });
-        }
+        if (!a.destination_id) continue;
+        const accountIds = (a.account_ids as string[] | null) ?? [];
+        const hasSpend = accountIds.some(id => {
+            const uuid = metaToUuid.get(normalize(id));
+            return uuid !== undefined && uuidsWithSpend.has(uuid);
+        });
+        if (!a.enabled && !hasSpend) continue;
+        if (seen.has(a.destination_id)) continue;
+        seen.add(a.destination_id);
+        groups.push({ id: a.destination_id, name: a.destination_name || a.destination_id });
     }
-
     return groups;
 }
 

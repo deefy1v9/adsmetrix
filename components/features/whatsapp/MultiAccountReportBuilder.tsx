@@ -292,11 +292,14 @@ export function MultiAccountReportBuilder() {
         setAdSetsCache({});
         const data = await fetchCampaignsMultiAction([...selectedAccountIds], datePreset);
         setCampaignsData(data);
-        // Auto-select all active campaigns
-        const activeCampaignIds = data.flatMap(a =>
-            a.campaigns.filter(c => c.status === 'ACTIVE').map(c => c.id)
+        // Auto-marca: campanhas ativas + campanhas com gasto no período
+        // (mesmo desativadas devem aparecer no relatório se tiveram gasto).
+        const autoSelectIds = data.flatMap(a =>
+            a.campaigns
+                .filter(c => c.status === 'ACTIVE' || parseFloat(c.insights?.spend ?? '0') > 0)
+                .map(c => c.id)
         );
-        setSelectedCampaigns(new Set(activeCampaignIds));
+        setSelectedCampaigns(new Set(autoSelectIds));
         setLoadingCampaigns(false);
     };
 

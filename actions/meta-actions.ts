@@ -814,9 +814,35 @@ async function resolveCurrentToken(): Promise<{ token: string; source: TokenSour
     return null;
 }
 
-/** Validates a token against the Graph API and counts the ad accounts it can reach. */
+/**
+ * Reads a token's real expiry via /debug_token.
+ * `expiresAt === 0` means the token never expires (System User tokens).
+ * Returns null when Meta refuses to describe the token — callers treat that as "unknown".
+ */
+async function getTokenExpiry(token: string): Promise<{ expiresAt: number; scopes: string[] } | null> {
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    // An app access token is the documented inspector; a token can also debug itself.
+    const inspector = appId && appSecret ? `${appId}|${appSecret}` : token;
+
+    try {
+        const res = await fetch(
+            `https://graph.facebook.com/${GRAPH_VERSION}/debug_token?input_token=${encodeURIComponent(token)}&access_token=${encodeURIComponent(inspector)}`
+        );
+        const json = await res.json();
+        if (json.error || !json.data) return null;
+        return {
+            expiresAt: typeof json.data.expires_at === 'number' ? json.data.expires_at : 0,
+            scopes: Array.isArray(json.data.scopes) ? json.data.scopes : [],
+        };
+    } catch {
+        return null;
+    }
+}
+
+/** Validates a token against the Graph API, counts reachable ad accounts and reads its expiry. */
 async function inspectToken(token: string): Promise<
-    { valid: true; userName: string; accountsCount: number } |
+    { valid: true; userName: string; accountsCount: number; expiresAt: number | null; scopes: string[] } |
     { valid: false; error: string }
 > {
     try {
@@ -842,31 +868,64 @@ async function inspectToken(token: string): Promise<
             ? acc.summary.total_count
             : (acc.data?.length ?? 0);
 
+        const debug = await getTokenExpiry(token);
+
         return {
             valid: true,
             userName: me.name ?? me.id ?? 'Desconhecido',
             accountsCount: total,
+            expiresAt: debug ? debug.expiresAt : null,
+            scopes: debug?.scopes ?? [],
         };
     } catch (err: any) {
         return { valid: false, error: err.message ?? 'Falha de rede ao contatar a Meta' };
     }
 }
 
-/** Best-effort upgrade of a short-lived token to a 60-day one. Returns the original on failure. */
-async function exchangeForLongLived(token: string): Promise<{ token: string; exchanged: boolean }> {
+/**
+ * Upgrades a short-lived token to a 60-day one.
+ * Never touches a token that already never expires — exchanging a System User token
+ * would trade a permanent credential for one that dies in 60 days.
+ */
+async function exchangeForLongLived(token: string, currentExpiresAt: number | null): Promise<{
+    token: string;
+    exchanged: boolean;
+    expiresAt: number | null;
+    reason?: string;
+}> {
+    if (currentExpiresAt === 0) {
+        return { token, exchanged: false, expiresAt: 0, reason: 'permanent' };
+    }
+
     const appId = process.env.META_APP_ID;
     const appSecret = process.env.META_APP_SECRET;
-    if (!appId || !appSecret) return { token, exchanged: false };
+    if (!appId || !appSecret) {
+        return { token, exchanged: false, expiresAt: currentExpiresAt, reason: 'no_app_credentials' };
+    }
 
     try {
         const res = await fetch(
             `https://graph.facebook.com/${GRAPH_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(token)}`
         );
         const data = await res.json();
-        if (data.error || !data.access_token) return { token, exchanged: false };
-        return { token: data.access_token, exchanged: true };
+        if (data.error || !data.access_token) {
+            return { token, exchanged: false, expiresAt: currentExpiresAt, reason: 'exchange_failed' };
+        }
+
+        // Keep the exchanged token only if it actually lives longer than what we already had
+        const newExpiry = await getTokenExpiry(data.access_token);
+        const newExpiresAt = newExpiry ? newExpiry.expiresAt : null;
+        const improves =
+            newExpiresAt === 0 ||
+            currentExpiresAt === null ||
+            (newExpiresAt !== null && newExpiresAt > currentExpiresAt);
+
+        if (!improves) {
+            return { token, exchanged: false, expiresAt: currentExpiresAt, reason: 'no_gain' };
+        }
+        return { token: data.access_token, exchanged: true, expiresAt: newExpiresAt };
     } catch {
-        return { token, exchanged: false };
+        return { token, exchanged: false, expiresAt: currentExpiresAt, reason: 'exchange_failed' };
     }
 }
 
@@ -877,11 +936,30 @@ export async function getMetaTokenStatusAction(): Promise<{
     valid: boolean;
     userName?: string;
     accountsCount?: number;
+    expiresAt?: number | null;
+    overrideCount?: number;
+    appCredentialsConfigured?: boolean;
     error?: string;
 }> {
+    const appCredentialsConfigured = !!(process.env.META_APP_ID && process.env.META_APP_SECRET);
+
     try {
         const current = await resolveCurrentToken();
-        if (!current) return { hasToken: false, source: null, maskedToken: null, valid: false };
+        if (!current) {
+            return { hasToken: false, source: null, maskedToken: null, valid: false, appCredentialsConfigured };
+        }
+
+        // Per-account tokens win over the workspace token in getAccessToken() — surface them,
+        // otherwise a stale one silently shadows the token just saved here.
+        let overrideCount = 0;
+        try {
+            const workspaceId = await getWorkspaceId();
+            if (workspaceId) {
+                overrideCount = await prisma.account.count({
+                    where: { workspace_id: workspaceId, NOT: { access_token: null } },
+                });
+            }
+        } catch { /* diagnostic only */ }
 
         const check = await inspectToken(current.token);
         if (!check.valid) {
@@ -890,6 +968,8 @@ export async function getMetaTokenStatusAction(): Promise<{
                 source: current.source,
                 maskedToken: maskToken(current.token),
                 valid: false,
+                overrideCount,
+                appCredentialsConfigured,
                 error: check.error,
             };
         }
@@ -901,9 +981,12 @@ export async function getMetaTokenStatusAction(): Promise<{
             valid: true,
             userName: check.userName,
             accountsCount: check.accountsCount,
+            expiresAt: check.expiresAt,
+            overrideCount,
+            appCredentialsConfigured,
         };
     } catch (err: any) {
-        return { hasToken: false, source: null, maskedToken: null, valid: false, error: err.message };
+        return { hasToken: false, source: null, maskedToken: null, valid: false, appCredentialsConfigured, error: err.message };
     }
 }
 
@@ -914,6 +997,9 @@ export async function saveMetaTokenAction(rawToken: string): Promise<{
     accountsCount?: number;
     source?: TokenSource;
     longLived?: boolean;
+    expiresAt?: number | null;
+    warning?: string;
+    clearedOverrides?: number;
 }> {
     const token = (rawToken ?? '').trim();
     if (!token) return { success: false, error: 'Cole um token antes de salvar.' };
@@ -928,11 +1014,30 @@ export async function saveMetaTokenAction(rawToken: string): Promise<{
         };
     }
 
-    const { token: finalToken, exchanged } = await exchangeForLongLived(token);
+    const exchange = await exchangeForLongLived(token, check.expiresAt);
+    const finalToken = exchange.token;
+    const finalExpiresAt = exchange.expiresAt;
+
+    // Tell the user up front when the token they saved is going to die on them —
+    // this is the difference between "it worked" and "it stopped working tomorrow".
+    let warning: string | undefined;
+    if (finalExpiresAt === null) {
+        warning = 'Não foi possível verificar a validade deste token na Meta. Se ele parar de funcionar em algumas horas, gere um token de Usuário do Sistema.';
+    } else if (finalExpiresAt > 0) {
+        const hoursLeft = Math.round((finalExpiresAt * 1000 - Date.now()) / 3_600_000);
+        if (hoursLeft <= 24) {
+            warning = `Atenção: este token expira em aproximadamente ${hoursLeft}h. ` +
+                (exchange.reason === 'no_app_credentials'
+                    ? 'Não foi possível estendê-lo porque META_APP_ID/META_APP_SECRET não estão configurados no servidor. '
+                    : 'Não foi possível estendê-lo automaticamente. ') +
+                'Use um token de Usuário do Sistema para que ele não expire.';
+        }
+    }
 
     try {
         const workspaceId = await getWorkspaceId();
         let source: TokenSource;
+        let clearedOverrides = 0;
 
         if (workspaceId) {
             await prisma.workspace.update({
@@ -940,6 +1045,18 @@ export async function saveMetaTokenAction(rawToken: string): Promise<{
                 data: { meta_access_token: finalToken },
             });
             source = 'workspace';
+
+            // getAccessToken() prefers Account.access_token over the workspace token, so a stale
+            // per-account token would keep being used and look like "the new token didn't stick".
+            try {
+                const cleared = await prisma.account.updateMany({
+                    where: { workspace_id: workspaceId, NOT: { access_token: null } },
+                    data:  { access_token: null },
+                });
+                clearedOverrides = cleared.count;
+            } catch (e: any) {
+                console.warn('[saveMetaToken] Failed to clear per-account tokens:', e.message);
+            }
         } else {
             await prisma.globalConfig.upsert({
                 where:  { id: 'singleton' },
@@ -959,7 +1076,10 @@ export async function saveMetaTokenAction(rawToken: string): Promise<{
             userName: check.userName,
             accountsCount: check.accountsCount,
             source,
-            longLived: exchanged,
+            longLived: exchange.exchanged,
+            expiresAt: finalExpiresAt,
+            warning,
+            clearedOverrides,
         };
     } catch (err: any) {
         return { success: false, error: err.message ?? 'Falha ao salvar o token.' };

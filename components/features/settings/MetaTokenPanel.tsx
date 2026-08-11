@@ -15,12 +15,28 @@ const SOURCE_LABEL: Record<string, string> = {
     env: "Variável de ambiente",
 };
 
+/** expiresAt === 0 means the token never expires (System User token). */
+function describeExpiry(expiresAt: number | null | undefined): { text: string; danger: boolean } {
+    if (expiresAt === 0) return { text: "Não expira (Usuário do Sistema)", danger: false };
+    if (expiresAt == null) return { text: "Validade desconhecida", danger: false };
+
+    const msLeft = expiresAt * 1000 - Date.now();
+    if (msLeft <= 0) return { text: "Expirado", danger: true };
+
+    const hours = Math.floor(msLeft / 3_600_000);
+    const date = new Date(expiresAt * 1000).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+    if (hours < 48) return { text: `Expira em ~${hours}h (${date})`, danger: true };
+    return { text: `Expira em ${Math.floor(hours / 24)} dias (${date})`, danger: false };
+}
+
 export function MetaTokenPanel() {
     const [status, setStatus] = useState<Status | null>(null);
     const [checking, setChecking] = useState(true);
     const [token, setToken] = useState("");
     const [saving, setSaving] = useState(false);
     const [feedback, setFeedback] = useState<{ ok: boolean; message: string } | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
 
     async function loadStatus() {
         setChecking(true);
@@ -36,15 +52,16 @@ export function MetaTokenPanel() {
     async function handleSave() {
         setSaving(true);
         setFeedback(null);
+        setWarning(null);
         try {
             const res = await saveMetaTokenAction(token);
             if (res.success) {
                 setToken("");
-                setFeedback({
-                    ok: true,
-                    message: `Token salvo para ${res.userName} — ${res.accountsCount} conta(s) acessível(is).` +
-                        (res.longLived ? " Convertido para token de longa duração (60 dias)." : ""),
-                });
+                const parts = [`Token salvo para ${res.userName} — ${res.accountsCount} conta(s) acessível(is).`];
+                if (res.longLived) parts.push("Convertido para token de longa duração (60 dias).");
+                if (res.clearedOverrides) parts.push(`${res.clearedOverrides} token(s) antigo(s) por conta foram limpos.`);
+                setFeedback({ ok: true, message: parts.join(" ") });
+                setWarning(res.warning ?? null);
                 await loadStatus();
             } else {
                 setFeedback({ ok: false, message: res.error ?? "Não foi possível salvar o token." });
@@ -92,14 +109,36 @@ export function MetaTokenPanel() {
                                 {status.source && <> · origem: {SOURCE_LABEL[status.source] ?? status.source}</>}
                             </p>
                             {status.valid ? (
-                                <p className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                    <CheckCircle2 className="h-3 w-3 shrink-0" />
-                                    {status.userName} · {status.accountsCount} conta(s) de anúncio visível(is)
-                                </p>
+                                <>
+                                    <p className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                        {status.userName} · {status.accountsCount} conta(s) de anúncio visível(is)
+                                    </p>
+                                    {(() => {
+                                        const exp = describeExpiry(status.expiresAt);
+                                        return (
+                                            <p className={exp.danger ? "text-amber-600 dark:text-amber-400 font-medium" : ""}>
+                                                Validade: {exp.text}
+                                            </p>
+                                        );
+                                    })()}
+                                </>
                             ) : (
                                 <p className="text-destructive flex items-start gap-1">
                                     <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
                                     <span>{status.error}</span>
+                                </p>
+                            )}
+                            {status.appCredentialsConfigured === false && (
+                                <p className="text-amber-600 dark:text-amber-400">
+                                    META_APP_ID / META_APP_SECRET não configurados — tokens curtos não podem ser
+                                    estendidos para 60 dias automaticamente.
+                                </p>
+                            )}
+                            {!!status.overrideCount && status.overrideCount > 0 && (
+                                <p className="text-amber-600 dark:text-amber-400">
+                                    {status.overrideCount} conta(s) com token próprio sobrepondo o token do workspace.
+                                    Salvar um novo token limpa essas sobreposições.
                                 </p>
                             )}
                         </>
@@ -135,6 +174,13 @@ export function MetaTokenPanel() {
             {feedback && (
                 <p className={`text-[10px] leading-relaxed ${feedback.ok ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`}>
                     {feedback.message}
+                </p>
+            )}
+
+            {warning && (
+                <p className="text-[10px] leading-relaxed text-amber-600 dark:text-amber-400 flex items-start gap-1">
+                    <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                    <span>{warning}</span>
                 </p>
             )}
 

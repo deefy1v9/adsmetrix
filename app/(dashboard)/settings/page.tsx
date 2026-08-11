@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
 import { UazAPIPanel } from "@/components/features/whatsapp/UazAPIPanel";
+import { MetaTokenPanel } from "@/components/features/settings/MetaTokenPanel";
 
 export default function SettingsPage() {
     return (
@@ -53,6 +54,8 @@ export default function SettingsPage() {
                                 Conectar Facebook
                             </Button>
                         </div>
+
+                        <MetaTokenPanel />
 
                         <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
                             <div className="flex items-center justify-between">

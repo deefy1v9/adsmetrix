@@ -1,6 +1,6 @@
 "use server";
 
-import { getAdAccounts, getCampaigns, getAdSets, getAllLeads, getTopCreatives, getWeeklyBreakdown, updateObjectStatus, getAdsForAdSet, getAdsByCPR, MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
+import { getAdAccounts, getCampaigns, getAdSets, getAllLeads, getTopCreatives, getWeeklyBreakdown, updateObjectStatus, getAdsForAdSet, getAdsByCPR, invalidateAccountsCache, MetaAdAccount, MetaCampaign, MetaAdSet, MetaLead, MetaCreative, WeeklyDay } from "@/lib/meta-api";
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -775,5 +775,193 @@ export async function saveDashboardMetricsConfigAction(config: Record<DashboardM
         return { success: true };
     } catch (err: any) {
         return { success: false, error: err.message };
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ *  Token Meta — cadastro manual                                       *
+ * ------------------------------------------------------------------ */
+
+const GRAPH_VERSION = 'v20.0';
+
+type TokenSource = 'workspace' | 'global' | 'env';
+
+function maskToken(token: string): string {
+    if (token.length <= 12) return '••••••••';
+    return `${token.slice(0, 6)}••••${token.slice(-4)}`;
+}
+
+/** Reads the token that fetchAdAccountsAction would actually use, in the same precedence order. */
+async function resolveCurrentToken(): Promise<{ token: string; source: TokenSource } | null> {
+    const workspaceId = await getWorkspaceId();
+
+    if (workspaceId) {
+        const workspace = await prisma.workspace.findUnique({
+            where: { id: workspaceId },
+            select: { meta_access_token: true },
+        });
+        if (workspace?.meta_access_token) return { token: workspace.meta_access_token, source: 'workspace' };
+    }
+
+    const globalConfig = await prisma.globalConfig.findUnique({
+        where: { id: 'singleton' },
+        select: { meta_access_token: true },
+    });
+    if (globalConfig?.meta_access_token) return { token: globalConfig.meta_access_token, source: 'global' };
+
+    if (process.env.META_ACCESS_TOKEN) return { token: process.env.META_ACCESS_TOKEN, source: 'env' };
+
+    return null;
+}
+
+/** Validates a token against the Graph API and counts the ad accounts it can reach. */
+async function inspectToken(token: string): Promise<
+    { valid: true; userName: string; accountsCount: number } |
+    { valid: false; error: string }
+> {
+    try {
+        const meRes = await fetch(
+            `https://graph.facebook.com/${GRAPH_VERSION}/me?fields=id,name&access_token=${encodeURIComponent(token)}`
+        );
+        const me = await meRes.json();
+        if (me.error) return { valid: false, error: me.error.message ?? 'Token inválido' };
+
+        const accRes = await fetch(
+            `https://graph.facebook.com/${GRAPH_VERSION}/me/adaccounts?fields=id&limit=500&summary=total_count&access_token=${encodeURIComponent(token)}`
+        );
+        const acc = await accRes.json();
+        if (acc.error) {
+            return {
+                valid: false,
+                error: `${acc.error.message ?? 'Erro ao listar contas'} — verifique se a permissão ads_read foi concedida.`,
+            };
+        }
+
+        // summary.total_count is authoritative; fall back to the page length when Meta omits it
+        const total = typeof acc.summary?.total_count === 'number'
+            ? acc.summary.total_count
+            : (acc.data?.length ?? 0);
+
+        return {
+            valid: true,
+            userName: me.name ?? me.id ?? 'Desconhecido',
+            accountsCount: total,
+        };
+    } catch (err: any) {
+        return { valid: false, error: err.message ?? 'Falha de rede ao contatar a Meta' };
+    }
+}
+
+/** Best-effort upgrade of a short-lived token to a 60-day one. Returns the original on failure. */
+async function exchangeForLongLived(token: string): Promise<{ token: string; exchanged: boolean }> {
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appId || !appSecret) return { token, exchanged: false };
+
+    try {
+        const res = await fetch(
+            `https://graph.facebook.com/${GRAPH_VERSION}/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${encodeURIComponent(token)}`
+        );
+        const data = await res.json();
+        if (data.error || !data.access_token) return { token, exchanged: false };
+        return { token: data.access_token, exchanged: true };
+    } catch {
+        return { token, exchanged: false };
+    }
+}
+
+export async function getMetaTokenStatusAction(): Promise<{
+    hasToken: boolean;
+    source: TokenSource | null;
+    maskedToken: string | null;
+    valid: boolean;
+    userName?: string;
+    accountsCount?: number;
+    error?: string;
+}> {
+    try {
+        const current = await resolveCurrentToken();
+        if (!current) return { hasToken: false, source: null, maskedToken: null, valid: false };
+
+        const check = await inspectToken(current.token);
+        if (!check.valid) {
+            return {
+                hasToken: true,
+                source: current.source,
+                maskedToken: maskToken(current.token),
+                valid: false,
+                error: check.error,
+            };
+        }
+
+        return {
+            hasToken: true,
+            source: current.source,
+            maskedToken: maskToken(current.token),
+            valid: true,
+            userName: check.userName,
+            accountsCount: check.accountsCount,
+        };
+    } catch (err: any) {
+        return { hasToken: false, source: null, maskedToken: null, valid: false, error: err.message };
+    }
+}
+
+export async function saveMetaTokenAction(rawToken: string): Promise<{
+    success: boolean;
+    error?: string;
+    userName?: string;
+    accountsCount?: number;
+    source?: TokenSource;
+    longLived?: boolean;
+}> {
+    const token = (rawToken ?? '').trim();
+    if (!token) return { success: false, error: 'Cole um token antes de salvar.' };
+
+    const check = await inspectToken(token);
+    if (!check.valid) return { success: false, error: check.error };
+
+    if (check.accountsCount === 0) {
+        return {
+            success: false,
+            error: 'O token é válido, mas não enxerga nenhuma conta de anúncio. Confirme se o usuário tem acesso às contas no Gerenciador de Negócios e se a permissão ads_read foi concedida.',
+        };
+    }
+
+    const { token: finalToken, exchanged } = await exchangeForLongLived(token);
+
+    try {
+        const workspaceId = await getWorkspaceId();
+        let source: TokenSource;
+
+        if (workspaceId) {
+            await prisma.workspace.update({
+                where: { id: workspaceId },
+                data: { meta_access_token: finalToken },
+            });
+            source = 'workspace';
+        } else {
+            await prisma.globalConfig.upsert({
+                where:  { id: 'singleton' },
+                update: { meta_access_token: finalToken },
+                create: { id: 'singleton', meta_access_token: finalToken },
+            });
+            source = 'global';
+        }
+
+        invalidateAccountsCache();
+        revalidatePath('/accounts');
+        revalidatePath('/overview');
+        revalidatePath('/settings');
+
+        return {
+            success: true,
+            userName: check.userName,
+            accountsCount: check.accountsCount,
+            source,
+            longLived: exchanged,
+        };
+    } catch (err: any) {
+        return { success: false, error: err.message ?? 'Falha ao salvar o token.' };
     }
 }

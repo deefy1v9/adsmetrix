@@ -16,21 +16,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { NAV_ITEMS, ADMIN_EMAIL } from "@/lib/navigation";
+import { PageHeader } from "@/components/ui/PageHeader";
 
-const ADMIN_EMAIL = "deefy07@gmail.com";
-
-const ALL_TABS = [
-    { label: "Visão Geral",       href: "/overview" },
-    { label: "Gestor de Tráfego", href: "/gestor-trafego" },
-    { label: "Dashboard",         href: "/" },
-    { label: "Leads",             href: "/leads" },
-    { label: "Performance",       href: "/performance" },
-    { label: "Automações",        href: "/automations" },
-    { label: "WhatsApp",          href: "/whatsapp-reports" },
-    { label: "Logs",              href: "/logs" },
-    { label: "Notificações",      href: "/notifications" },
-    { label: "Configurações",     href: "/settings" },
-];
+// Same list the sidebar renders, so new pages (e.g. Google Ads) show up here automatically
+const ALL_TABS = NAV_ITEMS.map(i => ({ label: i.name, href: i.href }));
 
 type AdminUser = {
     id: string;
@@ -238,15 +228,12 @@ export default function AdminPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                    <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Painel Admin</h2>
-                    <p className="text-sm text-muted-foreground">Gerenciamento de usuários e permissões.</p>
-                </div>
-            </div>
+            <PageHeader
+                eyebrow="Sistema"
+                title="Painel Admin"
+                icon={Shield}
+                description="Gerenciamento de usuários, abas e contas liberadas para cada um."
+            />
 
             <GlassCard>
                 <div className="flex items-center gap-2 mb-4">

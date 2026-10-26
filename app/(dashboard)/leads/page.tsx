@@ -1,12 +1,16 @@
+import { Users } from "lucide-react";
 import { LeadsList } from "@/components/features/leads/LeadsList";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 export default function LeadsPage() {
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">Gerenciamento de Leads</h2>
-                <p className="text-muted-foreground">Visualize e gerencie todos os leads capturados.</p>
-            </div>
+            <PageHeader
+                eyebrow="Análise"
+                title="Leads"
+                icon={Users}
+                description="Visualize e gerencie todos os leads capturados pelas campanhas."
+            />
 
             <LeadsList />
         </div>

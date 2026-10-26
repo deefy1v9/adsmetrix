@@ -6,7 +6,10 @@ import { useDate } from "@/components/providers/DateContext";
 import { fetchTopCreativesAction } from "@/actions/meta-actions";
 import { MetaCreative } from "@/lib/balance-utils";
 import { CreativeCard } from "./CreativeCard";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { SectionTitle } from "@/components/ui/PageHeader";
 import { Sparkles, Trophy, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 'sales' | 'leads_form' | 'leads_gtm' }) {
@@ -37,56 +40,57 @@ export function CreativeGrid({ metricFilter = 'all' }: { metricFilter?: 'all' | 
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <div className="p-2 bg-yellow-500/10 rounded-lg">
-                        <Trophy className="h-5 w-5 text-yellow-500" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-foreground">Melhores Criativos</h2>
-                        <p className="text-sm text-muted-foreground">Os anúncios com melhor performance no período selecionado.</p>
-                    </div>
-                </div>
-
-                {totalPages > 1 && (
-                    <div className="flex items-center gap-2">
-                        <button
+        <div className="space-y-4">
+            <SectionTitle
+                title={
+                    <span className="inline-flex items-center gap-2">
+                        <Trophy className="h-4 w-4 text-warning" />
+                        Melhores criativos
+                    </span>
+                }
+                description="Os anúncios com melhor performance no período selecionado."
+                actions={totalPages > 1 && (
+                    <>
+                        <Button
+                            variant="outline"
+                            size="icon"
                             onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
                             disabled={currentPage === 0}
-                            className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 transition-colors border border-white/5"
+                            aria-label="Página anterior"
                         >
-                            <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <span className="text-sm font-medium text-muted-foreground min-w-12 text-center">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm font-medium text-muted-foreground min-w-12 text-center tabular">
                             {currentPage + 1} / {totalPages}
                         </span>
-                        <button
+                        <Button
+                            variant="outline"
+                            size="icon"
                             onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
                             disabled={currentPage === totalPages - 1}
-                            className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 transition-colors border border-white/5"
+                            aria-label="Próxima página"
                         >
-                            <ChevronRight className="h-5 w-5" />
-                        </button>
-                    </div>
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </>
                 )}
-            </div>
+            />
 
             {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {[1, 2, 3, 4].map((i) => (
-                        <GlassCard key={i} className="aspect-4/5 animate-pulse bg-white/5" />
+                        <Skeleton key={i} className="aspect-4/5 rounded-xl" />
                     ))}
                 </div>
             ) : creatives.length === 0 ? (
-                <GlassCard className="p-8 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center gap-2">
-                        <Sparkles className="h-8 w-8 opacity-20" />
-                        <p>Nenhum criativo encontrado nesta conta.</p>
-                    </div>
-                </GlassCard>
+                <EmptyState
+                    icon={Sparkles}
+                    title="Nenhum criativo encontrado"
+                    description="Esta conta não tem anúncios com entrega no período selecionado."
+                    className="py-10"
+                />
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {paginatedCreatives.map((creative) => (
                         <CreativeCard key={creative.id} creative={creative} />
                     ))}

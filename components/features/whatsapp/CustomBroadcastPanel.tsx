@@ -66,7 +66,7 @@ function AutomationRow({ automation, selected, onToggle, result }: RowProps) {
                 'w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all',
                 selected
                     ? 'border-primary/40 bg-primary/8'
-                    : 'border-border bg-background/30 hover:bg-white/5',
+                    : 'border-border bg-background/30 hover:bg-accent',
                 !hasDestination && 'opacity-40 cursor-not-allowed',
             )}
         >
@@ -75,7 +75,7 @@ function AutomationRow({ automation, selected, onToggle, result }: RowProps) {
                 'h-4 w-4 rounded border shrink-0 flex items-center justify-center transition-colors',
                 selected ? 'bg-primary border-primary' : 'border-border',
             )}>
-                {selected && <span className="text-black text-[10px] font-bold leading-none">✓</span>}
+                {selected && <span className="text-primary-foreground text-[10px] font-bold leading-none">✓</span>}
             </div>
 
             {/* Info */}
@@ -94,8 +94,8 @@ function AutomationRow({ automation, selected, onToggle, result }: RowProps) {
             {/* Send result indicator */}
             {result && (
                 result.success
-                    ? <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                    : <span title={result.error}><XCircle className="h-4 w-4 text-red-400 shrink-0" /></span>
+                    ? <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                    : <span title={result.error}><XCircle className="h-4 w-4 text-destructive shrink-0" /></span>
             )}
         </button>
     );
@@ -161,7 +161,7 @@ export function CustomBroadcastPanel() {
                     <h3 className="text-lg font-bold">Disparar Mensagem</h3>
                 </div>
                 <div className="space-y-2">
-                    {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />)}
+                    {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />)}
                 </div>
             </GlassCard>
         );
@@ -187,8 +187,8 @@ export function CustomBroadcastPanel() {
                 <div className={cn(
                     'flex items-center gap-2 text-sm p-3 rounded-lg',
                     failedCount === 0
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+                        ? 'bg-success/10 text-success border border-success/20'
+                        : 'bg-warning/10 text-warning border border-warning/20',
                 )}>
                     {failedCount === 0
                         ? <><CheckCircle2 className="h-4 w-4 shrink-0" /> Enviado para {sentCount} destino{sentCount !== 1 ? 's' : ''} com sucesso.</>

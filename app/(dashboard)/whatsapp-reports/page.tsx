@@ -343,38 +343,36 @@ function ReportSection() {
 
 import { BalanceAlertPanel } from '@/components/features/balance/BalanceAlertPanel';
 import { CustomBroadcastPanel } from '@/components/features/whatsapp/CustomBroadcastPanel';
+import { PageHeader, SectionTitle } from '@/components/ui/PageHeader';
+import { MessageSquare } from 'lucide-react';
 
 export default function WhatsAppReportsPage() {
     return (
-        <div className="space-y-10">
-            <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">WhatsApp</h1>
-                <p className="text-muted-foreground">
-                    Dispare mensagens personalizadas e configure alertas de saldo.
-                </p>
-            </div>
+        <div className="space-y-6">
+            <PageHeader
+                eyebrow="Automação"
+                title="WhatsApp"
+                icon={MessageSquare}
+                description="Dispare mensagens personalizadas e configure alertas de saldo."
+            />
 
             {/* Section 1: Custom Broadcast */}
             <div className="space-y-4">
-                <div>
-                    <h2 className="text-xl font-semibold text-foreground">Disparar Mensagem</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Envie uma mensagem personalizada para os grupos/números das suas automações.
-                    </p>
-                </div>
+                <SectionTitle
+                    title="Disparar mensagem"
+                    description="Envie uma mensagem personalizada para os grupos/números das suas automações."
+                />
                 <CustomBroadcastPanel />
             </div>
 
-            <div className="border-t border-white/5" />
+            <div className="border-t border-border" />
 
             {/* Section 2: Balance Alerts */}
             <div className="space-y-4">
-                <div>
-                    <h2 className="text-xl font-semibold text-foreground">Alertas de Saldo</h2>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Receba notificações no grupo interno quando o saldo de uma conta estiver abaixo do limite configurado.
-                    </p>
-                </div>
+                <SectionTitle
+                    title="Alertas de saldo"
+                    description="Receba notificações no grupo interno quando o saldo de uma conta estiver abaixo do limite configurado."
+                />
                 <BalanceAlertPanel />
             </div>
         </div>

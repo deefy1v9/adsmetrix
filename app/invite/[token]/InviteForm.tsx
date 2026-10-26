@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus } from "lucide-react";
 
+const INPUT_CLASS = "h-11 w-full rounded-lg border border-input bg-card px-3.5 text-sm text-foreground shadow-xs placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25 transition-colors";
+
 export default function InviteForm({ token, email }: { token: string; email: string }) {
     const router = useRouter();
     const [error, setError] = useState("");
@@ -43,43 +45,46 @@ export default function InviteForm({ token, email }: { token: string; email: str
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-                <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">E-mail</label>
+            <div className="space-y-1.5">
+                <label htmlFor="invite-email" className="text-sm font-medium text-foreground">E-mail</label>
                 <input
+                    id="invite-email"
                     type="email"
                     value={email}
                     disabled
-                    className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white/50 font-medium opacity-60 cursor-not-allowed"
+                    className="h-11 w-full cursor-not-allowed rounded-lg border border-input bg-muted px-3.5 text-sm text-muted-foreground"
                 />
             </div>
 
-            <div className="space-y-2">
-                <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Seu nome</label>
+            <div className="space-y-1.5">
+                <label htmlFor="invite-name" className="text-sm font-medium text-foreground">Seu nome</label>
                 <input
+                    id="invite-name"
                     type="text"
                     name="name"
                     required
                     autoComplete="name"
                     placeholder="Como quer ser chamado?"
-                    className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                    className={INPUT_CLASS}
                 />
             </div>
 
-            <div className="space-y-2">
-                <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Senha</label>
+            <div className="space-y-1.5">
+                <label htmlFor="invite-password" className="text-sm font-medium text-foreground">Senha</label>
                 <input
+                    id="invite-password"
                     type="password"
                     name="password"
                     required
                     minLength={8}
                     autoComplete="new-password"
                     placeholder="Mínimo 8 caracteres"
-                    className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                    className={INPUT_CLASS}
                 />
             </div>
 
             {error && (
-                <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 font-medium">
+                <div role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm font-medium text-destructive">
                     {error}
                 </div>
             )}
@@ -87,7 +92,7 @@ export default function InviteForm({ token, email }: { token: string; email: str
             <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-xl bg-primary text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
             >
                 {loading ? (
                     <Loader2 className="h-5 w-5 animate-spin" />

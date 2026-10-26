@@ -3,6 +3,12 @@
 import { authenticate, createSession, destroySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
+/** Only same-origin paths — never "//evil.com" or "/\evil.com", which browsers treat as external. */
+function safeNextPath(next: FormDataEntryValue | null): string {
+    if (typeof next !== "string" || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
+    return next;
+}
+
 export async function loginAction(formData: FormData) {
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
@@ -17,7 +23,7 @@ export async function loginAction(formData: FormData) {
     }
 
     await createSession(user.id, (user as any).role, (user as any).workspace_id, (user as any).is_super_admin);
-    redirect("/");
+    redirect(safeNextPath(formData.get("next")));
 }
 
 export async function logoutAction() {

@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
+  --breakpoint-xs: 30rem;
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
 
@@ -29,6 +31,19 @@
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
 
+  /* Brand lime (from the logo) — used for fills, indicators and focus, never as body text on light surfaces */
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
+  /* Readable brand tone for text/icons on the current surface */
+  --color-brand-ink: hsl(var(--brand-ink));
+
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-info: hsl(var(--info));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-surface: hsl(var(--surface));
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -42,75 +57,97 @@
 
 @layer base {
   :root {
-    --background: 220 18% 93%;
-    --foreground: 0 0% 8%;
+    --background: 220 20% 97%;
+    --foreground: 224 24% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
-    --card-muted: 220 14% 96%;
+    --card-foreground: 224 24% 10%;
+    --card-muted: 220 16% 97%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
+    --popover-foreground: 224 24% 10%;
 
-    --primary: 0 0% 8%;
+    --primary: 224 24% 10%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 220 16% 95%;
+    --secondary-foreground: 224 24% 12%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 0 0% 42%;
+    --muted: 220 16% 95%;
+    --muted-foreground: 220 9% 42%;
 
-    --accent: 220 14% 94%;
-    --accent-foreground: 0 0% 8%;
-    --accent-muted: 220 14% 97%;
+    --accent: 220 16% 94%;
+    --accent-foreground: 224 24% 10%;
+    --accent-muted: 220 16% 97%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 220 13% 82%;
-    --input: 220 13% 82%;
-    --ring: 0 0% 8%;
-    --radius: 1rem;
+    --brand: 77 82% 59%;
+    --brand-foreground: 82 60% 9%;
+    --brand-ink: 84 72% 30%;
+
+    --success: 152 69% 36%;
+    --warning: 32 95% 44%;
+    --info: 213 90% 50%;
+
+    --sidebar: 0 0% 100%;
+    --surface: 220 16% 98%;
+
+    --border: 220 14% 89%;
+    --input: 220 14% 86%;
+    --ring: 84 72% 38%;
+    --radius: 0.875rem;
 
     --glass-bg: 0 0% 100% / 1;
-    --glass-border: 220 13% 82% / 1;
+    --glass-border: 220 14% 89% / 1;
     --dot-color: rgba(0, 0, 0, 0.12);
   }
 
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 90%;
+    --background: 228 12% 5%;
+    --foreground: 220 14% 94%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 90%;
-    --card-muted: 0 0% 6%;
+    --card: 228 10% 8%;
+    --card-foreground: 220 14% 94%;
+    --card-muted: 228 10% 6%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 0 0% 90%;
+    --popover: 228 10% 9%;
+    --popover-foreground: 220 14% 94%;
 
-    --primary: 0 0% 92%;
-    --primary-foreground: 0 0% 8%;
+    --primary: 220 14% 94%;
+    --primary-foreground: 228 12% 7%;
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 228 8% 13%;
+    --secondary-foreground: 220 14% 92%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 58%;
+    --muted: 228 8% 12%;
+    --muted-foreground: 225 7% 60%;
 
-    --accent: 0 0% 14%;
-    --accent-foreground: 0 0% 90%;
-    --accent-muted: 0 0% 5%;
+    --accent: 228 8% 14%;
+    --accent-foreground: 220 14% 94%;
+    --accent-muted: 228 10% 6%;
 
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 0 0% 92%;
+    --brand: 77 82% 59%;
+    --brand-foreground: 82 60% 9%;
+    --brand-ink: 77 82% 62%;
 
-    --glass-bg: 0 0% 10% / 0.72;
-    --glass-border: 0 0% 22% / 0.6;
+    --success: 152 60% 52%;
+    --warning: 38 92% 58%;
+    --info: 213 94% 66%;
+
+    --sidebar: 228 12% 6.5%;
+    --surface: 228 10% 7%;
+
+    --border: 228 8% 15%;
+    --input: 228 8% 18%;
+    --ring: 77 82% 59%;
+
+    --glass-bg: 228 10% 8% / 1;
+    --glass-border: 228 8% 15% / 1;
     --dot-color: rgba(255, 255, 255, 0.06);
   }
 }
@@ -118,6 +155,10 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -136,44 +177,67 @@
   .text-secondary-label {
     @apply text-muted-foreground font-medium text-sm;
   }
+
+  ::selection {
+    background: hsl(var(--brand) / 0.35);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
 }
 
-/* Glassmorphism Utilities */
-.glass {
-  background: hsla(var(--glass-bg));
-  backdrop-filter: blur(12px);
-  border: 1px solid hsla(var(--glass-border));
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
-/* Light mode: solid white cards with clear shadow and border */
-.glass-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 4px 16px -4px rgba(0, 0, 0, 0.10),
-    0 12px 40px -8px rgba(0, 0, 0, 0.08);
-  @apply transition-all duration-300;
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Dark mode: restore glassmorphism */
-.dark .glass-card {
-  background: hsla(var(--glass-bg));
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid hsla(var(--glass-border));
-  box-shadow:
-    0 4px 24px -4px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
-}
+/* Surface classes live in the components layer so Tailwind utilities passed alongside them
+   (bg-*, border-*, shadow-*) still win — unlayered CSS would override every utility. */
+@layer components {
+  .glass {
+    background: hsla(var(--glass-bg));
+    backdrop-filter: blur(12px);
+    border: 1px solid hsla(var(--glass-border));
+  }
 
-.glass-button {
-  @apply bg-primary/5 hover:bg-primary/10 active:bg-primary/15 backdrop-blur-md border border-border transition-all text-foreground;
+  .glass-card {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow:
+      0 1px 2px rgba(16, 24, 40, 0.04),
+      0 1px 3px rgba(16, 24, 40, 0.03);
+    @apply transition-colors duration-200;
+  }
+
+  .dark .glass-card {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .glass-button {
+    @apply bg-primary/5 hover:bg-primary/10 active:bg-primary/15 backdrop-blur-md border border-border transition-all text-foreground;
+  }
+
+  /* Subtle dotted backdrop for empty states and hero areas */
+  .bg-dots {
+    background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -187,56 +251,62 @@
 /* ─── Chart CSS Variables ─────────────────────────────────────────────────── */
 :root {
   --chart-background: hsl(0 0% 100%);
-  --chart-foreground: hsl(0 0% 10%);
-  --chart-foreground-muted: hsl(0 0% 45%);
-  --chart-label: hsl(0 0% 45%);
-  --chart-line-primary: #1e3a8a;
-  --chart-line-secondary: #1e40af;
-  --chart-crosshair: rgba(30, 58, 138, 0.45);
-  --chart-grid: rgba(0, 0, 0, 0.07);
-  --chart-indicator-color: #1e3a8a;
-  --chart-indicator-secondary-color: #1e40af;
+  --chart-foreground: hsl(224 24% 10%);
+  --chart-foreground-muted: hsl(220 9% 45%);
+  --chart-label: hsl(220 9% 45%);
+  --chart-line-primary: #4d7c0f;
+  --chart-line-secondary: #2563eb;
+  --chart-crosshair: rgba(77, 124, 15, 0.45);
+  --chart-grid: rgba(16, 24, 40, 0.07);
+  --chart-indicator-color: #4d7c0f;
+  --chart-indicator-secondary-color: #2563eb;
   --chart-marker-background: hsl(0 0% 100%);
-  --chart-marker-border: hsl(0 0% 88%);
-  --chart-marker-foreground: hsl(0 0% 10%);
-  --chart-marker-badge-background: #1e3a8a;
+  --chart-marker-border: hsl(220 14% 88%);
+  --chart-marker-foreground: hsl(224 24% 10%);
+  --chart-marker-badge-background: #4d7c0f;
   --chart-marker-badge-foreground: #ffffff;
-  --chart-segment-background: rgba(30, 58, 138, 0.1);
-  --chart-segment-line: rgba(30, 58, 138, 0.45);
+  --chart-segment-background: rgba(77, 124, 15, 0.1);
+  --chart-segment-line: rgba(77, 124, 15, 0.45);
 }
 
 .dark {
-  --chart-background: hsl(0 0% 8%);
-  --chart-foreground: hsl(0 0% 90%);
-  --chart-foreground-muted: hsl(0 0% 55%);
-  --chart-label: hsl(0 0% 50%);
-  --chart-line-primary: #1e3a8a;
-  --chart-line-secondary: #1e40af;
-  --chart-crosshair: rgba(30, 58, 138, 0.45);
+  --chart-background: hsl(228 10% 8%);
+  --chart-foreground: hsl(220 14% 94%);
+  --chart-foreground-muted: hsl(225 7% 58%);
+  --chart-label: hsl(225 7% 52%);
+  --chart-line-primary: #bcec41;
+  --chart-line-secondary: #60a5fa;
+  --chart-crosshair: rgba(188, 236, 65, 0.45);
   --chart-grid: rgba(255, 255, 255, 0.06);
-  --chart-indicator-color: #1e3a8a;
-  --chart-indicator-secondary-color: #1e40af;
-  --chart-marker-background: hsl(0 0% 12%);
-  --chart-marker-border: hsl(0 0% 20%);
-  --chart-marker-foreground: hsl(0 0% 90%);
-  --chart-marker-badge-background: #1e3a8a;
-  --chart-marker-badge-foreground: #ffffff;
-  --chart-segment-background: rgba(30, 58, 138, 0.1);
-  --chart-segment-line: rgba(30, 58, 138, 0.4);
+  --chart-indicator-color: #bcec41;
+  --chart-indicator-secondary-color: #60a5fa;
+  --chart-marker-background: hsl(228 10% 11%);
+  --chart-marker-border: hsl(228 8% 20%);
+  --chart-marker-foreground: hsl(220 14% 94%);
+  --chart-marker-badge-background: #bcec41;
+  --chart-marker-badge-foreground: #1a2306;
+  --chart-segment-background: rgba(188, 236, 65, 0.1);
+  --chart-segment-line: rgba(188, 236, 65, 0.4);
 }
 
 /* ─── Card Entrance Animations ────────────────────────────────────────────── */
 @keyframes cardEntrance {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .glass-card {
-  animation: cardEntrance 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cardEntrance 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.glass-card:nth-child(2) { animation-delay: 0.05s; }
-.glass-card:nth-child(3) { animation-delay: 0.10s; }
-.glass-card:nth-child(4) { animation-delay: 0.15s; }
-.glass-card:nth-child(5) { animation-delay: 0.20s; }
-.glass-card:nth-child(6) { animation-delay: 0.25s; }
+.glass-card:nth-child(2) { animation-delay: 0.03s; }
+.glass-card:nth-child(3) { animation-delay: 0.06s; }
+.glass-card:nth-child(4) { animation-delay: 0.09s; }
+.glass-card:nth-child(5) { animation-delay: 0.12s; }
+.glass-card:nth-child(6) { animation-delay: 0.15s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-card {
+    animation: none;
+  }
+}

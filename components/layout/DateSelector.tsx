@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Calendar, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useDate, DateRangePreset } from "@/components/providers/DateContext";
+import { useDate, DateRangePreset, toLocalISODate } from "@/components/providers/DateContext";
 
 const datePresets: { label: string; value: DateRangePreset }[] = [
     { label: "Hoje",          value: "today" },
@@ -16,7 +16,7 @@ const datePresets: { label: string; value: DateRangePreset }[] = [
 ];
 
 function today() {
-    return new Date().toISOString().split("T")[0];
+    return toLocalISODate(new Date());
 }
 
 export function DateSelector({ className }: { className?: string }) {
@@ -62,21 +62,23 @@ export function DateSelector({ className }: { className?: string }) {
         <div className={cn("relative", className)} ref={dropdownRef}>
             <button
                 onClick={() => { setIsOpen(!isOpen); setShowCustom(false); }}
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
                 className={cn(
-                    "flex items-center gap-2 sm:gap-3 rounded-full border border-border bg-card px-4 sm:px-5 py-2 sm:py-2.5 transition-all hover:border-primary hover:shadow-md shadow-sm active:scale-[0.98]",
+                    "flex h-9 items-center gap-2 rounded-lg border border-input bg-card px-3 shadow-xs transition-colors hover:bg-accent",
                     className && "w-full justify-between",
-                    isOpen && "border-primary ring-4 ring-primary/10 shadow-md"
+                    isOpen && "border-ring ring-2 ring-ring/20"
                 )}
             >
-                <Calendar className={cn("h-4 w-4 shrink-0 transition-colors", isOpen ? "text-primary" : "text-foreground")} />
-                <span className="text-xs sm:text-sm font-bold text-foreground truncate max-w-[160px]">
+                <Calendar className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground truncate max-w-[180px]">
                     {label}
                 </span>
                 <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200", isOpen && "rotate-180")} />
             </button>
 
             {isOpen && (
-                <div className="absolute left-0 mt-3 z-50 w-[240px] rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in duration-200 origin-top-left overflow-hidden">
+                <div className="absolute right-0 mt-2 z-50 w-[240px] rounded-xl border border-border bg-popover shadow-xl animate-in fade-in zoom-in-95 duration-150 origin-top-right overflow-hidden">
                     {/* Presets */}
                     {!showCustom && (
                         <div className="p-1.5 grid gap-0.5">
@@ -87,14 +89,14 @@ export function DateSelector({ className }: { className?: string }) {
                                         key={item.value}
                                         onClick={() => handlePresetSelect(item.value)}
                                         className={cn(
-                                            "flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left transition-all duration-200",
+                                            "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors",
                                             isSelected
-                                                ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                                                : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                                                ? "bg-accent text-foreground font-medium"
+                                                : "hover:bg-accent/60 text-muted-foreground hover:text-foreground"
                                         )}
                                     >
                                         <span className="text-sm">{item.label}</span>
-                                        {isSelected && <Check className="h-4 w-4 shrink-0" />}
+                                        {isSelected && <Check className="h-4 w-4 shrink-0 text-brand-ink" />}
                                     </button>
                                 );
                             })}
@@ -103,14 +105,14 @@ export function DateSelector({ className }: { className?: string }) {
                             <button
                                 onClick={() => setShowCustom(true)}
                                 className={cn(
-                                    "flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 text-left transition-all duration-200 border-t border-border mt-1 pt-3",
+                                    "flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors mt-1",
                                     preset === "custom"
-                                        ? "bg-primary text-primary-foreground shadow-sm font-bold"
-                                        : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                                        ? "bg-accent text-foreground font-medium"
+                                        : "hover:bg-accent/60 text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                <span className="text-sm">Personalizado</span>
-                                {preset === "custom" && <Check className="h-4 w-4 shrink-0" />}
+                                <span className="text-sm">Personalizado…</span>
+                                {preset === "custom" && <Check className="h-4 w-4 shrink-0 text-brand-ink" />}
                             </button>
                         </div>
                     )}
@@ -151,7 +153,7 @@ export function DateSelector({ className }: { className?: string }) {
                             <button
                                 onClick={handleApplyCustom}
                                 disabled={!customFrom || !customTo}
-                                className="w-full rounded-xl bg-primary text-primary-foreground py-2 text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-40"
+                                className="w-full rounded-lg bg-primary text-primary-foreground py-2 text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40"
                             >
                                 Aplicar
                             </button>

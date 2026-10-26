@@ -1,5 +1,4 @@
-import { GlassCard } from "@/components/ui/GlassCard";
-import { Badge } from "@/components/ui/Badge";
+import { StatCard } from "@/components/ui/StatCard";
 import { ArrowUpRight, ArrowDownRight, DollarSign, Users, MousePointerClick, MessageSquare, Wallet, ShoppingCart, TrendingUp, Eye, CheckSquare, CreditCard, BarChart2 } from "lucide-react";
 import { DateRangePreset } from "@/components/providers/DateContext";
 import { calculateAvailableBalance, getPaymentLabel } from "@/lib/balance-utils";
@@ -186,41 +185,27 @@ export function KPICards({
     }).filter(c => c.show);
 
     const allCards = [balanceCard, ...metricCards];
+    const hasSpendCap = !!spendCap && spendCap > 0;
 
     return (
-        <div className="grid gap-3 md:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {allCards.map((card, i) => {
-                const Icon = card.icon;
-                return (
-                    <GlassCard key={card.key ?? i} className="flex flex-col justify-between hoverEffect">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{card.label}</span>
-                                <div className="p-2 bg-muted rounded-full border border-border">
-                                    <Icon className="h-4 w-4 text-foreground" />
-                                </div>
-                            </div>
-                            <div>
-                                <div className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">{card.value}</div>
-                                {card.key === 'balance' && spendCap && spendCap > 0 && (
-                                    <div className="mt-2">
-                                        <Badge variant="warning" className="text-[9px] px-1.5 font-bold">
-                                            Limite: {fmtCurrency(spendCap / 100)}
-                                        </Badge>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className="mt-6 flex items-center gap-2">
-                            {card.neutral ? (
-                                <Badge variant="neutral">{(card as any).sub}</Badge>
-                            ) : (
-                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-tight">{comparisonLabel}</span>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+            {allCards.map((card, i) => (
+                <StatCard
+                    key={card.key ?? i}
+                    label={card.label}
+                    value={card.value}
+                    icon={card.icon}
+                    highlight={card.key === 'balance'}
+                    hint={card.neutral ? (
+                        <>
+                            {(card as any).sub}
+                            {card.key === 'balance' && hasSpendCap && (
+                                <> · <span className="font-medium text-warning">Limite: {fmtCurrency(spendCap! / 100)}</span></>
                             )}
-                        </div>
-                    </GlassCard>
-                );
-            })}
+                        </>
+                    ) : comparisonLabel}
+                />
+            ))}
         </div>
     );
 }

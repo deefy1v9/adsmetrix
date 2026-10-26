@@ -2,7 +2,7 @@
 
 import { prisma } from './prisma';
 
-async function getAccessToken(accountId?: string, workspaceId?: string): Promise<string> {
+export async function getAccessToken(accountId?: string, workspaceId?: string): Promise<string> {
     try {
         // 1. Try to find account-specific token
         if (accountId) {

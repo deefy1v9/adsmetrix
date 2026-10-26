@@ -65,14 +65,14 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
-                    <Zap className="w-4 h-4 text-amber-500" />
+                    <Zap className="w-4 h-4 text-warning" />
                     Webhook
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-amber-500" />
+                        <Zap className="h-5 w-5 text-warning" />
                         Webhook de Captura (Externa)
                     </DialogTitle>
                     <DialogDescription>
@@ -93,7 +93,8 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
                             <Button
                                 onClick={handleGenerate}
                                 disabled={isLoading}
-                                className="w-full sm:w-auto mt-2 bg-amber-500 hover:bg-amber-600 text-white"
+                                variant="brand"
+                                className="w-full sm:w-auto mt-2"
                             >
                                 {isLoading ? (
                                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -131,9 +132,9 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
                             </div>
 
                             <div className="mt-4 p-3 bg-card border border-border rounded-md text-xs text-muted-foreground flex items-start gap-2">
-                                <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
+                                <ShieldAlert className="w-4 h-4 shrink-0 text-warning mt-0.5" />
                                 <p>
-                                    Mantenha este link seguro. Qualquer sistema que enviar dados POST para esta URL registrar\u00e1 um lead nesta conta de an\u00fancios.
+                                    Mantenha este link seguro. Qualquer sistema que enviar dados POST para esta URL registrará um lead nesta conta de anúncios.
                                 </p>
                             </div>
                         </div>
@@ -147,7 +148,6 @@ export function CustomWebhookDialog({ accountId, currentWebhookId, onUpdate }: C
                             size="sm"
                             onClick={handleGenerate}
                             disabled={isLoading}
-                            className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                         >
                             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                             Regerar e Invalidar URL Atual

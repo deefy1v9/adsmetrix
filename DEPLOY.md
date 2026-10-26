@@ -402,6 +402,31 @@ docker stack deploy -c /opt/bilula/docker-compose.infra.yml infra
 | `WHATSAPP_PHONE_NUMBER_ID`| ID do número WhatsApp Business         | `123456789`                                      |
 | `WHATSAPP_ACCESS_TOKEN`   | Token da API WhatsApp Cloud            | `EAAxxxxxxx...`                                  |
 | `NODE_ENV`                | Ambiente (setado automaticamente)      | `production`                                     |
+| `JWT_SECRET`              | **Obrigatório.** Assina as sessões de login. Sem ele o código usa um valor padrão público | `openssl rand -base64 48` |
+| `TOKEN_ENCRYPTION_KEY`    | Criptografa tokens do Google Ads no banco (cai no `JWT_SECRET` se ausente). Não troque depois de definir | `openssl rand -base64 48` |
+| `APP_URL`                 | URL pública lida em runtime (OAuth e MCP). Opcional: o padrão é `NEXT_PUBLIC_APP_URL` | `https://ads.metrixbr.com` |
+| `GOOGLE_ADS_CLIENT_ID`    | Cliente OAuth "Aplicativo da Web" no Google Cloud (API Google Ads ativada) | `123-abc.apps.googleusercontent.com` |
+| `GOOGLE_ADS_CLIENT_SECRET`| Secret do mesmo cliente OAuth          | `GOCSPX-...`                                     |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Developer token (Google Ads → Ferramentas → Central de API, na conta MCC) | `AbCdEf...` |
+| `GOOGLE_ADS_API_VERSION`  | Opcional. Versão da API (padrão `v26`; cada versão vive ~1 ano) | `v26` |
+| `MCP_CIMD_ALLOWED_HOSTS`  | Opcional. Habilita Client ID Metadata Documents para esses hosts | `claude.ai,claude.com` |
+
+As variáveis opcionais acima podem ser cadastradas como GitHub Secrets (o workflow só as grava no `.env`
+do servidor quando existem) ou adicionadas manualmente ao `.env` do servidor.
+
+### Google Ads — configuração
+
+1. No Google Cloud, ative a **Google Ads API** e crie um cliente OAuth do tipo **Aplicativo da Web**.
+2. Em "URIs de redirecionamento autorizados", adicione `https://ads.metrixbr.com/api/auth/google-ads/callback`.
+3. Na conta de administrador (MCC) do Google Ads, pegue o **developer token** em Ferramentas → Central de API.
+   Token em nível de teste só acessa contas de teste — solicite acesso Básico para usar contas reais.
+4. Defina as três variáveis `GOOGLE_ADS_*`, faça deploy e conecte em **Integrações → Google Ads**.
+
+### Claude (MCP) — conexão
+
+O servidor MCP fica em `https://ads.metrixbr.com/api/mcp`, protegido por OAuth 2.1 (registro dinâmico + PKCE).
+No Claude: **Configurações → Conectores → Adicionar conector personalizado**, cole a URL e conclua o login.
+As conexões ativas aparecem (e podem ser revogadas) em **Integrações → Claude (MCP)**.
 
 ---
 

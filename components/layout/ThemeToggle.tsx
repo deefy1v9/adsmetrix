@@ -1,40 +1,27 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
+import { useIsClient } from "@/hooks/use-is-client";
 
-export function ThemeToggle() {
-    const [theme, setTheme] = useState<"light" | "dark">("light");
-
-    useEffect(() => {
-        const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-        if (savedTheme) {
-            setTheme(savedTheme);
-            document.documentElement.classList.toggle("dark", savedTheme === "dark");
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            setTheme("dark");
-            document.documentElement.classList.add("dark");
-        }
-    }, []);
-
-    const toggleTheme = () => {
-        const newTheme = theme === "light" ? "dark" : "light";
-        setTheme(newTheme);
-        document.documentElement.classList.toggle("dark");
-        localStorage.setItem("theme", newTheme);
-    };
+export function ThemeToggle({ className }: { className?: string }) {
+    const { resolvedTheme, setTheme } = useTheme();
+    // resolvedTheme is unknown during SSR — render the dark-theme icon until hydrated
+    const isClient = useIsClient();
+    const isDark = isClient ? resolvedTheme === "dark" : true;
 
     return (
         <button
-            onClick={toggleTheme}
-            className="relative rounded-full border border-border bg-card p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground shadow-sm"
-            aria-label="Alternar tema"
-        >
-            {theme === "light" ? (
-                <Moon className="h-5 w-5" />
-            ) : (
-                <Sun className="h-5 w-5" />
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                className
             )}
+            aria-label={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
+            title={isDark ? "Tema claro" : "Tema escuro"}
+        >
+            {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
         </button>
     );
 }

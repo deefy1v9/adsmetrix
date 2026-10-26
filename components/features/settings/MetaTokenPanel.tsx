@@ -15,6 +15,27 @@ const SOURCE_LABEL: Record<string, string> = {
     env: "Variável de ambiente",
 };
 
+/**
+ * Meta's raw errors are opaque ("Session has expired on..."). Turn the common ones
+ * into the action the user actually needs to take.
+ */
+function errorHint(error: string | undefined): string | null {
+    if (!error) return null;
+    const e = error.toLowerCase();
+
+    if (e.includes("session has expired") || e.includes("session is invalid") || e.includes("expired")) {
+        return "O token foi salvo, mas já venceu — não é falha de gravação. Tokens do Graph API Explorer duram cerca de 1h. " +
+            "Gere um token de Usuário do Sistema (Gerenciador de Negócios → Usuários do Sistema → Gerar novo token, sem data de expiração) para que ele não vença.";
+    }
+    if (e.includes("permission") || e.includes("ads_read") || e.includes("(#200)")) {
+        return "Faltam permissões no token. Ao gerar, marque ads_read, leads_retrieval e pages_show_list.";
+    }
+    if (e.includes("malformed") || e.includes("cannot parse")) {
+        return "O token parece incompleto — confira se ele foi copiado inteiro, sem espaços ou quebras de linha.";
+    }
+    return null;
+}
+
 /** expiresAt === 0 means the token never expires (System User token). */
 function describeExpiry(expiresAt: number | null | undefined): { text: string; danger: boolean } {
     if (expiresAt === 0) return { text: "Não expira (Usuário do Sistema)", danger: false };
@@ -124,10 +145,15 @@ export function MetaTokenPanel() {
                                     })()}
                                 </>
                             ) : (
-                                <p className="text-destructive flex items-start gap-1">
-                                    <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-                                    <span>{status.error}</span>
-                                </p>
+                                <>
+                                    <p className="text-destructive flex items-start gap-1">
+                                        <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                                        <span>{status.error}</span>
+                                    </p>
+                                    {errorHint(status.error) && (
+                                        <p className="text-amber-600 dark:text-amber-400">{errorHint(status.error)}</p>
+                                    )}
+                                </>
                             )}
                             {status.appCredentialsConfigured === false && (
                                 <p className="text-amber-600 dark:text-amber-400">
@@ -148,6 +174,15 @@ export function MetaTokenPanel() {
                             <span>Nenhum token configurado — por isso a lista de contas aparece vazia.</span>
                         </p>
                     )}
+
+                    {status.storedIn && (
+                        <p className="pt-1 border-t border-border/50 mt-1">
+                            Persistência — workspace: <strong>{status.storedIn.workspace ? "sim" : "não"}</strong>
+                            {" · "}global: <strong>{status.storedIn.global ? "sim" : "não"}</strong>
+                            {" · "}env: <strong>{status.storedIn.env ? "sim" : "não"}</strong>
+                            {status.workspaceId === null && " · sessão sem workspace"}
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -156,7 +191,9 @@ export function MetaTokenPanel() {
                     type="password"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
-                    placeholder="Cole aqui o novo token de acesso"
+                    placeholder={status?.hasToken
+                        ? "Cole um novo token para substituir o atual"
+                        : "Cole aqui o token de acesso"}
                     className="h-8 text-xs"
                     autoComplete="off"
                 />
@@ -185,6 +222,8 @@ export function MetaTokenPanel() {
             )}
 
             <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Por segurança o token nunca é devolvido ao navegador — o campo acima fica sempre vazio
+                ao reabrir a página. O que indica se ele está salvo é a linha de status, não o campo.
                 O token é validado na Meta antes de ser salvo e substitui o anterior deste workspace.
                 Use um token de Usuário do Sistema (Gerenciador de Negócios → Configurações → Usuários do Sistema)
                 para não precisar renová-lo a cada 60 dias. Permissões necessárias: <code>ads_read</code>,

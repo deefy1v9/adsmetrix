@@ -98,13 +98,13 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
     };
 
     if (loading) {
-        return <div className="p-8 text-center text-zinc-400">Carregando calendário...</div>;
+        return <div className="p-8 text-center text-sm text-muted-foreground">Carregando calendário...</div>;
     }
 
     const days = Array.from({ length: data.daysInMonth }, (_, i) => i + 1);
 
     return (
-        <GlassCard className="border-border bg-card overflow-hidden shadow-sm">
+        <GlassCard className="border-border bg-card overflow-hidden shadow-sm p-0 sm:p-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-5 border-b border-border">
                 <h3 className="text-sm sm:text-lg font-black text-foreground tracking-tight">Evolução Diária de Leads</h3>
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -172,7 +172,7 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                                     className="w-14 px-1.5 py-0.5 text-xs rounded border border-primary bg-background text-foreground focus:outline-none"
                                                     placeholder="10"
                                                 />
-                                                <button onClick={() => confirmEdit(acc.id)} className="text-emerald-500 hover:text-emerald-400">
+                                                <button onClick={() => confirmEdit(acc.id)} className="text-success hover:text-success/80">
                                                     <Check className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button onClick={cancelEdit} className="text-muted-foreground hover:text-foreground">
@@ -206,13 +206,13 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                             <td key={day} className="border-b border-r border-border p-1 text-center transition-all">
                                                 {leads > 0 ? (
                                                     <div className="flex flex-col items-center gap-0.5">
-                                                        <div className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-[#1C1C1C] text-primary text-[10px] font-black shadow-sm">
+                                                        <div className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-brand/15 text-brand-ink text-[10px] font-black">
                                                             {leads}
                                                         </div>
                                                         {cpl && cplValue !== null && (
                                                             <span className={cn(
                                                                 "text-[8px] font-bold leading-none",
-                                                                cplValue <= threshold ? "text-emerald-500" : "text-red-500"
+                                                                cplValue <= threshold ? "text-success" : "text-destructive"
                                                             )}>
                                                                 {cpl}
                                                             </span>
@@ -230,7 +230,7 @@ export function MonthlyCalendar({ data, onMonthChange, onRefresh, loading }: Mon
                                             {avgCPL && avgCPLValue !== null && (
                                                 <span className={cn(
                                                     "text-[9px] font-bold leading-none",
-                                                    avgCPLValue <= threshold ? "text-emerald-500" : "text-red-500"
+                                                    avgCPLValue <= threshold ? "text-success" : "text-destructive"
                                                 )}>
                                                     {avgCPL}
                                                 </span>

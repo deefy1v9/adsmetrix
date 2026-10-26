@@ -4,12 +4,19 @@ import { GlassCard } from "@/components/ui/GlassCard";
 export default function DashboardLoading() {
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <Skeleton className="h-9 w-36" />
-                <Skeleton className="h-8 w-40" />
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex items-start gap-3">
+                    <Skeleton className="hidden sm:block h-11 w-11 shrink-0 rounded-xl" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-3 w-16" />
+                        <Skeleton className="h-8 w-40" />
+                        <Skeleton className="h-4 w-64 max-w-full" />
+                    </div>
+                </div>
+                <Skeleton className="h-9 w-32 rounded-lg" />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {Array.from({ length: 4 }).map((_, i) => <SkeletonKPICard key={i} />)}
             </div>
 

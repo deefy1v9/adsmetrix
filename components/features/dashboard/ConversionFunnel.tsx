@@ -157,12 +157,13 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
             width="100%"
             preserveAspectRatio="xMidYMid meet"
             style={{ overflow: 'visible', display: 'block' }}
+            className="text-foreground"
         >
             <defs>
                 <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stopColor="#1e3a8a" />
-                    <stop offset="60%"  stopColor="#1e40af" />
-                    <stop offset="100%" stopColor="#2563eb" />
+                    <stop offset="0%"   style={{ stopColor: 'var(--chart-line-primary)', stopOpacity: 0.55 }} />
+                    <stop offset="60%"  style={{ stopColor: 'var(--chart-line-primary)', stopOpacity: 0.8 }} />
+                    <stop offset="100%" style={{ stopColor: 'var(--chart-line-primary)', stopOpacity: 1 }} />
                 </linearGradient>
                 <filter id="waveBlur">
                     <feGaussianBlur stdDeviation="1.5" />
@@ -204,7 +205,7 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
                         <line
                             x1={x} y1={top - 18}
                             x2={x} y2={bot + 18}
-                            stroke="white"
+                            stroke="currentColor"
                             strokeOpacity="0.25"
                             strokeWidth="1"
                             strokeDasharray="3 3"
@@ -217,8 +218,9 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
                                     x={x - 22} y={top - 38}
                                     width={44} height={18}
                                     rx={9}
-                                    fill={i === 0 ? 'white' : '#1e1b4b'}
-                                    fillOpacity={i === 0 ? 0.15 : 0.8}
+                                    style={i === 0
+                                        ? { fill: 'var(--chart-marker-background)', stroke: 'var(--chart-marker-border)' }
+                                        : { fill: 'var(--chart-marker-badge-background)' }}
                                 />
                                 <text
                                     x={x} y={top - 25}
@@ -226,7 +228,7 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
                                     dominantBaseline="middle"
                                     fontSize={9}
                                     fontWeight="700"
-                                    fill="white"
+                                    style={{ fill: i === 0 ? 'var(--chart-marker-foreground)' : 'var(--chart-marker-badge-foreground)' }}
                                     fontFamily="ui-sans-serif,system-ui,sans-serif"
                                 >
                                     {topLabel}
@@ -239,7 +241,7 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
                             x={x} y={bot + 30}
                             textAnchor="middle"
                             fontSize={9}
-                            fill="rgba(255,255,255,0.5)"
+                            style={{ fill: 'var(--chart-foreground-muted)' }}
                             fontFamily="ui-sans-serif,system-ui,sans-serif"
                         >
                             {fmtShort(stage.value)}
@@ -251,7 +253,7 @@ function WaveSVG({ stages, width, height }: WaveSVGProps) {
                             textAnchor="middle"
                             fontSize={8}
                             fontWeight="600"
-                            fill="rgba(255,255,255,0.35)"
+                            style={{ fill: 'var(--chart-label)' }}
                             fontFamily="ui-sans-serif,system-ui,sans-serif"
                         >
                             {stage.label}
@@ -280,24 +282,24 @@ export function ConversionFunnel(props: ConversionFunnelProps) {
     const overallRate = first.value > 0 ? ((last.value / first.value) * 100) : null;
 
     return (
-        <GlassCard className="col-span-full lg:col-span-3 flex flex-col gap-0 overflow-hidden p-0">
+        <GlassCard className="col-span-full lg:col-span-3 flex flex-col gap-0 overflow-hidden p-0 sm:p-0">
             {/* Header */}
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
                 <div>
-                    <h3 className="text-sm font-bold text-foreground">Funil de Conversão</h3>
+                    <h3 className="text-base font-semibold tracking-tight text-foreground">Funil de Conversão</h3>
                     <div className="flex items-center gap-4 mt-2">
                         <div>
-                            <p className="text-lg font-bold text-foreground leading-none">{fmtShort(first.value)}</p>
+                            <p className="text-lg font-bold text-foreground leading-none tabular">{fmtShort(first.value)}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">{first.label}</p>
                         </div>
                         {overallRate !== null && (
                             <div>
-                                <p className="text-lg font-bold text-primary leading-none">{overallRate.toFixed(1)}%</p>
+                                <p className="text-lg font-bold text-brand-ink leading-none tabular">{overallRate.toFixed(1)}%</p>
                                 <p className="text-[10px] text-muted-foreground mt-0.5">Taxa geral</p>
                             </div>
                         )}
                         <div>
-                            <p className="text-lg font-bold text-foreground leading-none">{fmtShort(last.value)}</p>
+                            <p className="text-lg font-bold text-foreground leading-none tabular">{fmtShort(last.value)}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">{last.label}</p>
                         </div>
                     </div>
@@ -313,7 +315,7 @@ export function ConversionFunnel(props: ConversionFunnelProps) {
                                 'px-2 py-1 rounded-md text-[10px] font-semibold transition-all',
                                 mode === m
                                     ? 'bg-primary text-primary-foreground'
-                                    : 'bg-white/5 text-muted-foreground hover:bg-white/10',
+                                    : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground',
                             )}
                         >
                             {MODE_LABELS[m]}

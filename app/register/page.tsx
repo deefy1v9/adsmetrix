@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Logo } from "@/components/ui/Logo";
+import { BrandMark } from "@/components/ui/Logo";
 import { Loader2, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { APP_NAME } from "@/lib/brand";
+
+const INPUT_CLASS = "h-11 w-full rounded-lg border border-input bg-card px-3.5 text-sm text-foreground shadow-xs placeholder:text-muted-foreground/60 focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25 transition-colors";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -47,70 +50,73 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#0A0A0A] relative overflow-hidden">
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-3xl" />
-                <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-primary/3 to-transparent rounded-full blur-3xl" />
-            </div>
-
-            <div className="relative z-10 w-full max-w-sm mx-auto px-6 py-10">
-                <div className="flex flex-col items-center mb-10">
-                    <Logo className="scale-150 mb-6" />
-                    <h1 className="text-2xl font-black text-white tracking-tight">Criar conta</h1>
-                    <p className="text-sm text-white/40 mt-1 font-medium">Configure seu workspace em minutos</p>
+        <main className="flex min-h-dvh items-center justify-center bg-background px-6 py-12">
+            <div className="w-full max-w-sm">
+                <div className="mb-8 flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card shadow-sm">
+                        <BrandMark className="h-5 w-5" />
+                    </div>
+                    <span className="text-lg font-bold tracking-tight">{APP_NAME}</span>
                 </div>
 
+                <h1 className="text-2xl font-bold tracking-tight">Criar conta</h1>
+                <p className="mt-1.5 mb-8 text-sm text-muted-foreground">Configure seu workspace em minutos.</p>
+
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Nome</label>
+                    <div className="space-y-1.5">
+                        <label htmlFor="name" className="text-sm font-medium text-foreground">Nome</label>
                         <input
+                            id="name"
                             type="text"
                             name="name"
                             required
                             autoComplete="name"
                             placeholder="Seu nome"
-                            className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                            className={INPUT_CLASS}
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">E-mail</label>
+                    <div className="space-y-1.5">
+                        <label htmlFor="email" className="text-sm font-medium text-foreground">E-mail</label>
                         <input
+                            id="email"
                             type="email"
                             name="email"
                             required
                             autoComplete="email"
                             placeholder="seu@email.com"
-                            className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                            className={INPUT_CLASS}
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Senha</label>
+                    <div className="space-y-1.5">
+                        <label htmlFor="password" className="text-sm font-medium text-foreground">Senha</label>
                         <input
+                            id="password"
                             type="password"
                             name="password"
                             required
                             minLength={8}
                             autoComplete="new-password"
                             placeholder="Mínimo 8 caracteres"
-                            className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                            className={INPUT_CLASS}
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Nome da empresa / workspace</label>
+                    <div className="space-y-1.5">
+                        <label htmlFor="workspaceName" className="text-sm font-medium text-foreground">Nome da empresa / workspace</label>
                         <input
+                            id="workspaceName"
                             type="text"
                             name="workspaceName"
                             required
                             placeholder="Ex: Minha Agência"
-                            className="w-full h-12 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-white font-medium placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                            className={INPUT_CLASS}
                         />
                     </div>
 
                     {error && (
-                        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 font-medium">
+                        <div role="alert" className="rounded-lg border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm font-medium text-destructive">
                             {error}
                         </div>
                     )}
@@ -118,7 +124,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-12 rounded-xl bg-primary text-black font-bold text-sm flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 disabled:pointer-events-none"
+                        className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-60"
                     >
                         {loading ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -131,13 +137,13 @@ export default function RegisterPage() {
                     </button>
                 </form>
 
-                <p className="text-center text-xs text-white/30 mt-8">
+                <p className="mt-8 text-center text-xs text-muted-foreground">
                     Já tem uma conta?{" "}
-                    <Link href="/login" className="text-primary hover:underline font-medium">
+                    <Link href="/login" className="font-medium text-foreground underline-offset-4 hover:underline">
                         Fazer login
                     </Link>
                 </p>
             </div>
-        </div>
+        </main>
     );
 }

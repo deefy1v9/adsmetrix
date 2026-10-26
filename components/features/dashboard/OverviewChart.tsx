@@ -8,6 +8,7 @@ import {
     XAxis,
     YAxis,
     ChartTooltip,
+    chartCssVars,
 } from "@/components/ui/area-chart";
 import { useMemo } from "react";
 
@@ -41,6 +42,8 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
     // Determine which series to show (prefer conversations if non-zero)
     const hasConversations = chartData.some(d => d.conversations > 0);
     const hasLeads = chartData.some(d => d.leads > 0);
+    // The chart needs at least two days to draw an axis; with fewer it renders bogus dates
+    const hasData = chartData.length >= 2 && chartData.some(d => d.spend > 0 || d.leads > 0 || d.conversations > 0);
 
     return (
         <GlassCard className="col-span-full lg:col-span-4">
@@ -51,6 +54,11 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                 </p>
             </div>
 
+            {!hasData ? (
+                <div className="flex h-[240px] sm:h-[300px] items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                    Sem investimento nos últimos 7 dias.
+                </div>
+            ) : (
             <div className="h-[240px] sm:h-[300px] w-full">
                 <AreaChart
                     data={chartData}
@@ -68,9 +76,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {hasConversations && (
                         <Area
                             dataKey="conversations"
-                            fill="#1e3a8a"
+                            fill={chartCssVars.linePrimary}
                             fillOpacity={0.3}
-                            stroke="#1e3a8a"
+                            stroke={chartCssVars.linePrimary}
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -83,9 +91,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {!hasConversations && hasLeads && (
                         <Area
                             dataKey="leads"
-                            fill="#1e3a8a"
+                            fill={chartCssVars.linePrimary}
                             fillOpacity={0.3}
-                            stroke="#1e3a8a"
+                            stroke={chartCssVars.linePrimary}
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -98,9 +106,9 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     {!hasConversations && !hasLeads && (
                         <Area
                             dataKey="spend"
-                            fill="#1e40af"
+                            fill={chartCssVars.lineSecondary}
                             fillOpacity={0.3}
-                            stroke="#1e40af"
+                            stroke={chartCssVars.lineSecondary}
                             strokeWidth={2.5}
                             gradientToOpacity={0}
                             fadeEdges
@@ -125,17 +133,17 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                         showDots
                         rows={(point) => [
                             ...(hasConversations ? [{
-                                color: "#1e3a8a",
+                                color: chartCssVars.linePrimary,
                                 label: "Conversas",
                                 value: typeof point.conversations === "number" ? point.conversations : 0,
                             }] : []),
                             ...(!hasConversations && hasLeads ? [{
-                                color: "#1e3a8a",
+                                color: chartCssVars.linePrimary,
                                 label: "Leads",
                                 value: typeof point.leads === "number" ? point.leads : 0,
                             }] : []),
                             {
-                                color: "#1e40af",
+                                color: chartCssVars.lineSecondary,
                                 label: "Gasto",
                                 value:
                                     typeof point.spend === "number"
@@ -149,6 +157,7 @@ export function OverviewChart({ data }: { data: WeeklyDay[] }) {
                     />
                 </AreaChart>
             </div>
+            )}
         </GlassCard>
     );
 }

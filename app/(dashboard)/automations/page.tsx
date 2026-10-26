@@ -41,6 +41,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
     Loader2, Plus, Wifi, WifiOff, MessageSquare, Pencil, Trash2,
     Play, ArrowLeft, CheckSquare, Square, Terminal, Clock, Zap, Search,
@@ -1551,9 +1552,12 @@ export default function AutomationsPage() {
     if (view.type === "form") {
         return (
             <div className="space-y-6">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">Automações</h1>
-                </div>
+                <PageHeader
+                    eyebrow="Automação"
+                    title="Automações"
+                    icon={Zap}
+                    description="Configure relatórios automáticos multi-conta enviados via WhatsApp."
+                />
                 <AutomationForm
                     initial={view.editing}
                     accounts={accounts}
@@ -1565,21 +1569,18 @@ export default function AutomationsPage() {
     }
 
     return (
-        <div className="space-y-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1">Automações</h1>
-                    <p className="text-sm text-muted-foreground">
-                        {activeTab === "reports"
-                            ? "Configure relatórios automáticos multi-conta enviados via WhatsApp."
-                            : activeTab === "disparo"
-                            ? "Envie mensagens automáticas para clientes em dias configurados."
-                            : "Receba notificações quando o saldo de uma conta estiver abaixo do limite."}
-                    </p>
-                </div>
-                {activeTab === "reports" && (
-                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-start sm:justify-end">
+        <div className="space-y-6">
+            <PageHeader
+                eyebrow="Automação"
+                title="Automações"
+                icon={Zap}
+                description={activeTab === "reports"
+                    ? "Configure relatórios automáticos multi-conta enviados via WhatsApp."
+                    : activeTab === "disparo"
+                    ? "Envie mensagens automáticas para clientes em dias configurados."
+                    : "Receba notificações quando o saldo de uma conta estiver abaixo do limite."}
+                actions={activeTab === "reports" && (
+                    <>
                         {automations.filter(a => a.enabled).length > 0 && (
                             <>
                                 <select
@@ -1587,7 +1588,7 @@ export default function AutomationsPage() {
                                     onChange={e => handleOverridePresetChange(e.target.value)}
                                     disabled={!!sendAll?.running || savingPreset}
                                     title="Período de envio"
-                                    className="h-9 px-2 text-xs rounded-xl border border-border bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                    className="h-9 rounded-lg border border-input bg-card px-3 text-sm text-foreground shadow-xs focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25 disabled:opacity-50"
                                 >
                                     <option value="">Período original</option>
                                     {DATE_PRESETS.map(p => (
@@ -1625,9 +1626,9 @@ export default function AutomationsPage() {
                         >
                             <Plus className="w-4 h-4" /> Nova
                         </Button>
-                    </div>
+                    </>
                 )}
-            </div>
+            />
 
             {/* Tabs */}
             <div className="flex gap-1 p-1 bg-muted rounded-xl w-fit flex-wrap">

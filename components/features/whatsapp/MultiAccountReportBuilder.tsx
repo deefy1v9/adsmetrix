@@ -498,9 +498,9 @@ export function MultiAccountReportBuilder() {
                     <h3 className="text-base font-bold text-foreground mb-4">Prévia do Relatório</h3>
 
                     {reportPreview ? (
-                        <div className="bg-[#1C1C1C] rounded-2xl p-5 border border-white/5">
+                        <div className="bg-surface rounded-2xl p-5 border border-border">
                             <Badge variant="neon" className="font-black mb-3">WHATSAPP PREVIEW</Badge>
-                            <pre className="text-sm text-[#FAFAFA] font-medium whitespace-pre-wrap leading-relaxed opacity-90 font-sans">
+                            <pre className="text-sm text-foreground font-medium whitespace-pre-wrap leading-relaxed opacity-90 font-sans">
                                 {reportPreview}
                             </pre>
                         </div>
@@ -526,17 +526,17 @@ export function MultiAccountReportBuilder() {
                 {sendResult && (
                     <GlassCard className={cn(
                         'animate-in slide-in-from-bottom-4 border-2',
-                        sendResult.success ? 'border-primary/50 bg-primary/5' : 'border-red-500/50 bg-red-100/50'
+                        sendResult.success ? 'border-primary/50 bg-primary/5' : 'border-destructive/40 bg-destructive/5'
                     )}>
                         <div className="flex items-center gap-3">
                             <div className={cn(
                                 'w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-black',
-                                sendResult.success ? 'bg-primary text-primary-foreground' : 'bg-red-500 text-white'
+                                sendResult.success ? 'bg-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground'
                             )}>
                                 {sendResult.success ? '✓' : '✗'}
                             </div>
                             <div>
-                                <p className={cn('font-black', sendResult.success ? 'text-foreground' : 'text-red-500')}>
+                                <p className={cn('font-black', sendResult.success ? 'text-foreground' : 'text-destructive')}>
                                     {sendResult.success ? 'Relatório enviado!' : 'Falha no envio'}
                                 </p>
                                 {!sendResult.success && (

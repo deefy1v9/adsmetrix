@@ -24,6 +24,7 @@ model User {
   workspace       Workspace? @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
 
   password_resets PasswordReset[]
+  oauth_grants    OAuthGrant[]
 
   created_at      DateTime   @default(now())
   updated_at      DateTime   @updatedAt
@@ -78,6 +79,9 @@ model Workspace {
   invites             Invite[]
   automations         ReportAutomation[]
   wa_blast_automations WaBlastAutomation[]
+
+  google_ads_connection GoogleAdsConnection?
+  google_ads_accounts   GoogleAdsAccount[]
 }
 
 model Setting {
@@ -268,4 +272,125 @@ model ReportAutomation {
   updated_at     DateTime  @updatedAt
 
   @@index([workspace_id])
+}
+
+
+/* ------------------------------------------------------------------ *
+ *  Google Ads                                                         *
+ * ------------------------------------------------------------------ */
+
+// One Google login per workspace. Tokens are encrypted at rest (lib/crypto.ts).
+model GoogleAdsConnection {
+  id                      String    @id @default(uuid())
+  workspace_id            String    @unique
+  workspace               Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  google_email            String?
+  refresh_token           String
+  access_token            String?
+  access_token_expires_at DateTime?
+  connected_by_user_id    String?
+  last_synced_at          DateTime?
+  last_error              String?
+
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+}
+
+model GoogleAdsAccount {
+  id                String    @id @default(uuid())
+  workspace_id      String
+  workspace         Workspace @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+
+  customer_id       String    // 10 digits, no dashes
+  descriptive_name  String
+  currency_code     String    @default("BRL")
+  time_zone         String?
+  is_manager        Boolean   @default(false)
+  login_customer_id String?   // manager (MCC) used to reach this customer — sent as login-customer-id
+  status            String    @default("ENABLED")
+  is_hidden         Boolean   @default(false)
+
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  @@unique([workspace_id, customer_id])
+  @@index([workspace_id])
+}
+
+/* ------------------------------------------------------------------ *
+ *  OAuth 2.1 authorization server for the MCP endpoint (/api/mcp)     *
+ * ------------------------------------------------------------------ */
+
+model OAuthClient {
+  id                         String   @id @default(uuid())
+  client_id                  String   @unique
+  client_secret_hash         String?
+  client_name                String?
+  client_uri                 String?
+  logo_uri                   String?
+  redirect_uris              Json     // string[]
+  token_endpoint_auth_method String   @default("none")
+  // true when client_id is a URL to a Client ID Metadata Document (CIMD)
+  is_metadata_document       Boolean  @default(false)
+
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  codes                      OAuthAuthorizationCode[]
+  grants                     OAuthGrant[]
+}
+
+model OAuthAuthorizationCode {
+  id                    String      @id @default(uuid())
+  code_hash             String      @unique
+  client_id             String
+  client                OAuthClient @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  user_id               String
+  workspace_id          String
+  redirect_uri          String
+  code_challenge        String
+  code_challenge_method String      @default("S256")
+  scope                 String
+  resource              String?
+  expires_at            DateTime
+  used_at               DateTime?
+  created_at            DateTime    @default(now())
+
+  @@index([client_id])
+}
+
+// An authorized connection (user + client). Listed in Settings so the user can revoke it.
+model OAuthGrant {
+  id           String      @id @default(uuid())
+  client_id    String
+  client       OAuthClient @relation(fields: [client_id], references: [client_id], onDelete: Cascade)
+  user_id      String
+  user         User        @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  workspace_id String
+  scope        String
+  resource     String?
+  last_used_at DateTime?
+  revoked_at   DateTime?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+
+  tokens       OAuthToken[]
+
+  @@index([user_id])
+  @@index([workspace_id])
+}
+
+// Access and refresh tokens — only their SHA-256 is stored.
+model OAuthToken {
+  id         String     @id @default(uuid())
+  grant_id   String
+  grant      OAuthGrant @relation(fields: [grant_id], references: [id], onDelete: Cascade)
+  type       String     // "access" | "refresh"
+  token_hash String     @unique
+  expires_at DateTime
+  revoked_at DateTime?
+  created_at DateTime   @default(now())
+
+  @@index([grant_id])
 }

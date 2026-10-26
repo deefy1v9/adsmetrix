@@ -29,11 +29,11 @@ function daysUntil(iso: string): number {
 }
 
 function urgencyColor(days: number): string {
-    if (days < 0) return 'text-zinc-500';
-    if (days === 0) return 'text-red-400';
-    if (days === 1) return 'text-amber-400';
-    if (days <= 3) return 'text-yellow-400';
-    return 'text-emerald-400';
+    if (days < 0) return 'text-muted-foreground';
+    if (days === 0) return 'text-destructive';
+    if (days === 1) return 'text-warning';
+    if (days <= 3) return 'text-warning';
+    return 'text-success';
 }
 
 function urgencyLabel(days: number): string {
@@ -69,7 +69,7 @@ export function CampaignEndDatesPanel() {
                     <CalendarClock className="h-5 w-5 text-muted-foreground" />
                     <h3 className="text-lg font-bold">Campanhas Ativas com Data de Término</h3>
                     {!loading && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/20">
                             {campaigns.length}
                         </span>
                     )}
@@ -82,13 +82,13 @@ export function CampaignEndDatesPanel() {
             </div>
 
             {error && (
-                <div className="text-sm p-3 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">
+                <div className="text-sm p-3 rounded-lg bg-destructive/10 text-destructive border border-destructive/20">
                     {error}
                 </div>
             )}
 
             {!loading && !error && campaigns.length === 0 && (
-                <div className="text-sm p-4 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-center">
+                <div className="text-sm p-4 rounded-lg bg-success/10 text-success border border-success/20 text-center">
                     Nenhuma campanha ativa com data de término configurada.
                 </div>
             )}
@@ -100,11 +100,11 @@ export function CampaignEndDatesPanel() {
                         return (
                             <div
                                 key={`${c.accountId}-${c.campaignId}`}
-                                className="p-4 rounded-xl bg-white/5 border border-border hover:border-amber-500/40 transition-colors space-y-2"
+                                className="p-4 rounded-xl bg-surface border border-border hover:border-warning/40 transition-colors space-y-2"
                             >
                                 <div className="flex items-start justify-between gap-2">
                                     <h4 className="font-semibold text-sm leading-tight line-clamp-2">{c.campaignName}</h4>
-                                    <span className={cn('shrink-0 text-xs font-bold px-2 py-1 rounded-md bg-white/5 border border-border', urgencyColor(days))}>
+                                    <span className={cn('shrink-0 text-xs font-bold px-2 py-1 rounded-md bg-muted border border-border', urgencyColor(days))}>
                                         {urgencyLabel(days)}
                                     </span>
                                 </div>

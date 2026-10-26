@@ -24,9 +24,9 @@ export function CreativeCard({ creative }: CreativeCardProps) {
     const imgSrc = rawUrl && !imgFailed ? rawUrl : null;
 
     return (
-        <GlassCard className="overflow-hidden flex flex-col h-full group">
+        <GlassCard className="overflow-hidden flex flex-col h-full group p-0 sm:p-0">
             {/* Ad Preview / Thumbnail */}
-            <div className="relative aspect-[4/3] w-full bg-zinc-900 overflow-hidden">
+            <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
                 {imgSrc ? (
                     <img
                         src={imgSrc}
@@ -37,7 +37,7 @@ export function CreativeCard({ creative }: CreativeCardProps) {
                         decoding="async"
                     />
                 ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-zinc-700 p-2">
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-muted-foreground p-2">
                         <TrendingUp className="h-8 w-8 opacity-20" />
                         {!rawUrl && <span className="text-[8px] opacity-40 text-center break-all">no url</span>}
                         {rawUrl && imgFailed && <span className="text-[8px] opacity-40 text-center">load failed</span>}
@@ -108,9 +108,9 @@ export function CreativeCard({ creative }: CreativeCardProps) {
                     </div>
                     <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                            <MessageSquare className="h-3 w-3 text-emerald-400" /> Custo/Conversa
+                            <MessageSquare className="h-3 w-3 text-success" /> Custo/Conversa
                         </div>
-                        <div className="text-sm font-bold text-emerald-400">
+                        <div className="text-sm font-bold text-success tabular">
                             {cpr != null ? fmt(cpr) : "—"}
                         </div>
                     </div>

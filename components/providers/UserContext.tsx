@@ -11,6 +11,7 @@ export interface UserData {
     is_super_admin: boolean;
     allowed_tabs: string[] | null;         // null = all tabs allowed
     allowed_account_ids: string[] | null;  // null = all accounts allowed
+    workspace_name?: string | null;
 }
 
 const UserContext = createContext<UserData | null>(null);

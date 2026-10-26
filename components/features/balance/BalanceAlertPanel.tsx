@@ -97,10 +97,10 @@ function GroupSelector({ selectedId, selectedName, alertTime, onChange, onTimeCh
                 </Button>
             </div>
 
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
 
             {saveResult && (
-                <p className={cn('text-xs', saveResult.success ? 'text-emerald-400' : 'text-red-400')}>
+                <p className={cn('text-xs', saveResult.success ? 'text-success' : 'text-destructive')}>
                     {saveResult.success ? '✓ Grupo salvo' : saveResult.error}
                 </p>
             )}
@@ -186,7 +186,7 @@ function AccountRow({ account, onChange }: AccountRowProps) {
                     </p>
                 )}
                 {!account.isPrepay && (
-                    <p className="text-[11px] text-amber-400/80 mt-0.5">
+                    <p className="text-[11px] text-warning mt-0.5">
                         Cobrança automática — alerta de saldo não aplicável
                     </p>
                 )}
@@ -283,7 +283,7 @@ export function BalanceAlertPanel() {
                 </div>
                 <div className="space-y-2">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />
+                        <div key={i} className="h-14 rounded-xl bg-muted animate-pulse" />
                     ))}
                 </div>
             </GlassCard>
@@ -303,7 +303,7 @@ export function BalanceAlertPanel() {
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-amber-400" />
+                    <Bell className="h-5 w-5 text-warning" />
                     <h3 className="text-lg font-bold text-foreground">Alertas de Saldo</h3>
                     {enabledCount > 0 && (
                         <Badge variant="warning" className="text-[11px]">
@@ -330,8 +330,8 @@ export function BalanceAlertPanel() {
                     <div className={cn(
                         'flex items-center gap-2 text-sm p-3 rounded-lg',
                         checkResult.alerted > 0
-                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                            ? 'bg-warning/10 text-warning border border-warning/20'
+                            : 'bg-success/10 text-success border border-success/20',
                     )}>
                         {checkResult.alerted > 0
                             ? <><AlertTriangle className="h-4 w-4 shrink-0" />
@@ -343,8 +343,8 @@ export function BalanceAlertPanel() {
                         <div className={cn(
                             'flex items-center gap-2 text-sm p-3 rounded-lg',
                             checkResult.campaignsAlerted > 0
-                                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                                ? 'bg-warning/10 text-warning border border-warning/20'
+                                : 'bg-success/10 text-success border border-success/20',
                         )}>
                             {checkResult.campaignsAlerted > 0
                                 ? <><AlertTriangle className="h-4 w-4 shrink-0" />
@@ -357,7 +357,7 @@ export function BalanceAlertPanel() {
             )}
 
             {/* Group selector */}
-            <div className="p-4 rounded-xl bg-white/5 border border-border">
+            <div className="p-4 rounded-xl bg-surface border border-border">
                 <GroupSelector
                     selectedId={groupId}
                     selectedName={groupName}

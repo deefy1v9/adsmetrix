@@ -46,7 +46,7 @@ export function MetricsConfigPanel({ config, onClose, onSaved }: MetricsConfigPa
                     <h3 className="text-base font-bold text-foreground">Métricas do Dashboard</h3>
                     <p className="text-xs text-muted-foreground mt-0.5">Escolha quais KPIs aparecem nos cards</p>
                 </div>
-                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground">
+                <button onClick={onClose} aria-label="Fechar" className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                     <X className="w-4 h-4" />
                 </button>
             </div>
@@ -72,7 +72,7 @@ export function MetricsConfigPanel({ config, onClose, onSaved }: MetricsConfigPa
                                         )}
                                     >
                                         {local[def.key] && (
-                                            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 12 12">
+                                            <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
                                                 <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                             </svg>
                                         )}

@@ -63,19 +63,19 @@ function AdRow({ ad, accountId, metricFilter }: {
     const imgSrc  = ad.thumbnail_url && !imgFailed ? ad.thumbnail_url : null;
 
     return (
-        <TableRow className="bg-zinc-950/60 border-zinc-800/30">
+        <TableRow className="bg-muted/50 border-border/60">
             {/* indent */}
             <TableCell className="pl-16">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded bg-zinc-800 flex items-center justify-center shrink-0 overflow-hidden">
+                    <div className="w-7 h-7 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                         {imgSrc
                             ? <img src={imgSrc} alt="" onError={() => setImgFailed(true)} className="w-full h-full object-cover" />
-                            : <ImageIcon className="h-3 w-3 text-zinc-600" />
+                            : <ImageIcon className="h-3 w-3 text-muted-foreground" />
                         }
                     </div>
                     <div>
-                        <div className="text-xs font-medium text-zinc-300">{ad.name}</div>
-                        <div className="text-[10px] text-zinc-600">{ad.id}</div>
+                        <div className="text-xs font-medium text-foreground">{ad.name}</div>
+                        <div className="text-[10px] text-muted-foreground">{ad.id}</div>
                     </div>
                 </div>
             </TableCell>
@@ -90,7 +90,7 @@ function AdRow({ ad, accountId, metricFilter }: {
                     <Badge variant={statusMap[status] || "default"} className="text-[10px] py-0">{status}</Badge>
                 </div>
             </TableCell>
-            <TableCell className="text-xs text-zinc-500">—</TableCell>
+            <TableCell className="text-xs text-muted-foreground">—</TableCell>
             <TableCell className="text-xs">{ad.insights?.impressions || "-"}</TableCell>
             <TableCell className="text-xs">{ad.insights?.clicks || "-"}</TableCell>
             <TableCell className="text-xs">{convos || "0"}</TableCell>
@@ -144,17 +144,17 @@ function AdSetRow({ adset, accountId, metricFilter }: {
 
     return (
         <>
-            <TableRow className="bg-zinc-900/50 border-zinc-800/50 cursor-pointer hover:bg-zinc-900/80 transition-colors">
+            <TableRow className="bg-muted/30 border-border cursor-pointer hover:bg-muted/60 transition-colors">
                 <TableCell className="pl-8" onClick={expand}>
                     <div className="flex items-center gap-2">
                         {expanded
-                            ? <ChevronDown className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                            : <ChevronRight className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
+                            ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         }
-                        <Layers className="h-3 w-3 text-zinc-500 shrink-0" />
+                        <Layers className="h-3 w-3 text-muted-foreground shrink-0" />
                         <div>
-                            <div className="text-xs font-medium text-zinc-200">{adset.name}</div>
-                            <div className="text-[10px] text-zinc-600">{adset.id}</div>
+                            <div className="text-xs font-medium text-foreground">{adset.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{adset.id}</div>
                         </div>
                     </div>
                 </TableCell>
@@ -169,7 +169,7 @@ function AdSetRow({ adset, accountId, metricFilter }: {
                         <Badge variant={statusMap[status] || "default"} className="text-[10px] py-0">{status}</Badge>
                     </div>
                 </TableCell>
-                <TableCell className="text-xs text-zinc-500">—</TableCell>
+                <TableCell className="text-xs text-muted-foreground">—</TableCell>
                 <TableCell className="text-xs">{adset.insights?.impressions || "-"}</TableCell>
                 <TableCell className="text-xs">{adset.insights?.clicks || "-"}</TableCell>
                 <TableCell className="text-xs">{convos || "0"}</TableCell>
@@ -182,7 +182,7 @@ function AdSetRow({ adset, accountId, metricFilter }: {
             {expanded && (
                 loadingAds
                     ? Array.from({ length: 2 }).map((_, i) => (
-                        <TableRow key={i} className="bg-zinc-950/60">
+                        <TableRow key={i} className="bg-muted/50">
                             <TableCell colSpan={8} className="pl-16 py-2">
                                 <Skeleton className="h-3 w-64" />
                             </TableCell>
@@ -190,8 +190,8 @@ function AdSetRow({ adset, accountId, metricFilter }: {
                     ))
                     : ads.length === 0
                         ? (
-                            <TableRow className="bg-zinc-950/60">
-                                <TableCell colSpan={8} className="pl-16 py-2 text-xs text-zinc-600">
+                            <TableRow className="bg-muted/50">
+                                <TableCell colSpan={8} className="pl-16 py-2 text-xs text-muted-foreground">
                                     Nenhum anúncio encontrado.
                                 </TableCell>
                             </TableRow>
@@ -253,14 +253,14 @@ function CampaignRow({ campaign, accountId, metricFilter }: {
     return (
         <>
             <TableRow
-                className="cursor-pointer hover:bg-zinc-800/30 transition-colors"
+                className="cursor-pointer hover:bg-muted/40 transition-colors"
                 onClick={expand}
             >
                 <TableCell>
                     <div className="flex items-center gap-2">
                         {expanded
-                            ? <ChevronDown className="h-4 w-4 text-zinc-400 shrink-0" />
-                            : <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0" />
+                            ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                            : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         }
                         <div>
                             <div className="font-medium text-foreground">{campaign.name}</div>
@@ -279,7 +279,7 @@ function CampaignRow({ campaign, accountId, metricFilter }: {
                         <Badge variant={statusMap[status] || "default"}>{status}</Badge>
                     </div>
                 </TableCell>
-                <TableCell className="text-xs text-zinc-400">{campaign.objective}</TableCell>
+                <TableCell className="text-xs text-muted-foreground">{campaign.objective}</TableCell>
                 <TableCell>{campaign.insights?.impressions || "-"}</TableCell>
                 <TableCell>{campaign.insights?.clicks || "-"}</TableCell>
                 <TableCell>{specificMetric || "0"}</TableCell>
@@ -296,7 +296,7 @@ function CampaignRow({ campaign, accountId, metricFilter }: {
             {expanded && (
                 loadingAdsets
                     ? Array.from({ length: 2 }).map((_, i) => (
-                        <TableRow key={i} className="bg-zinc-900/50">
+                        <TableRow key={i} className="bg-muted/30">
                             <TableCell colSpan={8} className="pl-8 py-2">
                                 <Skeleton className="h-3 w-56" />
                             </TableCell>
@@ -304,8 +304,8 @@ function CampaignRow({ campaign, accountId, metricFilter }: {
                     ))
                     : adsets.length === 0
                         ? (
-                            <TableRow className="bg-zinc-900/50">
-                                <TableCell colSpan={8} className="pl-8 py-2 text-xs text-zinc-600">
+                            <TableRow className="bg-muted/30">
+                                <TableCell colSpan={8} className="pl-8 py-2 text-xs text-muted-foreground">
                                     Nenhum conjunto encontrado.
                                 </TableCell>
                             </TableRow>
@@ -359,8 +359,8 @@ export function CampaignsContent({ metricFilter = "all" }: { metricFilter?: "all
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground">Performance das Campanhas</h2>
-                    <p className="text-sm text-muted-foreground">
+                    <h2 className="text-base font-semibold tracking-tight text-foreground">Performance das Campanhas</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                         {loading
                             ? "Carregando campanhas..."
                             : <><span className="hidden sm:inline">Conta: {selectedAccount.name} — </span>Clique para expandir conjuntos e anúncios</>}

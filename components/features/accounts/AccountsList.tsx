@@ -165,7 +165,7 @@ export function AccountsList() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="text-zinc-400 hover:text-red-400 gap-1.5"
+                                                className="text-muted-foreground hover:text-destructive gap-1.5"
                                                 disabled={togglingId === account.id}
                                                 onClick={() => hideAccount(account.id)}
                                             >
@@ -186,27 +186,27 @@ export function AccountsList() {
                 <div>
                     <button
                         onClick={() => setShowHidden(v => !v)}
-                        className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors mb-2"
+                        className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
                     >
                         <Eye className="h-3.5 w-3.5" />
                         {showHidden ? "Ocultar" : `Ver contas ocultas (${hiddenAccounts.length})`}
                     </button>
 
                     {showHidden && (
-                        <GlassCard className="border-zinc-800/40">
+                        <GlassCard className="border-border">
                             <Table>
                                 <TableBody>
                                     {hiddenAccounts.map(acc => (
                                         <TableRow key={acc.account_id} className="opacity-60">
                                             <TableCell>
-                                                <div className="font-medium text-zinc-400">{acc.account_name}</div>
-                                                <div className="text-xs text-zinc-600">{acc.account_id}</div>
+                                                <div className="font-medium text-muted-foreground">{acc.account_name}</div>
+                                                <div className="text-xs text-muted-foreground">{acc.account_id}</div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
-                                                    className="text-zinc-500 hover:text-green-400 gap-1.5"
+                                                    className="text-muted-foreground hover:text-success gap-1.5"
                                                     disabled={togglingId === acc.account_id}
                                                     onClick={() => restoreAccount(acc.account_id)}
                                                 >

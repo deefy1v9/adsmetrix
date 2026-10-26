@@ -399,7 +399,7 @@ export function TrafficManagerUI() {
                             </CardTitle>
                             <CardDescription>
                                 Descreva a campanha. A IA preenche os campos automaticamente — você ajusta e confirma antes de criar.
-                                <span className="block mt-1 text-yellow-500 font-medium">⚠️ Todas as campanhas são criadas como PAUSADAS para revisão antes de ativar.</span>
+                                <span className="block mt-1 text-warning font-medium">⚠️ Todas as campanhas são criadas como PAUSADAS para revisão antes de ativar.</span>
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-5">
@@ -561,7 +561,7 @@ export function TrafficManagerUI() {
                                             <div className="space-y-1">
                                                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                                                     ID da Página do Facebook
-                                                    <span className="ml-1 text-yellow-500 normal-case font-normal">(obrigatório para Leads, Vendas e Engajamento)</span>
+                                                    <span className="ml-1 text-warning normal-case font-normal">(obrigatório para Leads, Vendas e Engajamento)</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -711,13 +711,13 @@ export function TrafficManagerUI() {
                                                         </div>
                                                         {adSet.destination_type === 'ON_AD' && (
                                                             <div className="mt-2 space-y-1">
-                                                                <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest">ID da Página do Facebook (obrigatório)</label>
+                                                                <label className="text-[10px] font-bold text-warning uppercase tracking-widest">ID da Página do Facebook (obrigatório)</label>
                                                                 <input
                                                                     type="text"
                                                                     value={adSet.page_id || ''}
                                                                     onChange={e => updateAdSet(adSetStep, { page_id: e.target.value })}
                                                                     placeholder="Ex: 123456789012345"
-                                                                    className="w-full bg-muted/50 border border-yellow-500/40 rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                                                                    className="w-full bg-muted/50 border border-warning/40 rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-warning"
                                                                 />
                                                             </div>
                                                         )}
@@ -852,7 +852,7 @@ export function TrafficManagerUI() {
                                                             <ImageIcon className="h-3.5 w-3.5 text-primary" />
                                                             <span className="text-xs font-semibold text-foreground">Anúncio</span>
                                                             {adSet.creative_image_url && (
-                                                                <span className="text-[10px] bg-green-500/20 text-green-600 dark:text-green-400 rounded px-1.5 py-0.5 font-medium">Imagem definida</span>
+                                                                <span className="text-[10px] bg-success/15 text-success rounded px-1.5 py-0.5 font-medium">Imagem definida</span>
                                                             )}
                                                             {adSet.ad_destination_url && (
                                                                 <span className="text-[10px] bg-foreground/10 text-foreground/70 rounded px-1.5 py-0.5 font-medium">URL definida</span>
@@ -896,7 +896,7 @@ export function TrafficManagerUI() {
                                                                             <div className="mt-2 flex items-center gap-2">
                                                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                                                                 <img src={adSet.creative_image_url} alt="selected" className="w-8 h-8 rounded object-cover border border-primary" />
-                                                                                <span className="text-[10px] text-green-500 font-semibold flex-1">Imagem selecionada</span>
+                                                                                <span className="text-[10px] text-success font-semibold flex-1">Imagem selecionada</span>
                                                                                 <button type="button" onClick={() => updateAdSet(adSetStep, { creative_image_url: undefined })} className="text-[10px] text-destructive hover:underline">Remover</button>
                                                                             </div>
                                                                         )}
@@ -948,10 +948,11 @@ export function TrafficManagerUI() {
                                                                                 <img src={creativePreviewUrl} alt="preview" className="w-full rounded-md border border-border object-contain max-h-40" />
                                                                                 <div className="flex gap-1.5">
                                                                                     <Button variant="outline" className="flex-1 h-7 text-[10px]" onClick={() => handleCopyCreativeUrl(creativePreviewUrl)}>
-                                                                                        {creativeCopied ? <><CheckCheck className="mr-1 h-3 w-3 text-green-500" /> Copiado</> : <><Copy className="mr-1 h-3 w-3" /> Copiar URL</>}
+                                                                                        {creativeCopied ? <><CheckCheck className="mr-1 h-3 w-3 text-success" /> Copiado</> : <><Copy className="mr-1 h-3 w-3" /> Copiar URL</>}
                                                                                     </Button>
                                                                                     <Button
-                                                                                        className="flex-1 h-7 text-[10px] bg-green-600 hover:bg-green-700 text-white"
+                                                                                        variant="brand"
+                                                                                        className="flex-1 h-7 text-[10px]"
                                                                                         onClick={() => {
                                                                                             updateAdSet(adSetStep, { creative_image_url: creativePreviewUrl });
                                                                                             setCreativeTab('recent');
@@ -1104,7 +1105,7 @@ export function TrafficManagerUI() {
                                                     ))}
                                                 </div>
                                             )}
-                                            <div className="text-xs text-yellow-500 font-medium">
+                                            <div className="text-xs text-warning font-medium">
                                                 ⚠️ Campanha será criada como PAUSADA. Adicione criativos e ative no Meta Ads Manager.
                                             </div>
                                             {createError && (
@@ -1163,7 +1164,7 @@ export function TrafficManagerUI() {
                                             </Button>
                                         ) : (
                                             <Button
-                                                className="bg-green-600 hover:bg-green-700 text-white"
+                                                variant="brand"
                                                 onClick={handleCreateCampaign}
                                                 disabled={creating}
                                             >
@@ -1180,10 +1181,10 @@ export function TrafficManagerUI() {
 
                             {/* Success */}
                             {createdCampaignId && (
-                                <div className="flex items-start gap-3 rounded-lg border border-green-500/40 bg-green-500/10 p-4">
-                                    <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
+                                <div className="flex items-start gap-3 rounded-lg border border-success/40 bg-success/10 p-4">
+                                    <CheckCircle2 className="h-5 w-5 text-success mt-0.5 shrink-0" />
                                     <div className="space-y-1">
-                                        <div className="font-bold text-green-500">Campanha criada com sucesso!</div>
+                                        <div className="font-bold text-success">Campanha criada com sucesso!</div>
                                         <div className="text-sm text-muted-foreground">
                                             Campanha: <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{createdCampaignId}</code>
                                         </div>
@@ -1208,7 +1209,7 @@ export function TrafficManagerUI() {
                                             </div>
                                         )}
                                         {adErrors.length > 0 && (
-                                            <div className="text-sm text-yellow-500">
+                                            <div className="text-sm text-warning">
                                                 <span className="font-semibold">Alguns anúncios falharam:</span>
                                                 <ul className="mt-0.5 space-y-0.5 text-xs list-disc list-inside">
                                                     {adErrors.map((err, i) => <li key={i}>{err}</li>)}
@@ -1224,7 +1225,7 @@ export function TrafficManagerUI() {
 
                             {/* Ad Set Errors */}
                             {adSetErrors.length > 0 && createdCampaignId && (
-                                <div className="flex items-start gap-2 rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-700 dark:text-yellow-400">
+                                <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning">
                                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                                     <div>
                                         <div className="font-semibold">Alguns conjuntos não foram criados:</div>

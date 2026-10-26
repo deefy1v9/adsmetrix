@@ -282,17 +282,17 @@ export function WhatsAppReportBuilder() {
 
                     {fetchingData ? (
                         <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#FAFAFA] border-t-primary"></div>
+                            <div className="animate-spin rounded-full h-10 w-10 border-4 border-muted border-t-primary"></div>
                             <p className="text-sm font-bold text-muted-foreground animate-pulse">BUSCANDO DADOS REAIS...</p>
                         </div>
                     ) : campaignData ? (
                         <div className="space-y-6">
-                            <div className="bg-[#1C1C1C] rounded-2xl p-6 shadow-xl border border-white/5">
+                            <div className="bg-surface rounded-2xl p-6 border border-border">
                                 <div className="flex items-center justify-between mb-4">
                                     <Badge variant="neon" className="font-black">WHATSAPP PREVIEW</Badge>
-                                    <div className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{getDateLabel()}</div>
+                                    <div className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">{getDateLabel()}</div>
                                 </div>
-                                <div className="text-sm text-[#FAFAFA] font-medium whitespace-pre-line leading-relaxed italic opacity-90">
+                                <div className="text-sm text-foreground font-medium whitespace-pre-line leading-relaxed italic opacity-90">
                                     {buildReportMessage()}
                                 </div>
                             </div>
@@ -336,27 +336,27 @@ export function WhatsAppReportBuilder() {
                 {result && (
                     <GlassCard className={cn(
                         "animate-in slide-in-from-bottom-4 border-2 transition-all",
-                        result.success ? "border-primary/50 bg-primary/5" : "border-red-500/50 bg-red-100/50"
+                        result.success ? "border-primary/50 bg-primary/5" : "border-destructive/40 bg-destructive/5"
                     )}>
                         <div className="flex items-start gap-4">
                             <div className={cn(
                                 "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
-                                result.success ? "bg-primary text-primary-foreground" : "bg-red-500 text-white"
+                                result.success ? "bg-primary text-primary-foreground" : "bg-destructive text-destructive-foreground"
                             )}>
                                 {result.success ? '✓' : '✗'}
                             </div>
                             <div className="min-w-0 flex-1">
                                 <h3 className={cn(
                                     "font-black tracking-tight",
-                                    result.success ? 'text-black' : 'text-red-600'
+                                    result.success ? 'text-foreground' : 'text-destructive'
                                 )}>
                                     {result.success ? 'RELATÓRIO ENVIADO COM SUCESSO!' : 'FALHA NO ENVIO DO RELATÓRIO'}
                                 </h3>
                                 <p className="text-xs font-medium text-muted-foreground mt-1 mb-3">
                                     {result.success ? 'Relatório enviado com sucesso.' : result.error}
                                 </p>
-                                <details className="bg-black/5 rounded-lg p-2 text-[10px] text-muted-foreground font-mono">
-                                    <summary className="cursor-pointer hover:text-black">Log da Operação</summary>
+                                <details className="bg-muted rounded-lg p-2 text-[10px] text-muted-foreground font-mono">
+                                    <summary className="cursor-pointer hover:text-foreground">Log da Operação</summary>
                                     <pre className="mt-2 whitespace-pre-wrap">
                                         {JSON.stringify(result, null, 2)}
                                     </pre>
